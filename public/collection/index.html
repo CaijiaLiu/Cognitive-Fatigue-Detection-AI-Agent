@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Cognitive Fatigue V1 · 浏览器本地的认知表现与摄像头特征研究采集工具。">
+  <title>Focus Lab · Cognitive Fatigue V1</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="#"><span class="brand-icon">f<span>·</span></span><span>focus lab<small>COGNITIVE RESEARCH</small></span></a>
+    <div class="side-label">WORKSPACE</div>
+    <a class="nav active" href="#collect"><span>◉</span> 会话采集</a>
+    <a class="nav" href="#dashboard"><span>▥</span> 数据仪表盘</a>
+    <a class="nav" href="#history"><span>◷</span> 本地会话</a>
+    <div class="side-bottom"><div class="privacy-icon">⌂</div><strong>你决定是否分享数据</strong><p>画面本地处理、不保存、不上传<br>仅在单独同意后分享数值结果</p><a href="/research">研究者登录</a><span class="version">V1.0 / RESEARCH MVP</span></div>
+  </aside>
+  <main>
+    <header class="topbar"><span>认知疲劳研究 / 数据采集</span><span class="local-pill"><i></i> LOCAL FIRST</span></header>
+    <section class="intro"><div><div class="eyebrow">A SMALL WINDOW INTO YOUR ATTENTION</div><h1>把变化，记录下来。</h1><p>一次短测试，记录眼部特征、反应表现与主观感受。<br>建立研究数据的起点，让每个变化都有迹可循。</p></div><button id="demo" class="button secondary">↗ 查看模拟示例</button></section>
+    <div class="research-note"><span>研究辅助</span> 当前版本收集特征与任务表现，不提供认知疲劳诊断或预测。测试结果受设备、光线、眼镜和操作习惯影响。</div>
+
+    <section id="collect" class="collection">
+      <div class="section-title"><h2>开始一段新会话</h2><span id="stage-label">01 / 准备</span></div>
+      <div class="steps"><span class="step current" id="step1"><b>1</b> 知情同意与准备</span><span class="step" id="step2"><b>2</b> 注意力测试</span><span class="step" id="step3"><b>3</b> 自评与保存</span></div>
+      <div class="grid setup-grid">
+        <article class="card setup-card">
+          <div class="card-heading"><h3>会话设置</h3><span class="badge">匿名采集</span></div>
+          <fieldset id="settings">
+            <label class="field-label" for="mode">采集方式</label>
+            <select id="mode"><option value="camera">真实摄像头 + 真实任务表现</option><option value="simulated">模拟眼部特征 + 真实任务表现</option><option value="behavior">仅真实任务表现（不使用摄像头）</option></select>
+            <p id="mode-note" class="small">请先同意研究说明，再启用摄像头。模型与画面均在浏览器本地处理。</p>
+            <label class="field-label" for="duration">测试时长</label>
+            <select id="duration"><option value="180">3 分钟 · 标准体验</option><option value="300">5 分钟 · 研究采集</option><option value="30">30 秒 · 快速验证</option></select>
+            <div class="rating-title"><label for="pre">测试前：你现在有多疲劳？</label><output id="pre-value" for="pre">5 / 10</output></div>
+            <input id="pre" type="range" min="1" max="10" value="5"><div class="range-labels"><span>1 完全不疲劳</span><span>10 极度疲劳</span></div>
+            <details class="consent-details" open><summary>了解本次研究采集</summary><p>我们记录匿名 ID、时间戳、疲劳自评、任务反应和眼部/头部数值特征。摄像头帧只用于本地计算，不录制视频、不保存照片。默认仅保存在当前浏览器。</p><p>参与自愿，可随时结束或撤回。测试结束后，你可以另行勾选上传同意，把本次匿名数值结果发到研究者的私密后台；不勾选则不上传。匿名 ID 仍可关联本设备上的会话。上传不包含浏览器信息、视频或照片；服务平台仍可能处理连接日志。</p><p>上传记录保留到研究者删除或你使用撤回凭证删除。页面会保存撤回凭证，也可下载备份；清空浏览器可能丢失凭证，已经由研究者导出的文件无法自动撤回。闭眼、头部转动和虹膜波动是未经临床验证的研究代理指标；自评也不等同于医学标签。</p></details>
+            <label class="checkbox"><input id="consent" type="checkbox"><span>我理解上述说明，同意在本设备记录本次会话。</span></label>
+          </fieldset>
+          <button id="start" class="button primary wide" disabled>开始注意力测试 <span>→</span></button>
+          <p class="small center">蓝色圆形出现时按空格 / 点击；三角形出现时等待。</p>
+        </article>
+        <article class="card camera-card">
+          <div class="card-heading"><h3>采集预览</h3><span id="source-badge" class="badge">真实采集 / 未启用</span></div>
+          <div class="camera-preview" id="preview"><video id="video" autoplay playsinline muted></video><div id="camera-placeholder"><div class="camera-symbol">◎</div><h4>让注意力，有迹可循</h4><p>正对摄像头，保持光线均匀<br>校准时自然睁眼，看向屏幕</p></div><span id="camera-overlay">摄像头未启用</span></div>
+          <div class="camera-actions"><button id="camera" class="button secondary" disabled>启用摄像头并校准</button><button id="release" class="text-button" disabled>关闭摄像头</button></div>
+          <p id="tracking-status" class="status" role="status">等待知情同意。</p>
+          <div class="live-grid"><div><small>眨眼次数</small><strong id="live-blinks">—</strong></div><div><small>有效追踪</small><strong id="live-coverage">—</strong></div><div><small>眼睛状态</small><strong id="live-eyes">—</strong></div></div>
+          <div class="camera-foot"><span>● 数值特征以约 10 Hz 记录</span><span>不录制视频</span></div>
+        </article>
+      </div>
+      <article id="task-panel" class="card task-panel" hidden>
+        <div class="card-heading"><h3>注意力测试 · Go / No-Go</h3><span id="task-source" class="badge"></span></div>
+        <div class="task-top"><span>蓝色圆形：按空格或点击 · 三角形：不要响应</span><strong id="remaining">03:00</strong></div>
+        <div class="progress-track"><div id="progress"></div></div>
+        <button id="stimulus" class="stimulus" aria-label="响应测试刺激"><span id="shape" class="shape neutral">准备</span></button>
+        <div class="task-bottom"><span id="task-help">请保持页面在前台。切换页面会结束本次会话并标记为中断。</span><button id="stop" class="button secondary">提前结束</button><button id="withdraw" class="text-button danger">撤回并丢弃</button></div>
+      </article>
+      <article id="post-panel" class="card post-panel" hidden>
+        <h3>会话已结束，请记录现在的感受</h3><p id="end-reason" class="small"></p>
+        <div class="rating-title"><label for="post">测试后疲劳程度</label><output id="post-value" for="post">5 / 10</output></div><input id="post" type="range" min="1" max="10" value="5"><div class="range-labels"><span>1 完全不疲劳</span><span>10 极度疲劳</span></div>
+        <label class="consent-check"><input id="upload-consent" type="checkbox"> 我单独同意把本次匿名 ID、时间戳、疲劳自评、任务表现和数值视觉特征上传至私密研究后台，用于研究探索。不会上传视频或照片。模拟视觉将明确标注。</label>
+        <div class="post-actions"><button id="save" class="button primary">保存自评与会话</button><button id="discard" class="text-button danger">丢弃本次记录</button></div>
+      </article>
+    </section>
+
+    <section id="dashboard" class="dashboard"><div class="section-title"><h2>会话仪表盘</h2><span id="result-badge" class="badge">等待数据</span></div>
+      <div id="empty-result" class="empty-state"><span>↗</span><p>完成一次会话，或查看模拟示例。<br><small>这里展示采集表现，不输出疲劳诊断。</small></p></div>
+      <div id="result" hidden>
+        <p id="result-meta" class="small"></p><div class="metrics"><article class="card metric"><small>反应时间中位数</small><strong id="metric-rt">—</strong><span>正确 Go 试次 / ms</span></article><article class="card metric"><small>任务正确率</small><strong id="metric-accuracy">—</strong><span id="metric-trials">—</span></article><article class="card metric"><small>眨眼频率</small><strong id="metric-blink">—</strong><span>次 / 有效追踪分钟</span></article><article class="card metric"><small>疲劳自评变化</small><strong id="metric-rating">—</strong><span id="rating-detail">测试前 → 测试后</span></article></div>
+        <div class="grid chart-grid"><article class="card"><div class="card-heading"><h3>反应时间</h3><span class="small">每个 Go 试次</span></div><svg id="reaction-chart" class="chart" viewBox="0 0 600 180" role="img" aria-label="反应时间图"></svg><p class="chart-caption">只绘制有效、正确响应；遗漏与误按计入下方质量摘要。</p></article><article class="card"><div class="card-heading"><h3>眼部开合趋势</h3><span class="small">Eye aspect ratio</span></div><svg id="eye-chart" class="chart" viewBox="0 0 600 180" role="img" aria-label="眼部开合图"></svg><p class="chart-caption">数值越低表示眼睑距离越小。追踪缺失保留为空，不补值。</p></article></div>
+        <article class="card quality"><h3>数据质量与代理特征</h3><div id="quality-grid" class="quality-grid"></div><p class="small">虹膜位置标准差以眼宽为单位，仅反映本次任务中的位置波动；头部运动以相邻有效帧的旋转差计算。二者都不应直接解释为疲劳程度。</p></article>
+        <div class="export-row"><span>导出当前查看的会话</span><button id="export-json" class="button secondary">JSON · 完整记录 ↓</button><button id="export-csv" class="button secondary">CSV · 会话摘要 ↓</button><button id="export-samples" class="button secondary">CSV · 逐帧特征 ↓</button><button id="export-trials" class="button secondary">CSV · 逐试次 ↓</button></div>
+      </div>
+    </section>
+    <section id="history"><div class="section-title"><h2>本地会话</h2><div><button id="export-all" class="text-button">导出全部 JSON</button><button id="delete-all" class="text-button danger">删除全部本地数据</button></div></div><div class="card history-card"><div id="history-list" class="history-list"><p class="small">暂无会话。记录仅保存在当前浏览器。</p></div></div></section>
+    <section id="cloud-panel" class="card" aria-live="polite"><h3>上传与撤回</h3><p id="cloud-status">默认不上传。仅对测试结束后单独同意的本次会话进行上传。</p><div id="cloud-actions"></div><div id="cloud-receipts"></div></section>
+    <footer><span>focus lab · Cognitive Fatigue Detection / V1</span><a href="/research">私密研究者后台</a></footer>
+    <div id="toast" role="status" class="toast" hidden></div>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
