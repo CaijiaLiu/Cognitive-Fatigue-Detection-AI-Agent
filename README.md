@@ -74,3 +74,14 @@ Completed verification: five data-validation tests, type checking, a production 
 Future model training can consume the exported JSON / CSV data. Exclude simulated visual features, preserve missing values and quality flags, split training and validation sets by participant ID rather than by frame or trial, and establish reliable labels and independent evaluation. Changes in blinking or fatigue self-ratings must not be treated as medical diagnoses.
 
 See [Research Data and Deployment Notes](RESEARCH.md) and [Framework and Local D1 Notes](docs/STARTER.md) for additional details. Third-party model and dependency licenses are retained in the corresponding license files under `public/collection/vendor/`, `vendor/`, and `build/`.
+
+## Architecture and implementation plan
+
+Focus Lab is the existing V1 collection application; NeuroLens names the broader ocular, facial and behavioral research platform. V2/V3 are planned milestones, not implemented features.
+
+- [Documentation index](docs/README.md)
+- [Merged architecture](docs/architecture/overview.md)
+- [Implementation steps and release gates](docs/planning/roadmap.md)
+- [Implemented versus planned capabilities](docs/planning/implementation-status.md)
+- [Repository file locations](docs/architecture/repository-layout.md)
+- [Shared agent/contributor instructions](AGENTS.md)
