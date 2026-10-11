@@ -1,72 +1,76 @@
 # Cognitive-Fatigue-Detection-AI-Agent
 
-## Focus Lab · V1 数据收集 Web App
+## Focus Lab · V1 Data Collection Web App
 
-用于认知疲劳研究探索的 Web 原型，**不是医学诊断工具，也不提供疲劳预测分数**。这一版重点是建立可分析的数据采集管道，暂不训练机器学习模型。
+A web prototype for exploratory cognitive fatigue research. **It is not a medical diagnostic tool and does not provide a predicted fatigue score.** V1 focuses on collecting analyzable research data; it does not train a machine learning model.
 
-- [公开测试网页](https://focus-lab-cognitive-v1.sassyhen16.chatgpt.site)
-- [私密研究者后台](https://focus-lab-cognitive-v1.sassyhen16.chatgpt.site/research)：仅授权研究者账号可查看、导出和删除结果。
+- [Public test app](https://focus-lab-cognitive-v1.sassyhen16.chatgpt.site)
+- [Private researcher dashboard](https://focus-lab-cognitive-v1.sassyhen16.chatgpt.site/research): only an authorized researcher account can view, export, or delete results.
 
-### 已实现
+### Features
 
-- 本地采集知情同意与摄像头权限；MediaPipe 面部/眼部模型与视频帧在浏览器端处理。
-- 眨眼、闭眼时长、头部运动、未经视线校准的虹膜位置波动代理特征；约 10 Hz 数值采样。
-- Go / No-Go 注意力任务，记录反应时间、正确率、遗漏、误按和无效试次。
-- 测试前后 1–10 疲劳自评、匿名浏览器 ID、会话 UUID、时间戳。
-- IndexedDB 本地保存，JSON / CSV 导出及会话仪表盘。
-- 单独上传同意（默认不勾选），服务器确认回执、手动重试、会话去重和云端撤回凭证。
-- Sites 平台登录、服务器端研究者授权、D1 存储与分页导出。
-- 真实摄像头、模拟视觉和仅任务三种模式；模拟特征始终明确标记。
+- Informed consent for local data collection and camera permission; MediaPipe face/eye inference and video-frame processing run in the browser.
+- Blink counts, eye-closure duration, head movement, and an uncalibrated iris-position variability proxy, with numerical sampling at approximately 10 Hz.
+- A Go / No-Go attention task that records reaction times, accuracy, omissions, false alarms, and invalid trials.
+- Pre- and post-task fatigue self-ratings on a 1–10 scale, an anonymous browser ID, a session UUID, and timestamps.
+- Local storage in IndexedDB, JSON / CSV exports, and a session dashboard.
+- Separate upload consent, unchecked by default; server acknowledgments, manual retries, session deduplication, and a credential for withdrawing a cloud submission.
+- Sites platform sign-in, server-side researcher authorization, D1 storage, and paginated exports.
+- Three modes: real camera, simulated visual features, and task-only. Simulated features are always explicitly labeled.
 
-### 隐私边界
+### Privacy Boundaries
 
-摄像头画面不录制、不保存、不上传。不会把已有本地会话自动迁移到云端。只有新会话完成后另行勾选同意并保存，才上传匿名 ID、时间戳、自评、任务表现和数值视觉特征。服务端采用字段白名单，不存储视频、照片、原始面部点位、浏览器信息或自由文本事件。
+Camera footage is not recorded, saved, or uploaded. Existing local sessions are not automatically migrated to the cloud. Only after completing a new session, separately consenting to upload, and saving it are the anonymous ID, timestamps, self-ratings, task performance, and numerical visual features submitted. The server uses a field allowlist and does not store videos, photos, raw facial landmarks, browser information, or free-text events.
 
-匿名 ID 可关联同一浏览器的会话，因此是可关联的研究标识，不保证绝对匿名。平台可能处理连接日志。上传记录保留到参与者或研究者删除；删除不能自动撤回已导出的文件。本仓库不包含参与者记录、开发数据库、截图、视频或生产密钥。
+The anonymous ID can link sessions from the same browser, so it is a linkable research identifier, not a guarantee of complete anonymity. The hosting platform may process connection logs. Uploaded records are retained until deleted by the participant or researcher; deletion cannot automatically recall files already exported. This repository contains no participant records, development databases, screenshots, videos, or production secrets.
 
-### 本地运行
+### Run Locally
 
-需要 Node.js ≥ 22.13.0（本版使用 Node.js 24 验证）。
+Requires Node.js ≥ 22.13.0. This version was verified with Node.js 24.
 
 ```sh
 npm run install:ci
 npm run build
 ```
 
-创建不提交到 Git 的 `.dev.vars`，用于本地开发：
+Create a `.dev.vars` file for local development. Do not commit it to Git:
 
 ```text
 RESEARCHER_EMAIL="seedy@sites.test"
 RATE_HASH_KEY="choose-a-development-only-random-value"
 ```
 
-初始化**本地**数据库，再启动预览：
+Initialize the **local** database, then start the preview:
 
 ```sh
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_cool_groot.sql
 npm run dev -- --hostname 127.0.0.1
 ```
 
-打开 `http://127.0.0.1:5173/collection/index.html`。本地平台模拟登录使用 `seedy@sites.test`，不属于生产认证。线上登录由 Sites 提供，生产 `RESEARCHER_EMAIL` 和 `RATE_HASH_KEY` 仅保存在托管平台，不写入源码。仅静态 GitHub Pages 无法运行这个版本的私密后台和 D1 API；GitHub 在这里托管源码，线上应用由 Sites 运行。
+Open `http://127.0.0.1:5173/collection/index.html`. The local platform sign-in simulation uses `seedy@sites.test`; it is not production authentication. Production sign-in is provided by Sites. Production values for `RESEARCHER_EMAIL` and `RATE_HASH_KEY` are stored only on the hosting platform, not in the source code. Static GitHub Pages cannot run this version's private dashboard or D1 API: GitHub hosts the source code, while Sites runs the live application.
 
-摄像头需要 HTTPS 或 localhost，并需要浏览器与操作系统许可。Safari 的真实摄像头硬件仍须实际设备验证，模拟模式不能证明硬件或疲劳识别有效。
+Camera access requires HTTPS or localhost, plus browser and operating-system permission. Real camera capture in Safari still needs verification on an actual device. Simulation does not validate camera hardware or the ability to detect fatigue.
 
-### 测试
+### Tests
 
 ```sh
 node --test tests/research.test.mjs
 npx tsc --noEmit
 npm run build
-# 在上述本地预览启动后运行；不要对生产网站执行集成测试
+# Run after starting the local preview above; do not run integration tests against production.
 node tests/integration.mjs
 ```
 
-已通过：5 项数据校验测试、类型检查、生产构建、本地同意门控/授权/去重/导出/撤回/重放拦截验证，以及浏览器 30 秒模拟视觉流程。原始本地 MVP 的 12 项核心/摄像头接口测试亦通过。线上页面、模型与 WASM 可访问；未登录导出被拒绝，后台跳转平台登录，上传许可配置正常。没有声称验证真人摄像头、线上所有者登录或医学有效性。
+Completed verification: five data-validation tests, type checking, a production build, local consent gating, authorization, deduplication, exports, withdrawal, replay protection, and a 30-second browser flow using simulated visual features. The original local MVP's 12 core/camera-interface tests also passed. The deployed page, model, and WASM assets are accessible; unauthenticated exports are rejected, the researcher dashboard redirects to platform sign-in, and upload-ticket configuration works. These checks do not establish real-person camera capture, production owner sign-in, or medical validity.
 
-### 项目结构与后续 ML
+### Project Structure and Future ML Integration
 
-`public/collection/` 为浏览器采集与可视化；`app/api/` 为上传和保护接口；`app/research/` 为私密后台；`db/` 和 `drizzle/` 为数据库结构及迁移；`lib/research-data.mjs` 为上传白名单与来源检查。
+- `public/collection/`: browser-side collection and visualization.
+- `app/api/`: upload and protected endpoints.
+- `app/research/`: private researcher dashboard.
+- `db/` and `drizzle/`: database schema and migrations.
+- `lib/research-data.mjs`: upload field allowlisting and data-source validation.
 
-模型训练可从导出的 JSON / CSV 接入。先排除模拟视觉，保留缺失值与质量标记，按参与者 ID 而非帧/试次划分训练与验证集，并建立可靠标签与独立评估。不能把眨眼变化或自评直接当成医学诊断。
+Future model training can consume the exported JSON / CSV data. Exclude simulated visual features, preserve missing values and quality flags, split training and validation sets by participant ID rather than by frame or trial, and establish reliable labels and independent evaluation. Changes in blinking or fatigue self-ratings must not be treated as medical diagnoses.
 
-详见 [研究数据与部署说明](RESEARCH.md)、[框架与本地 D1 说明](docs/STARTER.md)。第三方模型/依赖许可保留在 `public/collection/vendor/`、`vendor/` 和 `build/` 对应许可文件中。
+See [Research Data and Deployment Notes](RESEARCH.md) and [Framework and Local D1 Notes](docs/STARTER.md) for additional details. Third-party model and dependency licenses are retained in the corresponding license files under `public/collection/vendor/`, `vendor/`, and `build/`.
