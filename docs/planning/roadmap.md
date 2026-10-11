@@ -1,6 +1,6 @@
 # Roadmap and implementation steps
 
-V1/V2/V3 are milestones, not separate code directories. Work in dependency order; release tags follow acceptance, not calendar dates. No step is marked complete by this documentation update.
+V1/V2/V3 are milestones, not separate code directories. Work in dependency order; release tags follow acceptance, not calendar dates. The modular base has been extracted. Research-step acceptance gates remain open; see implementation-status.md.
 
 | Step | Milestone | Deliverable | Acceptance gate |
 |---|---|---|---|
@@ -29,3 +29,5 @@ V1/V2/V3 are milestones, not separate code directories. Work in dependency order
 ## Handoff checklist per step
 
 Record changed paths, schema/protocol impact, completed checks, pending real-device/research verification, and the next concrete task in implementation-status.md. Record a branch/commit or PR reference when available. A contributor must read the current Git state before beginning work; chat context is not a shared task queue.
+
+Module extraction in Step 2 is complete; this does not complete the facial-feature or validation work in Step 2.

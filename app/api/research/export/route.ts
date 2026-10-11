@@ -1,5 +1,5 @@
 import { database,researcher,response } from '../../../../lib/research';
-import { exportRows,toCSV } from '../../../../public/collection/core.js';
+import { exportRows,toCSV } from '../../../../public/collection/reporting/export.js';
 export async function GET(r:Request){
  if(!await researcher())return response({error:'仅研究者可以读取结果'},403);
  const url=new URL(r.url),format=url.searchParams.get('format')||'json',kind=url.searchParams.get('kind')||'sessions';

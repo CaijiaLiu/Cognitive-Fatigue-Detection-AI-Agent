@@ -33,20 +33,25 @@
 - Original NeuroLens framework is preserved under docs/reference/.
 - Runtime code stays at current paths: moving it requires coordinated imports, Worker URLs, static asset URLs and integration tests.
 
-## Planned module extraction (create when implemented)
+## Implemented module layout
 
-| Proposed path | Contents | Step |
-|---|---|---|
-| public/collection/features/ | Ocular, facial, head, gaze and window feature modules | 2–3 |
-| public/collection/tracking/ | Calibration, adapter interfaces and quality helpers | 2–3 |
-| public/collection/tasks/ | Go/No-Go task adapter and future task adapters | 4 |
-| public/collection/session/ | Protocol phases, timing, consent and session orchestration | 4 |
-| public/collection/reporting/ | Browser charts and timelines | 5 |
-| analysis/src/neurolens/ | Export validation, windows, statistics and model evaluation | 6–7 |
-| analysis/tests/ | Synthetic fixtures and reproducibility/leakage checks | 6–7 |
-| analysis/notebooks/ | Exploratory notebooks calling tested analysis code | 6 |
-| analysis/configs/ | Versioned analysis configurations | 6–7 |
+| Path | Contents |
+|---|---|
+| public/collection/tracking/ | Camera adapter, classic MediaPipe Worker implementation and tracking controller |
+| public/collection/features/ | Landmark extraction, time-series accumulator, unavailable-vision summary |
+| public/collection/tasks/ | Go/No-Go adapter owns trials/timers; task summary is pure |
+| public/collection/session/ | Session coordinator, version constants, source labels and demo |
+| public/collection/reporting/ | SVG dashboard, display formatting, shared exports and download helpers |
+| public/collection/persistence/ | IndexedDB store and opt-in cloud lifecycle |
+| public/collection/shared/ | Pure numeric helpers |
+| lib/research/ | Server helpers and allowlisted payload validator |
 
-Do not create empty placeholder folders or V1/V2 copies. Extract modules incrementally; maintain existing entrypoints until all consumers have migrated.
+app.js remains the browser entrypoint. core.js, camera.js, storage.js, cloud.js, lib/research.ts and lib/research-data.mjs are compatibility facades. tracker.worker.js remains a classic Worker bootstrap, preserving its URL and vendor asset base. The server export endpoint imports the DOM-free reporting/export.js directly.
+
+The session controller composes explicit task/tracking controllers and owns session/save/history UI state. Task and tracking controllers receive callbacks rather than import the coordinator; feature/export modules do not access the DOM. Display rendering belongs in reporting. Vendor assets, framework helpers and database migrations retain their required locations.
+
+## Future extraction (not implemented)
+
+Window features, screen-gaze calibration, new task adapters and protocol phases belong in the existing domain folders. Offline analysis goes under analysis/src/neurolens/, analysis/tests/, analysis/notebooks/ and analysis/configs/ when Step 6 starts. Do not create empty placeholder directories or V1/V2 copies.
 
 Participant exports and generated models/reports stay outside tracked source by default. Public demonstration artifacts require synthetic or intentionally approved de-identified data and clear provenance.

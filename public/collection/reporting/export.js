@@ -1,0 +1,6 @@
+export const csvCell = value => { if (value===null||value===undefined) return ''; const s=typeof value==='object'?JSON.stringify(value):String(value); const safe=/^[=+@\t\r]/.test(s)||(/^-.+/.test(s)&&!Number.isFinite(Number(s)))?"'"+s:s; return '"'+safe.replaceAll('"','""')+'"'; };
+export function toCSV(rows) { if(!rows.length) return ''; const keys=[...new Set(rows.flatMap(r=>Object.keys(r)))]; return '\uFEFF'+keys.map(csvCell).join(',')+'\r\n'+rows.map(r=>keys.map(k=>csvCell(r[k])).join(',')).join('\r\n'); }
+export function exportRows(sessions,kind='sessions') {
+  if(kind==='sessions') return sessions.map(s=>({schema_version:s.schema_version,session_id:s.session_id,participant_id:s.participant_id,started_at:s.started_at,ended_at:s.ended_at,status:s.status,mode:s.mode,vision_source:s.sources.vision,behavior_source:s.sources.behavior,ratings_source:s.sources.ratings,consent_version:s.consent?.version??null,duration_ms:s.duration_ms,fatigue_pre:s.fatigue_pre,fatigue_post:s.fatigue_post,...s.vision_summary,...s.behavior_summary}));
+  return sessions.flatMap(s=>(s[kind]||[]).map(row=>({session_id:s.session_id,participant_id:s.participant_id,vision_source:s.sources.vision,behavior_source:s.sources.behavior,...row})));
+}

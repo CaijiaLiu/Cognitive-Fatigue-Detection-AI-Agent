@@ -1,0 +1,1 @@
+export function nullVision(){return {blink_count:null,blink_rate_per_min:null,closed_time_ms:null,closed_fraction:null,valid_tracking_ms:0,tracking_coverage:null,head_motion_deg_per_sec:null,gaze_position_sd_eye_width:null,mean_blink_duration_ms:null,sample_count:0};}

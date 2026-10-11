@@ -54,7 +54,8 @@ Camera access requires HTTPS or localhost, plus browser and operating-system per
 ### Tests
 
 ```sh
-node --test tests/research.test.mjs
+npm test
+npm run test:flow
 npx tsc --noEmit
 npm run build
 # Run after starting the local preview above; do not run integration tests against production.
@@ -85,3 +86,20 @@ Focus Lab is the existing V1 collection application; NeuroLens names the broader
 - [Implemented versus planned capabilities](docs/planning/implementation-status.md)
 - [Repository file locations](docs/architecture/repository-layout.md)
 - [Shared agent/contributor instructions](AGENTS.md)
+
+## Modular collection base
+
+The stable entrypoint is `public/collection/app.js`. Implementations are grouped by responsibility:
+
+| Folder | Responsibility |
+|---|---|
+| `tracking/` | Camera access, Worker inference and tracking lifecycle |
+| `features/` | Ocular/head feature extraction, accumulation and missing-vision summaries |
+| `tasks/` | Go/No-Go task adapter and performance summaries |
+| `session/` | Orchestration, data-source labels, version constants and synthetic demo |
+| `reporting/` | Dashboard, formatting, downloads and shared CSV exports |
+| `persistence/` | Local sessions and consented cloud upload/withdrawal |
+| `shared/` | Pure statistics helpers |
+| `lib/research/` | Server authorization/request helpers and upload validation |
+
+Legacy module paths remain thin compatibility facades. Schema 1.0.0, IndexedDB database name and task protocol remain unchanged. `npm run test:flow` exercises the collection module graph with a controlled DOM/clock and memory persistence; it does not validate real-browser hardware or IndexedDB.

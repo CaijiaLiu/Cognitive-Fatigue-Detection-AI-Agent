@@ -39,3 +39,11 @@ For runtime changes: run relevant unit tests, npx tsc --noEmit and npm run build
 The existing five research tests cover payload validation, not blink accuracy. README historical checks are not evidence that the current task reran them.
 
 Final handoff: commit/PR, changed behavior/files, actual checks, pending validation and next step. Do not imply a website changed when only repository documentation changed.
+
+## Current module boundaries
+
+Collection implementation is under public/collection/{tracking,features,tasks,session,reporting,persistence,shared}. app.js/core.js/camera.js/storage.js/cloud.js and the server lib facades are compatibility entrypoints: add implementations to domain modules. Keep classic Worker bootstrap and vendor URL base stable.
+
+Tracking and task controllers own their resources/state and receive callbacks from session/controller.js. Do not introduce reverse imports into the coordinator. Keep statistics, feature extraction and exports DOM-free for research/server reuse. The schema and IndexedDB name are unchanged by module extraction.
+
+Run npm test and npm run test:flow for collection changes. Flow tests use controlled DOM/clock and memory storage, not a real browser. Preserve the separate local D1 integration and actual-device validation requirements.
