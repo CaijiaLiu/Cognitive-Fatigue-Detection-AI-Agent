@@ -1,5 +1,24 @@
 # Implementation status
 
+## Current cross-branch status (2026-10-13 Toronto)
+
+Canonical main runtime: `3c3f0aa`. Reviewed preview runtime: `663ed79`, branch `preview/mission-live-camera-v0.3`. Documentation updates do not merge or deploy preview code.
+
+| Capability | Main | Mission preview |
+|---|---|---|
+| Modular collection / optional cloud workflow | Implemented; real-device validation pending | Original main code retained; preview itself has no uploads |
+| English multi-screen mission journey | Not integrated | Implemented; browser flow not verified |
+| PVT-inspired + Go/No-Go sequence | Go/No-Go only | Implemented: 3 + 4 minutes |
+| Three timestamped fatigue ratings | Pre/post only | Pre/between/post implemented |
+| Live eye-state card throughout tasks | Basic collector feedback | Implemented per task, including stale/no-face/unavailable states |
+| Local history / JSON and CSV | Implemented, schema 1.0.0 | Implemented separately, schema mission-preview-1 |
+| Facial dynamics / screen gaze / thought probes | Planned | Still absent |
+| Statistical research / ML | Planned | Still absent |
+
+Preview review reran `npm run check` and `npm test`; all 16 synthetic unit tests passed. No new real-browser or camera validation was performed. The review identified missing task-start frame filtering and a calibration timeout dependent on receiving frames; these are integration blockers, not completed fixes.
+
+Next work: [stabilize and port the preview](mission-integration.md). The earlier V1 audit below describes main, not preview availability.
+
 Snapshot: main at 2f72e925e1c90d113cb6a549c14a46b393a5eb3f, audited 2026-10-10 Toronto time. This snapshot is the original capability audit. The module refactor below changes code organization; it does not implement V2 research features.
 
 | Capability | Status | Evidence / remaining work |

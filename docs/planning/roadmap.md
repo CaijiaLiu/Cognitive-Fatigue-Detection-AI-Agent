@@ -31,3 +31,19 @@ V1/V2/V3 are milestones, not separate code directories. Work in dependency order
 Record changed paths, schema/protocol impact, completed checks, pending real-device/research verification, and the next concrete task in implementation-status.md. Record a branch/commit or PR reference when available. A contributor must read the current Git state before beginning work; chat context is not a shared task queue.
 
 Module extraction in Step 2 is complete; this does not complete the facial-feature or validation work in Step 2.
+
+## Immediate sequence after the mission preview review
+
+Keep Steps 1–9 as stable research milestones. Execute this bounded integration track before expanding V2 features:
+
+| Order | Work | Completion gate |
+|---|---|---|
+| 1A | Stabilize preview boundaries | Reject pre-task frames; independent calibration deadline; delayed/missing-frame tests |
+| 1B | Verify mission experience | Full and demo journeys in camera/task-only/simulated modes; interruption, export, history and responsive layout checks |
+| 1C | Port into canonical modules | Shared feature/tracking engine; reusable PVT and Go/No-Go adapters; no duplicate algorithm ownership |
+| 1D | Integrate data contracts | Versioned multi-task records and three ratings; V1 read compatibility; optional cloud consent/allowlist/export tests |
+| 1E | Complete Step 1 measurement QA | Annotated real-device detection checks, sampling/timing quality and recorded limitations |
+
+1C's minimal multi-task orchestration is engineering groundwork for Step 4, not completion of its baseline/probe/confounder requirements. 1D does not complete Step 5's facial/gaze/probe integration.
+
+The preview is already implemented on its branch; porting, scientific validation and deployment are separate statuses. See [detailed integration plan](mission-integration.md).

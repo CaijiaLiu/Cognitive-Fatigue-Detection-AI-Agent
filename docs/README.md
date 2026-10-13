@@ -8,6 +8,7 @@ NeuroLens is the target research platform; Focus Lab is the existing V1 collecti
 | Runtime and analysis data flow | [Data flow](architecture/data-flow.md) |
 | Schema, provenance and compatibility | [Data contracts](architecture/data-contracts.md) |
 | Existing and planned file locations | [Repository layout](architecture/repository-layout.md) |
+| Mission preview stabilization and integration | [Mission integration](planning/mission-integration.md) |
 | Ordered implementation steps and release gates | [Roadmap](planning/roadmap.md) |
 | Audited implementation status | [Status](planning/implementation-status.md) |
 | Research questions and validation | [Research plan](research/research-plan.md) |

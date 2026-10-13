@@ -47,3 +47,9 @@ Collection implementation is under public/collection/{tracking,features,tasks,se
 Tracking and task controllers own their resources/state and receive callbacks from session/controller.js. Do not introduce reverse imports into the coordinator. Keep statistics, feature extraction and exports DOM-free for research/server reuse. The schema and IndexedDB name are unchanged by module extraction.
 
 Run npm test and npm run test:flow for collection changes. Flow tests use controlled DOM/clock and memory storage, not a real browser. Preserve the separate local D1 integration and actual-device validation requirements.
+
+## Mission preview handoff (2026-10-13)
+
+Review docs/planning/mission-integration.md before mission work. Snapshot branch preview/mission-live-camera-v0.3 at 663ed79 is an independent local-only preview, not integrated main runtime or validated V2. Verify the current branch head rather than assuming this snapshot remains latest.
+
+Stabilize frame-start/calibration boundaries, validate the experience, then port into canonical domain modules. Keep preview schema/protocol/presentation metadata distinct; coordinate cloud consent and allowlist changes. Do not equate passing synthetic tests with browser/camera validation or duplicate feature engines as long-term architecture.

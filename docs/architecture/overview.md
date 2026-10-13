@@ -6,7 +6,7 @@ Build a non-invasive ocular, facial and behavioral research platform to investig
 
 Focus Lab V1 already collects Go/No-Go performance, pre/post fatigue ratings, browser-derived ocular/head features, local sessions and optional cloud submissions. It does not infer fatigue or mind wandering. This plan merges that implementation with the original NeuroLens framework.
 
-Audited source: main commit `2f72e925e1c90d113cb6a549c14a46b393a5eb3f`, 2026-10-10 Toronto time. See [status](../planning/implementation-status.md).
+Original V1 audit source: main commit `2f72e925e1c90d113cb6a549c14a46b393a5eb3f`, 2026-10-10 Toronto time. See [status](../planning/implementation-status.md).
 
 ## Architecture
 
@@ -72,3 +72,25 @@ Confirmed: preserve working V1 collection and cloud privacy behavior; develop re
 Open: final probe frequency, baseline duration, gaze quality thresholds, facial feature subset and recruitment/sample-size design. Resolve through pilot measurements and record decisions in the relevant protocol/feature document.
 
 See [roadmap](../planning/roadmap.md) for execution order and [repository layout](repository-layout.md) for file ownership.
+
+## Mission preview integration decision (2026-10-13 Toronto)
+
+Reviewed preview source: [mission snapshot](https://github.com/CaijiaLiu/Cognitive-Fatigue-Detection-AI-Agent/tree/663ed797841e46cd2bc7779673d52a5120b1b9a3/previews/mission), branch `preview/mission-live-camera-v0.3`. Main modular base is `3c3f0aa40464867489ddab6d50bc3b7d01349203`.
+
+The preview implements a separate English multi-screen experience, 3-minute PVT-inspired task, 4-minute Go/No-Go task, pre/between/post ratings and per-task live ocular feedback. It is local-only and not integrated into the canonical collector or cloud research backend. Presentation v0.3 is not product milestone V3.
+
+Decision: preserve the snapshot as provenance while porting selected capabilities into the canonical domain modules. Do not maintain a second long-term feature engine or replace main with the preview wholesale.
+
+| Preview capability | Target owner in main | Integration boundary |
+|---|---|---|
+| English journey and instructions | session/ controller and presentation modules | Explicit phases; retain existing collector entrypoint |
+| PVT-inspired mission | tasks/ adapter and summary | Keep provisional protocol identity and timing parameters |
+| Two-task session and three ratings | session/ plus versioned data contract | Task-relative and session-relative timestamps; old records readable |
+| Live eye feedback | reporting/ with shared features/ | Same detector as stored metrics; feedback presentation recorded |
+| Camera lifecycle | tracking/ controller | Independent calibration timeout, stale-frame handling and frame boundary checks |
+| Preview local persistence | persistence/ readers/adapters | No automatic copying/upload of historical records |
+| Research upload | existing API + lib/research/ | New consent, allowlist and schema handling together |
+
+Live feedback may alter behavior; the participant experience is an experimental variable. Preserve presentation version and feedback setting, and do not pool feedback-on/off or different protocols without explicit analysis justification.
+
+The immediate plan is [mission integration](../planning/mission-integration.md), followed by the existing V2/V3 research work. Facial actions, calibrated screen gaze, thought probes, confounders and ML remain outstanding.

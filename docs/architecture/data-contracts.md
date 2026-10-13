@@ -33,3 +33,11 @@ Use a new compatible minor schema for additive fields with documented defaults; 
 An observation is not a label. Fatigue ratings and thought-probe responses are separate outcomes. Pre/post fatigue ratings must not be copied onto every window as verified fatigue state.
 
 Simulated vision is excluded from empirical ocular training/validation. Adjacent windows and repeated sessions from one participant stay within the same evaluation group. Fit imputation, scaling and feature selection on training folds only. Preserve missingness; do not turn failed tracking into zero movement.
+
+## Mission-preview contract and target integration
+
+Reviewed source `663ed79` uses `mission-preview-1`, protocol `mission-exploratory-v1`, presentation `mission-en-v0.3-live-eyes`, separate IndexedDB identity and participant key. It contains tasks[], ratings {pre,between,post}, rating_events and presentation settings, with upload_consent=false. It is not a supported main cloud DTO.
+
+The integrated contract must record task start/end offsets relative to the session clock, task-specific protocol/timing parameters, presentation/feedback settings and source/quality metadata. Preserve original schema identity on imported data. Explicitly distinguish product milestone, protocol, schema and presentation versions: preview v0.3 does not mean V3 modeling is implemented.
+
+Do not silently convert the three preview ratings to V1 pre/post or upload old preview sessions. Old-reader compatibility and a deliberate consented upload path are gates in [mission integration](../planning/mission-integration.md).
