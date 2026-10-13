@@ -39,3 +39,14 @@ Checks: nine unit tests; controlled-DOM/clock flow covering consent, demo, simul
 Browser automation could not run because the available Playwright browser executable was absent and its download failed. Controlled-DOM checks are not real-browser/real-person validation. Real camera and Safari validation remain pending. No production deployment is part of this refactor.
 
 Next task: Step 1 real-device/measurement QA; Step 2 module extraction is complete, but facial features, head events and their acceptance gates remain planned. Other contributors should extend domain modules rather than the compatibility facades.
+
+
+## User-requested mission preview snapshot (2026-10-12 Vancouver)
+
+Branch: `preview/mission-live-camera-v0.3`, based on main `3c3f0aa40464867489ddab6d50bc3b7d01349203`. Source: `previews/mission/`. This is a preservation/publishing handoff of the already-running independent preview, not a replacement of the modular collection base, a V2 acceptance claim, or a new production deployment.
+
+Preserved behavior: English multi-screen consent/setup, 3-minute PVT-inspired and 4-minute Go/No-Go tasks, pre/between/post self-ratings, local storage/history/export, and persistent live camera/eye-state feedback during games. Task counts restart per mission; preview counters are transient. No-face/unavailable/stale states are explicit. Synthetic vision and the 40-second demo remain marked. Presentation version `mission-en-v0.3-live-eyes` is present in JSON and summary CSV. The separate preview IndexedDB identity and schema `mission-preview-1` are retained; V1 sessions/cloud writers/readers are not changed.
+
+Checks rerun for this publication: `npm run check` and `npm test` in the preview; all 16 synthetic unit tests passed. Served `dist/` source matched the preserved snapshot byte-for-byte. Pinned MediaPipe assets matched existing repository blob SHAs and were reused with licenses. No browser self-play, camera access, new participant data, typecheck, full server build, or production integration test was run: the server and its dependencies were not changed. These checks do not validate detection accuracy or research sensitivity.
+
+Limits: preview results are local-only; this schema is not wired into the private research backend. Existing public V1 remains unchanged. No participant exports, videos, screenshots, credentials, runtime databases, or preview hosting identity were added. No further gamification changes were made. Before resuming implementation, review integration into the canonical domain modules and coordinate schema/consent/server/export contracts; empirical real-device and measurement validation remains pending.

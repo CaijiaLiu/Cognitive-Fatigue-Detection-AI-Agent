@@ -1,5 +1,28 @@
 # Cognitive-Fatigue-Detection-AI-Agent
 
+## This branch: English live-camera mission preview
+
+This branch preserves the user-requested playable **v0.3** preview before further game-design changes. The existing V1 collection application and server are retained unchanged. The preview is independent and local-only; it does **not** upload results to the private researcher dashboard.
+
+- [Preview source and instructions](previews/mission/README.md)
+- [English interface](previews/mission/dist/index.html)
+- [Live eye-feedback checks](previews/mission/tests/live-camera.test.mjs)
+
+Run the preserved preview with Node.js (no dependency installation required):
+
+```sh
+cd previews/mission
+npm run dev
+```
+
+Then open `http://127.0.0.1:4177/?ui=mission-en-v0.3-live-eyes`. The header reads **LIVE CAMERA EN · v0.3**. On macOS, you can instead double-click `Launch English Preview.command` in that folder.
+
+Included: separate consent/setup/rules/game/report screens, a 3-minute PVT-inspired task and a 4-minute Go/No-Go task, three self-ratings, a camera preview and live Open/Closed estimates during both games, per-task blink/closure metrics, local history, JSON/CSV exports, and explicit demo/simulation labels. This is an exploratory collection prototype, not validated fatigue prediction or medical diagnosis.
+
+Publication checks: syntax checks and 16 synthetic unit tests passed. No real-camera test or browser self-play was performed for this snapshot. No participant records, screenshots, video, local databases, secrets, or preview Sites identity are included. Publishing source to this branch does not deploy a website.
+
+---
+
 ## Focus Lab · V1 Data Collection Web App
 
 A web prototype for exploratory cognitive fatigue research. **It is not a medical diagnostic tool and does not provide a predicted fatigue score.** V1 focuses on collecting analyzable research data; it does not train a machine learning model.

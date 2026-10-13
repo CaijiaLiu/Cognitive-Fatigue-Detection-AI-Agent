@@ -55,3 +55,8 @@ The session controller composes explicit task/tracking controllers and owns sess
 Window features, screen-gaze calibration, new task adapters and protocol phases belong in the existing domain folders. Offline analysis goes under analysis/src/neurolens/, analysis/tests/, analysis/notebooks/ and analysis/configs/ when Step 6 starts. Do not create empty placeholder directories or V1/V2 copies.
 
 Participant exports and generated models/reports stay outside tracked source by default. Public demonstration artifacts require synthetic or intentionally approved de-identified data and clear provenance.
+
+
+## Independent preview preservation branch
+
+`previews/mission/` contains the explicitly user-requested snapshot of the already-running English mission preview on `preview/mission-live-camera-v0.3`. It has its own dependency-free local server and tests; it is not a V1/V2/V3 source-version hierarchy or a change to canonical module ownership. The existing `public/collection/` entrypoints, vendor URLs, server, database, and cloud consent behavior are unchanged. The snapshot deliberately preserves its current algorithms and relative asset paths rather than refactoring behavior during a publishing-only handoff. Future integrated implementation should use the canonical domain modules and the normal research/schema acceptance gates, not treat this snapshot as a second canonical platform.
