@@ -2,7 +2,7 @@
 
 **Status:** Proposed planning framework; dates and gates are targets, not proof of completion.  
 **Dates:** 2026-10-19 (Monday) through 2026-12-06 (Sunday).  
-**People:** **Person A — Caijia (University of British Columbia / UBC student)**, Biomedical Research & Computational Science Lead; **Person B — Linxi (University of Waterloo student)**, Engineering & AI Lead.  
+**People:** **Person A — Caijia (University of British Columbia / UBC student)**, Research Systems & Applied ML Engineer; **Person B — Linxi (University of Waterloo student)**, Platform & AI Systems Engineer.  
 **Data strategy (confirmed):** During this seven-week sprint, Person A (Caijia) and Person B (Linxi) primarily use their own repeated self-measurements and appropriately licensed public datasets. **No external participant future recruitment or clinical study is planned for the sprint.** Self-measurements support system validation and exploratory within-person analysis, not population generalization. Public datasets can support held-out-participant evaluation only when independent participant IDs, matching labels/modalities, and licenses permit it. Do not claim the public dataset validates webcam multimodal fusion when its modalities differ.\n\n**Goal (stretch, accepted as planning ambition):** Complete all seven A–G engineering and research workstreams within seven weeks, including real-device self-measurement validation, public-dataset-based participant-held-out evaluation when scientifically compatible, and a clinical validation *future-study plan* (not clinical validation itself). The team explicitly aims beyond a prototype. Scientific validation and clinical claims are evidence-gated: neither agent throughput nor the deadline guarantees adequate participants, ethics approval, clinical populations, statistical power, external validity, or clinical validation. Report each as achieved, exploratory, or blocked, never silently mark complete.
 
 See [accepted decisions](decision-log.md), [ownership](collaboration-ownership.md), [research north star](research-north-star.md), [roadmap](roadmap.md), [mission integration](mission-integration.md), and [implementation status](implementation-status.md). This schedule does not silently override their safety/quality gates.
@@ -15,10 +15,26 @@ See [accepted decisions](decision-log.md), [ownership](collaboration-ownership.m
 - Aim to complete device validation by Week 2–3, self-test study and data QA by Week 3–4, participant-held-out experiments by Week 5, and replication/robustness plus final reporting by Week 7, **conditional on sufficient authorized data**.
 - Keep two scoreboards: **Engineering DoD** (merged code/tests/contract) and **Scientific DoD** (independent evidence/sample/uncertainty). A weekly stage may be engineering-complete while scientifically unvalidated.
 
+## Weekly code ownership — both contributors implement
+
+| Stage | Person A — Caijia (research-facing code + science) | Person B — Linxi (platform-facing code) | Integration boundary |
+|---|---|---|---|
+| W1 A | Implement PVT/Go-No-Go task engines, trial metrics, deterministic task tests; define outcomes | Mission adapter, tracking lifecycle, frame/event timestamps, calibration timeouts | Versioned trial/event interface; no duplicate timing engine |
+| W2 B | Implement annotation comparison/measurement QA scripts, blink/closure metrics and validation fixtures | Camera feature processing, quality/missingness flags, dropout/latency instrumentation | Shared feature units, quality taxonomy and reference traces |
+| W3 C | Implement protocol definitions, task config, self-report/probe logic and state transition tests | Session orchestrator, storage/schema versions, privacy and export | Protocol emits canonical session events; no conflicting state machines |
+| W4 D | Implement public-dataset adapter, statistics, plots, within-person analysis and tests | Dataset validator, window builder, provenance manifests, reproducible CLI | Adapter contract and modality compatibility report |
+| W5 E | Implement baseline models, ablations, evaluation metrics and interpretation notebooks | Grouped split/training runner, fold-safe preprocessing, fusion and model registry | Shared split manifest, metrics JSON and leakage audit |
+| W6 F | Implement scientific benchmark, claim/evidence checker, agent evaluation harness | Agent tool interface, provenance retrieval, constrained generation and abstention | Agent output schema and scored evaluation set |
+| W7 G | Implement research dashboard/results visualization, final research report and tests | End-to-end app integration, CI, reproducibility, security and release candidate | Fresh-clone run + scientific claim audit |
+
+**Minimum Friday handoff for each person:** code PR with tests, sample output, documented interface, and a short rationale; Person A additionally includes research references/hypotheses when relevant. Saturday integrates both PRs, Sunday cross-reviews. Neither contributor is a documentation-only role.
+
+**Conflict avoidance:** Person A owns task/protocol, measurement QA, dataset/analysis, baseline/evaluation and research-facing UI; Person B owns tracking, session/store, orchestration, training runtime, agent runtime and deployment. Shared event/schema changes require an agreed contract before either edits consumers.
+
 ## Operating cadence and handoff contract
 
 - **Monday:** both read main HEAD and open PRs, agree week's hypothesis, schemas/interfaces, scoped issues, and pass/fail gates. Freeze shared contracts before implementation.
-- **Tuesday–Thursday:** separate research and engineering branches; each owner produces reviewable artifacts, not only progress descriptions. Midweek interface check.
+- **Tuesday–Thursday:** separate research and engineering branches; each owner produces executable code and tests plus reviewable research artifacts, not only progress descriptions. Midweek interface check.
 - **Friday:** Person A delivers protocol/analysis note, fixture, expected outputs and limitations; Person B delivers PR, commands/tests, schema notes and example output. Both publish to repo.
 - **Saturday:** joint integration: run both contributions together, inspect event/schema provenance and failures; log issues. No silent scope changes.
 - **Sunday:** cross-review, reproducibility test, accept/partial/block decision, update implementation-status.md and decision-log.md (only if a decision changes), revise next week's plan.
