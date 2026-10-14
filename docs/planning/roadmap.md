@@ -1,5 +1,8 @@
 # Roadmap and implementation steps
 
+The proposed date-based A–G execution framework is [Seven-Week Sprint](seven-week-sprint.md); its deadlines do not override scientific validation gates.
+
+
 Accepted team decisions are tracked in [Decision Log](decision-log.md). Strategic research questions, scientific guardrails and workstreams A–G are defined in [Research North Star](research-north-star.md). This roadmap remains the dependency-ordered implementation source of truth; the North Star is a plan, not evidence of implemented capabilities.
 
 V1/V2/V3 are milestones, not separate code directories. Work in dependency order; release tags follow acceptance, not calendar dates. The modular base has been extracted. Research-step acceptance gates remain open; see implementation-status.md.
