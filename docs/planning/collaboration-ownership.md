@@ -7,9 +7,11 @@ Status: **Proposed allocation pending confirmation by both human collaborators**
 - **Person B: Linxi — University of Waterloo student**
 
 ## Team shape
-- **Person B — Linxi (Platform & AI Systems Engineer):** architecture, tracking and event-time correctness, schema/storage/privacy implementation, training infrastructure, multimodal fusion and evidence-grounded agent runtime.
-- **Person A — Caijia (Research Systems & Applied ML Engineer):** Own research design **and production code** for cognitive task engines, protocol/probe logic, measurement QA tooling, dataset adapters, statistical analysis, ML baselines/ablations and research-agent evaluation; also own scientific interpretation.
+- **Person B — Linxi (LLM / AI Research & Engineering Lead):** architecture, tracking and event-time correctness, schema/storage/privacy implementation, training infrastructure, multimodal fusion and evidence-grounded agent runtime.
+- **Person A — Caijia (Biomedical Fatigue Research & Engineering Lead):** Own research design **and production code** for cognitive task engines, protocol/probe logic, measurement QA tooling, dataset adapters, statistical analysis, ML baselines/ablations and research-agent evaluation; also own scientific interpretation.
 - Both leads own scientific validity, research ethics, reproducibility, release readiness and cross-review.
+
+**Research-to-code loop:** Linxi studies LLM/agent/retrieval/evaluation methods and implements AI tooling; Caijia studies ocular, cognitive fatigue and behavioral measurement science and implements features/tasks/measurement QA. Each delivers a hypothesis, references, executable PR, tests and metrics. Saturday integrates; Sunday evaluates against agreed baselines, then both refine code. Scientific plausibility alone does not establish improved accuracy.
 
 **Engineering parity:** Both people are hands-on developers and submit code PRs every week. Research deliverables never substitute for Person A's implementation. Person A owns research-facing software; Person B owns platform-facing software. Shared contracts are jointly reviewed.
 
