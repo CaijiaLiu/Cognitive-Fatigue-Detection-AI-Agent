@@ -2,7 +2,7 @@
 
 ## Read first
 
-Read docs/planning/research-north-star.md (strategic research scope), README.md, docs/README.md, docs/architecture/overview.md, docs/planning/implementation-status.md and docs/planning/roadmap.md before implementation. Read data-contracts.md and affected research/operations documents before changing collection or analysis.
+Read docs/planning/decision-log.md (accepted team decisions), docs/planning/research-north-star.md (strategic research scope), README.md, docs/README.md, docs/architecture/overview.md, docs/planning/implementation-status.md and docs/planning/roadmap.md before implementation. Read data-contracts.md and affected research/operations documents before changing collection or analysis.
 
 NeuroLens is the target platform; Focus Lab is the existing V1 app. Both refer to this repository. Current implementation is research data collection, not fatigue prediction or medical diagnosis.
 
@@ -53,3 +53,7 @@ Run npm test and npm run test:flow for collection changes. Flow tests use contro
 Review docs/planning/mission-integration.md before mission work. Snapshot branch preview/mission-live-camera-v0.3 at 663ed79 is an independent local-only preview, not integrated main runtime or validated V2. Verify the current branch head rather than assuming this snapshot remains latest.
 
 Stabilize frame-start/calibration boundaries, validate the experience, then port into canonical domain modules. Keep preview schema/protocol/presentation metadata distinct; coordinate cloud consent and allowlist changes. Do not equate passing synthetic tests with browser/camera validation or duplicate feature engines as long-term architecture.
+
+## Accepted decisions and multi-agent collaboration
+
+Treat docs/planning/decision-log.md as the authoritative record of accepted team decisions. Check it before proposing new features or changing scope. Record approved changes there; never silently reverse a decision. Coordinate via committed files, PRs and issues rather than assuming private AI conversations are shared. Prefer feature branches and reviewable PRs for code, protocol, schema and substantial architecture changes. Keep accepted design distinct from implementation, validation and deployment.
