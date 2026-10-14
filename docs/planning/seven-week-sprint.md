@@ -3,9 +3,17 @@
 **Status:** Proposed planning framework; dates and gates are targets, not proof of completion.  
 **Dates:** 2026-10-19 (Monday) through 2026-12-06 (Sunday).  
 **People:** **Person A — Caijia**, Biomedical Research & Computational Science Lead; **Person B — Linxi**, Engineering & AI Lead.  
-**Goal:** Ship an integrated, reproducible, research-grade *prototype* covering stages A–G, with honest measurement/ML evidence and explicit limitations. Seven weeks cannot guarantee recruitment, robust external generalization, ethics approvals, or clinical validation. Missing empirical evidence is recorded as a blocker, not replaced by simulated results.
+**Goal (stretch, accepted as planning ambition):** Complete all seven A–G engineering and research workstreams within seven weeks, including real-device measurement validation, a properly authorized human-participant study where feasible, participant-held-out generalization experiments, and clinical-level validation planning/evidence where feasible. The team explicitly aims beyond a prototype. Scientific validation and clinical claims are evidence-gated: neither agent throughput nor the deadline guarantees adequate participants, ethics approval, clinical populations, statistical power, external validity, or clinical validation. Report each as achieved, exploratory, or blocked, never silently mark complete.
 
 See [accepted decisions](decision-log.md), [ownership](collaboration-ownership.md), [research north star](research-north-star.md), [roadmap](roadmap.md), [mission integration](mission-integration.md), and [implementation status](implementation-status.md). This schedule does not silently override their safety/quality gates.
+
+## High-throughput agent-assisted execution rules
+
+- Run parallel **bounded PRs** within each person's ownership (implementation, test fixtures, analysis, docs), with one integrator per shared interface; do not let agents independently rewrite the same core module.
+- Each week requires **four outputs per owner**: substantive implementation/research artifact, automated tests, reproducible evidence/results, and integration documentation. Deliver working vertical slices rather than just scaffolding.
+- Start participant-study feasibility, institutional ethics requirements, recruitment channels, sample-size/power rationale, and device matrix in **Week 1**. No recruitment or identifiable collection before required approvals and consent. Clinical validation requires an appropriately designed study and expert oversight; if unavailable, mark as unmet.
+- Aim to complete device validation by Week 2–3, pilot study and data QA by Week 3–4, participant-held-out experiments by Week 5, and replication/robustness plus final reporting by Week 7, **conditional on sufficient authorized data**.
+- Keep two scoreboards: **Engineering DoD** (merged code/tests/contract) and **Scientific DoD** (independent evidence/sample/uncertainty). A weekly stage may be engineering-complete while scientifically unvalidated.
 
 ## Operating cadence and handoff contract
 
@@ -16,6 +24,18 @@ See [accepted decisions](decision-log.md), [ownership](collaboration-ownership.m
 - **Sunday:** cross-review, reproducibility test, accept/partial/block decision, update implementation-status.md and decision-log.md (only if a decision changes), revise next week's plan.
 - **Definition of done:** merged reviewed artifacts + documented reproducible checks + integration handoff + outstanding empirical limits. Use separate labels **Designed / Implemented / Verified in tests / Validated on real data / Deployed**.
 - **Time-box rule:** if a gate fails, preserve the blocker and reduce next week's scope to a credible vertical slice; never manufacture validation. Feature branches/PRs for substantive changes; no production deploy or participant recruitment without explicit authorization.
+
+## Parallel empirical study track (runs all seven weeks)
+
+| Week | Person A — Caijia | Person B — Linxi | Evidence gate |
+|---|---|---|---|
+| W1 | Ethics applicability check, consent and study feasibility, sample-size rationale, participant eligibility, device/lighting protocol | Local-only pilot tooling, anonymized IDs, QA telemetry, data export audit | Written authorization/ethics status; no unauthorized enrollment |
+| W2 | Annotator rubric and inter-rater pilot, measurement reference plan, device strata | Instrumented capture/quality reports, timing QA | Real-device reference comparisons where permitted |
+| W3 | Pilot study administration after approvals, protocol adherence and recruitment tracking | Consent-safe pilot export, quality dashboard and schema QA | Verified pilot provenance and participant counts |
+| W4 | Audit labels, missingness, exclusion and repeated-measure assumptions | Reproducible cohort manifest and locked dataset splits | Cohort manifest with independent-participant count |
+| W5 | Held-out participant interpretation and robustness hypotheses | Grouped model evaluation, ablations, uncertainty | No generalization claim without adequate held-out participants |
+| W6 | Replication or sensitivity analysis, agent scientific-answer benchmark | Agent evidence tracing, reliability regression | Reproducible claims and abstentions |
+| W7 | Final scientific limitations, validity evidence, next-study/clinical validation plan | Release evidence bundle, benchmark and audit | Separate engineering/scientific/clinical status report |
 
 ## Week 1 — Stage A: Foundation / Mission integration
 **2026-10-19–25**
@@ -73,6 +93,10 @@ See [accepted decisions](decision-log.md), [ownership](collaboration-ownership.m
 - Evidence: tests run, fixture IDs, actual device/pilot observations (if any), known failures
 - Saturday integration results; Sunday verdict (accepted/partial/blocked), changes to next sprint
 - Links to updated status and any accepted/superseding decision
+
+## Stage completion scorecard
+
+For each stage record: (1) feature/analysis code merged; (2) automated tests passed; (3) real-device or participant evidence obtained; (4) independent validation/generalization demonstrated; (5) clinical validation status (not applicable / not started / approved study / evidence achieved). Do not confuse clinical-level ambition with a clinical-grade or diagnostic product.
 
 ## Adaptive replanning policy
 Every Sunday adjust task scope based on actual gates. Keep stage sequence A–G as an organizing framework, but if A–D are not trustworthy, E/F/G may only deliver tested scaffolding; no unsupported accuracy, scientific validity or completed-stage claims. Maintain one canonical implementation and avoid parallel permanent feature engines.
