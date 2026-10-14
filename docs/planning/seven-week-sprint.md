@@ -2,7 +2,7 @@
 
 **Status:** Proposed planning framework; dates and gates are targets, not proof of completion.  
 **Dates:** 2026-10-19 (Monday) through 2026-12-06 (Sunday).  
-**People:** **Person A — Caijia**, Biomedical Research & Computational Science Lead; **Person B — Linxi**, Engineering & AI Lead.  
+**People:** **Person A — Caijia (University of British Columbia / UBC student)**, Biomedical Research & Computational Science Lead; **Person B — Linxi (University of Waterloo student)**, Engineering & AI Lead.  
 **Goal (stretch, accepted as planning ambition):** Complete all seven A–G engineering and research workstreams within seven weeks, including real-device measurement validation, a properly authorized human-participant study where feasible, participant-held-out generalization experiments, and clinical-level validation planning/evidence where feasible. The team explicitly aims beyond a prototype. Scientific validation and clinical claims are evidence-gated: neither agent throughput nor the deadline guarantees adequate participants, ethics approval, clinical populations, statistical power, external validity, or clinical validation. Report each as achieved, exploratory, or blocked, never silently mark complete.
 
 See [accepted decisions](decision-log.md), [ownership](collaboration-ownership.md), [research north star](research-north-star.md), [roadmap](roadmap.md), [mission integration](mission-integration.md), and [implementation status](implementation-status.md). This schedule does not silently override their safety/quality gates.
@@ -11,7 +11,7 @@ See [accepted decisions](decision-log.md), [ownership](collaboration-ownership.m
 
 - Run parallel **bounded PRs** within each person's ownership (implementation, test fixtures, analysis, docs), with one integrator per shared interface; do not let agents independently rewrite the same core module.
 - Each week requires **four outputs per owner**: substantive implementation/research artifact, automated tests, reproducible evidence/results, and integration documentation. Deliver working vertical slices rather than just scaffolding.
-- Start participant-study feasibility, institutional ethics requirements, recruitment channels, sample-size/power rationale, and device matrix in **Week 1**. No recruitment or identifiable collection before required approvals and consent. Clinical validation requires an appropriately designed study and expert oversight; if unavailable, mark as unmet.
+- Start participant-study feasibility, **UBC and Waterloo institutional ethics jurisdiction / multi-institution collaboration determination**, recruitment channels, sample-size/power rationale, and device matrix in **Week 1**. Caijia is at **UBC**, not Waterloo: do not assume Waterloo's ethics process alone governs this joint project. Ask the relevant UBC and Waterloo research ethics offices/supervisors which institution is responsible, whether harmonized/multi-site review is required, and whether either student's activity is exempt before recruiting. No recruitment or identifiable collection before required approvals and consent. Clinical validation requires an appropriately designed study and expert oversight; if unavailable, mark as unmet.
 - Aim to complete device validation by Week 2–3, pilot study and data QA by Week 3–4, participant-held-out experiments by Week 5, and replication/robustness plus final reporting by Week 7, **conditional on sufficient authorized data**.
 - Keep two scoreboards: **Engineering DoD** (merged code/tests/contract) and **Scientific DoD** (independent evidence/sample/uncertainty). A weekly stage may be engineering-complete while scientifically unvalidated.
 
@@ -29,7 +29,7 @@ See [accepted decisions](decision-log.md), [ownership](collaboration-ownership.m
 
 | Week | Person A — Caijia | Person B — Linxi | Evidence gate |
 |---|---|---|---|
-| W1 | Ethics applicability check, consent and study feasibility, sample-size rationale, participant eligibility, device/lighting protocol | Local-only pilot tooling, anonymized IDs, QA telemetry, data export audit | Written authorization/ethics status; no unauthorized enrollment |
+| W1 | UBC/Waterloo research ethics jurisdiction check, consent and study feasibility, sample-size rationale, participant eligibility, device/lighting protocol | Local-only pilot tooling, anonymized IDs, QA telemetry, data export audit | Written authorization/ethics status; no unauthorized enrollment |
 | W2 | Annotator rubric and inter-rater pilot, measurement reference plan, device strata | Instrumented capture/quality reports, timing QA | Real-device reference comparisons where permitted |
 | W3 | Pilot study administration after approvals, protocol adherence and recruitment tracking | Consent-safe pilot export, quality dashboard and schema QA | Verified pilot provenance and participant counts |
 | W4 | Audit labels, missingness, exclusion and repeated-measure assumptions | Reproducible cohort manifest and locked dataset splits | Cohort manifest with independent-participant count |
