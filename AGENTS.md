@@ -2,7 +2,7 @@
 
 ## Read first
 
-Read README.md, docs/README.md, docs/architecture/overview.md, docs/planning/implementation-status.md and docs/planning/roadmap.md before implementation. Read data-contracts.md and affected research/operations documents before changing collection or analysis.
+Read docs/planning/research-north-star.md (strategic research scope), README.md, docs/README.md, docs/architecture/overview.md, docs/planning/implementation-status.md and docs/planning/roadmap.md before implementation. Read data-contracts.md and affected research/operations documents before changing collection or analysis.
 
 NeuroLens is the target platform; Focus Lab is the existing V1 app. Both refer to this repository. Current implementation is research data collection, not fatigue prediction or medical diagnosis.
 
