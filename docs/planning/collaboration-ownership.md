@@ -26,6 +26,10 @@ Status: **Proposed allocation pending confirmation by both human collaborators**
 | Evidence-grounded LLM agent | Engineering | Research for claim fidelity |
 | Demo, reproducibility package and manuscript | Joint | Joint |
 
+## Seven-week sprint proposal
+
+The week-by-week responsibilities, Friday handoffs and Saturday/Sunday integration criteria are in [Seven-Week Sprint](seven-week-sprint.md). This is a proposed adaptive framework pending both collaborators' confirmation.
+
 ## Immediate parallel work (before mission integration)
 **Person B — Linxi (Engineering branch):** stabilize late-frame/task boundary, independent calibration deadline, dropout/restart tests and canonical integration contracts. Do not silently change experiment parameters.
 
