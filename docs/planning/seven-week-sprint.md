@@ -2,7 +2,7 @@
 
 **Status:** Proposed planning framework; dates and gates are targets, not proof of completion.  
 **Dates:** 2026-10-19 (Monday) through 2026-12-06 (Sunday).  
-**People:** **Person A — Caijia (University of British Columbia / UBC student)**, Research Systems & Applied ML Engineer; **Person B — Linxi (University of Waterloo student)**, Platform & AI Systems Engineer.  
+**People:** **Person A — Caijia (University of British Columbia / UBC student)**, Biomedical Fatigue Research & Engineering Lead; **Person B — Linxi (University of Waterloo student)**, LLM / AI Research & Engineering Lead.  
 **Data strategy (confirmed):** During this seven-week sprint, Person A (Caijia) and Person B (Linxi) primarily use their own repeated self-measurements and appropriately licensed public datasets. **No external participant future recruitment or clinical study is planned for the sprint.** Self-measurements support system validation and exploratory within-person analysis, not population generalization. Public datasets can support held-out-participant evaluation only when independent participant IDs, matching labels/modalities, and licenses permit it. Do not claim the public dataset validates webcam multimodal fusion when its modalities differ.\n\n**Goal (stretch, accepted as planning ambition):** Complete all seven A–G engineering and research workstreams within seven weeks, including real-device self-measurement validation, public-dataset-based participant-held-out evaluation when scientifically compatible, and a clinical validation *future-study plan* (not clinical validation itself). The team explicitly aims beyond a prototype. Scientific validation and clinical claims are evidence-gated: neither agent throughput nor the deadline guarantees adequate participants, ethics approval, clinical populations, statistical power, external validity, or clinical validation. Report each as achieved, exploratory, or blocked, never silently mark complete.
 
 See [accepted decisions](decision-log.md), [ownership](collaboration-ownership.md), [research north star](research-north-star.md), [roadmap](roadmap.md), [mission integration](mission-integration.md), and [implementation status](implementation-status.md). This schedule does not silently override their safety/quality gates.
@@ -14,6 +14,14 @@ See [accepted decisions](decision-log.md), [ownership](collaboration-ownership.m
 - In **Week 1**, document the independent extracurricular project status, self-measurement consent/privacy/retention rules, public dataset licenses and provenance, and whether either institution's research ethics policies apply to this specific activity. Caijia is a **UBC** student; Linxi is a **Waterloo** student. Seek written guidance before expanding into external recruitment, institution-sponsored research, or clinical research. Do not assume self-experimentation is automatically exempt from every applicable institutional/privacy rule. No third-party recruitment is scheduled. Clinical validation is a future study requiring appropriate design and oversight.
 - Aim to complete device validation by Week 2–3, self-test study and data QA by Week 3–4, participant-held-out experiments by Week 5, and replication/robustness plus final reporting by Week 7, **conditional on sufficient authorized data**.
 - Keep two scoreboards: **Engineering DoD** (merged code/tests/contract) and **Scientific DoD** (independent evidence/sample/uncertainty). A weekly stage may be engineering-complete while scientifically unvalidated.
+
+## Cross-disciplinary research-to-code workflow
+
+**Person A — Caijia:** study ocular signals, fatigue/attention constructs, measurement reliability and confounders; implement cognitive tasks, ocular feature algorithms, QA and scientifically justified evaluation. Hand off feature definitions, units, quality criteria, expected effect direction (as hypothesis), supporting references and runnable tests.
+
+**Person B — Linxi:** study LLM agent design, tool-grounding, retrieval, structured outputs, uncertainty/abstention, evaluation and integration with deterministic multimodal analysis; implement agent runtime, evidence tools, ML/data interfaces and automated evaluations. Hand off tool schemas, model/agent baselines, provenance contract, eval cases and runnable tests.
+
+**Shared:** choose one target metric before changing code; agree interface and dataset split; each opens bounded PRs; Saturday integrate; Sunday run baseline vs candidate, ablations and error analysis. Retain changes only if supported by evidence; record negative results. Do not use LLM prose as a substitute for measured fatigue prediction accuracy.
 
 ## Weekly code ownership — both contributors implement
 
