@@ -7,9 +7,11 @@ Status: **Proposed allocation pending confirmation by both human collaborators**
 - **Person B: Linxi — University of Waterloo student**
 
 ## Team shape
-- **Person B — Linxi (Engineering & AI Lead):** architecture, tracking and event-time correctness, schema/storage/privacy implementation, ML training infrastructure, multimodal fusion and evidence-grounded research agent.
-- **Person A — Caijia (Biomedical Research & Computational Science Lead):** Own hypotheses, literature, protocols, task semantics, measurement QA, labels/confounders, statistics, scientific interpretation and contribute directly to feature selection, ablations and model evaluation.
+- **Person B — Linxi (Platform & AI Systems Engineer):** architecture, tracking and event-time correctness, schema/storage/privacy implementation, training infrastructure, multimodal fusion and evidence-grounded agent runtime.
+- **Person A — Caijia (Research Systems & Applied ML Engineer):** Own research design **and production code** for cognitive task engines, protocol/probe logic, measurement QA tooling, dataset adapters, statistical analysis, ML baselines/ablations and research-agent evaluation; also own scientific interpretation.
 - Both leads own scientific validity, research ethics, reproducibility, release readiness and cross-review.
+
+**Engineering parity:** Both people are hands-on developers and submit code PRs every week. Research deliverables never substitute for Person A's implementation. Person A owns research-facing software; Person B owns platform-facing software. Shared contracts are jointly reviewed.
 
 ## Responsibility matrix
 | Workstream | Primary | Required review |
@@ -33,7 +35,7 @@ The week-by-week responsibilities, Friday handoffs and Saturday/Sunday integrati
 ## Immediate parallel work (before mission integration)
 **Person B — Linxi (Engineering branch):** stabilize late-frame/task boundary, independent calibration deadline, dropout/restart tests and canonical integration contracts. Do not silently change experiment parameters.
 
-**Person A — Caijia (Research branch):** write falsifiable hypotheses, provisional PVT/Go-No-Go/baseline protocol, label and confounder definitions, measurement QA plan, synthetic fixtures. Do not change production data collection/consent without joint review.
+**Person A — Caijia (Research systems branch):** implement cognitive task engines and trial metrics with tests, plus falsifiable hypotheses, provisional PVT/Go-No-Go/baseline protocol, label and confounder definitions, measurement QA plan and synthetic fixtures. Do not change production data collection/consent without joint review.
 
 **Integration checkpoint:** agree on event names, timestamps, units, quality/missingness taxonomy, protocol version and schema changes before either branch changes shared contracts.
 
