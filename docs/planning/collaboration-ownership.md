@@ -3,8 +3,8 @@
 Status: **Proposed allocation pending confirmation by both human collaborators**. Updated 2026-10-14. This is a coordination proposal, not an exclusive permission system.
 
 ## Named collaborators
-- **Person A: Caijia**
-- **Person B: Linxi**
+- **Person A: Caijia — University of British Columbia (UBC) student**
+- **Person B: Linxi — University of Waterloo student**
 
 ## Team shape
 - **Person B — Linxi (Engineering & AI Lead):** architecture, tracking and event-time correctness, schema/storage/privacy implementation, ML training infrastructure, multimodal fusion and evidence-grounded research agent.
