@@ -2,9 +2,13 @@
 
 Status: **Proposed allocation pending confirmation by both human collaborators**. Updated 2026-10-14. This is a coordination proposal, not an exclusive permission system.
 
+## Named collaborators
+- **Person A: Caijia**
+- **Person B: Linxi**
+
 ## Team shape
-- **Engineering & AI Lead (primary user):** architecture, tracking and event-time correctness, schema/storage/privacy implementation, ML training infrastructure, multimodal fusion and evidence-grounded research agent.
-- **Biomedical Research & Computational Science Lead (collaborator):** approximately 70% cognitive/biomedical science and 30% substantive AI research. Own hypotheses, literature, protocols, task semantics, measurement QA, labels/confounders, statistics, scientific interpretation and contribute directly to feature selection, ablations and model evaluation.
+- **Person B — Linxi (Engineering & AI Lead):** architecture, tracking and event-time correctness, schema/storage/privacy implementation, ML training infrastructure, multimodal fusion and evidence-grounded research agent.
+- **Person A — Caijia (Biomedical Research & Computational Science Lead):** Own hypotheses, literature, protocols, task semantics, measurement QA, labels/confounders, statistics, scientific interpretation and contribute directly to feature selection, ablations and model evaluation.
 - Both leads own scientific validity, research ethics, reproducibility, release readiness and cross-review.
 
 ## Responsibility matrix
@@ -23,9 +27,9 @@ Status: **Proposed allocation pending confirmation by both human collaborators**
 | Demo, reproducibility package and manuscript | Joint | Joint |
 
 ## Immediate parallel work (before mission integration)
-**Engineering branch:** stabilize late-frame/task boundary, independent calibration deadline, dropout/restart tests and canonical integration contracts. Do not silently change experiment parameters.
+**Person B — Linxi (Engineering branch):** stabilize late-frame/task boundary, independent calibration deadline, dropout/restart tests and canonical integration contracts. Do not silently change experiment parameters.
 
-**Research branch:** write falsifiable hypotheses, provisional PVT/Go-No-Go/baseline protocol, label and confounder definitions, measurement QA plan, synthetic fixtures. Do not change production data collection/consent without joint review.
+**Person A — Caijia (Research branch):** write falsifiable hypotheses, provisional PVT/Go-No-Go/baseline protocol, label and confounder definitions, measurement QA plan, synthetic fixtures. Do not change production data collection/consent without joint review.
 
 **Integration checkpoint:** agree on event names, timestamps, units, quality/missingness taxonomy, protocol version and schema changes before either branch changes shared contracts.
 
