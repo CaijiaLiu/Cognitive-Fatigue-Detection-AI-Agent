@@ -116,6 +116,8 @@ The original export object is frozen as a sidecar (`source_export_sha256`). Norm
 | `tests/analysis-adapter.test.mjs` | W1.3 acceptance tests |
 | `analysis/src/neurolens/agent/constants.mjs` + `validate.mjs` | Additive origin/computation/coverage tokens |
 
+The W1.6 offline pipeline (`runOfflinePipeline`) feeds these artifacts into the W1.5 prompt builder and validator. See [analysis-integration.md](analysis-integration.md).
+
 Out of scope: collection modules, consent, D1, camera, mission preview port, LLM provider, CSV writer changes.
 
 ## What this does not establish

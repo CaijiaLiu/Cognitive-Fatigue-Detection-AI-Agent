@@ -23,12 +23,17 @@ function stableJson(value) {
   return JSON.stringify(value, null, 2);
 }
 
-function requestsFromIntent(intent) {
+function analysisVersionFor(intent, tools) {
+  return intent.analysis_version ?? tools?.analysis_version ?? ANALYSIS_VERSION;
+}
+
+function requestsFromIntent(intent, tools) {
+  const analysis_version = analysisVersionFor(intent, tools);
   if (intent.kind === 'report_metric') {
     return [{
       tool: 'get_session_summary',
       session_ref: intent.session_ref,
-      analysis_version: intent.analysis_version ?? ANALYSIS_VERSION,
+      analysis_version,
     }];
   }
   if (intent.kind === 'compare_metric') {
@@ -36,7 +41,7 @@ function requestsFromIntent(intent) {
       tool: 'compare_sessions',
       session_refs: intent.session_refs,
       metric_id: intent.metric_id,
-      analysis_version: intent.analysis_version ?? ANALYSIS_VERSION,
+      analysis_version,
     }];
   }
   if (intent.kind === 'lookup_artifact') {
@@ -46,7 +51,7 @@ function requestsFromIntent(intent) {
 }
 
 export function collectEvidence(caseDef, tools) {
-  const requests = caseDef.tool_requests ?? requestsFromIntent(caseDef.intent);
+  const requests = caseDef.tool_requests ?? requestsFromIntent(caseDef.intent, tools);
   const envelopes = requests.map((request) => tools.invoke(request));
   const artifacts = [];
   for (const envelope of envelopes) {
@@ -58,11 +63,12 @@ export function collectEvidence(caseDef, tools) {
   return { requests, envelopes, artifacts };
 }
 
-export function toolManifest() {
+export function toolManifest(tools) {
+  const listed = tools?.listTools?.() ?? [];
   return {
     contract_version: CONTRACT_VERSION,
-    analysis_version: ANALYSIS_VERSION,
-    access: 'synthetic_fixture_catalog',
+    analysis_version: tools?.analysis_version ?? ANALYSIS_VERSION,
+    access: listed[0]?.access ?? 'synthetic_fixture_catalog',
     read_only: true,
     tools: ALLOWED_TOOLS.map((name) => ({
       name,
@@ -127,7 +133,7 @@ export function buildPromptPackage(caseDef, { tools } = {}) {
   const gold = composeAnswer(caseDef.intent, agent);
   const sections = {
     question: caseDef.question,
-    tool_manifest: toolManifest(),
+    tool_manifest: toolManifest(agent),
     validated_evidence: {
       tool_envelopes: evidence.envelopes,
       artifacts: evidence.artifacts,

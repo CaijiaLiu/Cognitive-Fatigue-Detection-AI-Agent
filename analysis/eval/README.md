@@ -1,6 +1,6 @@
 # Manual research-agent evaluation
 
-API-independent workflow. Synthetic fixtures only. See [agent-eval.md](../../docs/architecture/agent-eval.md).
+API-independent workflow. Synthetic fixtures only. See [agent-eval.md](../../docs/architecture/agent-eval.md). Offline export → agent integration: [analysis-integration.md](../../docs/architecture/analysis-integration.md) and `npm run test:integration`.
 
 ```sh
 npm run eval:agent -- list

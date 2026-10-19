@@ -55,12 +55,15 @@ Camera access requires HTTPS or localhost, plus browser and operating-system per
 
 ```sh
 npm test
+npm run test:integration
 npm run test:flow
 npx tsc --noEmit
 npm run build
-# Run after starting the local preview above; do not run integration tests against production.
+# Run after starting the local preview above; do not run collection/cloud integration tests against production.
 node tests/integration.mjs
 ```
+
+`npm run test:integration` is the offline W1.6 pipeline (V1 export → adapter → tools → prompt → validator). It needs no LLM API key and no network. It is not `tests/integration.mjs` (local D1 / collection cloud).
 
 Completed verification: five data-validation tests, type checking, a production build, local consent gating, authorization, deduplication, exports, withdrawal, replay protection, and a 30-second browser flow using simulated visual features. The original local MVP's 12 core/camera-interface tests also passed. The deployed page, model, and WASM assets are accessible; unauthenticated exports are rejected, the researcher dashboard redirects to platform sign-in, and upload-ticket configuration works. These checks do not establish real-person camera capture, production owner sign-in, or medical validity.
 

@@ -1,5 +1,43 @@
 # Implementation status
 
+## W1.6 integration and end-to-end validation (2026-10-19)
+
+**Status:** Implemented and verified in synthetic tests plus typecheck/build. Engineering integration of PR #4 and PR #5 only. Not an LLM API, not scientifically validated, not deployed, and not a reader of production D1 or camera streams.
+
+Implementation branch: `cursor/w1-integration-4e29`. Integration base: PR #5 (`cursor/w1-eval-harness-4e29` @ `4d7960d`) merged with PR #4 (`cursor/w1-export-adapter-4e29` @ `ae7f543`). Both remain stacked on PR #2 (`cursor/w1-agent-tools-4e29` @ `5e8f791`). Source: `analysis/src/neurolens/eval/pipeline.mjs`. Tests: `tests/analysis-integration.test.mjs`. Design: [analysis-integration.md](../architecture/analysis-integration.md).
+
+This slice does **not** add an LLM provider. A valid synthetic V1 export can travel adapter → immutable evidence → read-only tools → prompt builder → `validateAgentAnswer` → `agent-eval-report/0.1`.
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| PR #4 + #5 coexistence | Implemented | Adapter modules and eval harness are both present; validator tokens auto-merged |
+| Valid export pipeline (Test A) | Implemented | `camera-behavior-a.json` → tools → prompt → accepted gold answer |
+| Numeric fidelity (Test B) | Implemented | Drifted `999` rejected as `numeric_mismatch` |
+| Session binding (Test C) | Implemented | Camera-B artifact cited for camera A rejected as `session_mismatch` |
+| Missing / unusable metrics (Test D) | Implemented | `missing-rt.json` abstains; no fabricated numeric claim |
+| Protocol incompatibility (Test E) | Implemented | Camera A vs other-protocol abstains `incompatible_protocol` |
+| Eval-case regression (Test F) | Implemented | Seven W1.5 cases still gold-pass / trap-fail |
+| Offline reproducibility command | Implemented | `npm run test:integration` — no API key, no network |
+| Scientific metric / comparison confirmation | Blocked | Pending Caijia review; unchanged from W1.4 |
+| Real-export / camera / LLM validation | Not started | Synthetic fixtures only; no provider runtime |
+
+**Contracts preserved:** `agent-tools/0.1`, `agent-answer/0.1`, `research-agent-prompt/0.1`, V1 schema `1.0.0`, protocol `go-no-go-v1` → `go-no-go/1.0`. Metrics remain `reaction_time_median_ms` (ms), `accuracy` (proportion), `valid_trial_count` (count). Adapter does not fabricate missing measurements.
+
+**Conflicts resolved:** documentation union in `analysis/README.md`, `docs/README.md`, `docs/architecture/overview.md`, `docs/architecture/repository-layout.md`, and `docs/planning/implementation-status.md`. `validate.mjs` auto-merged (PR #4 export tokens + shared `coverage: 'all'`).
+
+**Not changed:** collection modules, consent, cloud allowlists, production D1, mission preview, deployment. PRs #2, #4, and #5 were not merged to `main` from this work.
+
+**Checks actually run (2026-10-19, W1.6):**
+- `npm test` — 65 passed, 0 failed (11 agent-eval + 23 agent-tools + 16 analysis-adapter + 6 analysis-integration + 4 collection + 5 research).
+- `npm run test:integration` — 6 passed, 0 failed.
+- `npm run test:flow` — PASS (collection graph unchanged; rerun for regression).
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run build` — vinext/Vite production build completed.
+- `tests/integration.mjs` was not run (requires initialized local D1 and preview; collection/cloud paths unchanged).
+- No LLM API call was made.
+
+**Next task:** Caijia review of metric identifiers, units, `n` definitions, and simulated-versus-camera comparison. Keep PR #2/#4/#5 unmerged from this work. Do not treat a green integration report as scientific validation.
+
 ## W1.5 API-independent LLM prompt and evaluation harness (2026-10-19)
 
 **Status:** Implemented and verified in synthetic tests. Manual ChatGPT workflow only. Not an LLM API, not scientifically validated, not deployed.

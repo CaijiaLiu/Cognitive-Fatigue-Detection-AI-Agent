@@ -1,6 +1,6 @@
 # W1.5 — API-independent LLM prompt and evaluation harness
 
-Status: **Implemented as a manual evaluation workflow; not an LLM API runtime and not scientifically validated.** Owner: Linxi. Depends on the PR #2 agent-tool contract and `validateAgentAnswer`. This slice is **not stacked on W1.4**. Collection, consent, D1, and deployment are unchanged.
+Status: **Implemented as a manual evaluation workflow; not an LLM API runtime and not scientifically validated.** Owner: Linxi. Depends on the PR #2 agent-tool contract and `validateAgentAnswer`. The original W1.5 slice shipped independently of W1.4; [W1.6](analysis-integration.md) now wires the same harness to export-backed tools. Collection, consent, D1, and deployment are unchanged.
 
 The harness lets a researcher export a versioned prompt, paste it into ChatGPT by hand, then programmatically score the JSON reply. Network calls, API keys, and trusted-by-default model output are out of scope.
 
@@ -55,10 +55,10 @@ Additive only on the PR #2 validator: `validateAgentAnswer(..., { coverage: 'all
 
 ## Dependency risks
 
-- Stacked on PR #2 only. W1.4 export artifacts are not required.
+- The fixture catalog path still works without export JSON. Export-backed prompts require W1.4/`analysis-export/0.1` tools; see [analysis-integration.md](analysis-integration.md).
 - Caijia has not confirmed metric science; prompts state that limitation.
 - A passing ChatGPT report is **not** model quality for fatigue research and **not** Stage F completion.
-- `coverage: 'all'` also appears in W1.4; if both merge, the validator hunks should be reconciled, not redesigned.
+- `coverage: 'all'` is shared with the export adapter; default citation coverage remains `'any'`.
 
 ## Manual run of one case
 
