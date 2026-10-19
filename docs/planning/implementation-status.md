@@ -4,7 +4,7 @@
 
 **Status:** Implemented and verified with a deterministic mock provider. Engineering runtime only. Not a hosted LLM, not scientifically validated, not deployed.
 
-Implementation branch: `cursor/w2-runtime-4e29`, based on W1.7 `cursor/w1-reliability-4e29` @ `181f305` (PR #7). Source: `analysis/src/neurolens/runtime/`. Tests: `tests/agent-runtime.test.mjs`. Design: [agent-runtime.md](../architecture/agent-runtime.md).
+Implementation branch: `cursor/w2-runtime-4e29` @ `4973e57`, based on W1.7 `cursor/w1-reliability-4e29` @ `181f305` (PR #7). Source: `analysis/src/neurolens/runtime/`. Tests: `tests/agent-runtime.test.mjs`. Design: [agent-runtime.md](../architecture/agent-runtime.md).
 
 The runtime reuses the existing export adapter, evidence store, read-only tools, prompt builder, and `validateAgentAnswer`. Provider output is never returned until it passes the validator. Unvalidated claims are replaced with a contract-compliant abstention.
 
