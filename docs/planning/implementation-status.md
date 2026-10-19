@@ -4,7 +4,7 @@
 
 **Status:** Implemented and verified with deterministic mock/config tests. OpenAI adapter is opt-in. Live evaluation is **NOT RUN**. Not scientifically validated, not a public paid endpoint, not deployed.
 
-Implementation branch: `feature/w2-real-llm-provider`, based on `develop/neurolens-agent` after PR #9 fast-forward (`1c3a995`). Source: `analysis/src/neurolens/runtime/{config,openai}.mjs`, `analysis/src/neurolens/eval/{llm-eval,llm-report}.mjs`. Tests: `tests/agent-llm.test.mjs`. Design: [agent-llm-provider.md](../architecture/agent-llm-provider.md).
+Implementation branch: `feature/w2-real-llm-provider` @ `55fdb63`, based on `develop/neurolens-agent` after PR #9 fast-forward (`1c3a995`). Source: `analysis/src/neurolens/runtime/{config,openai}.mjs`, `analysis/src/neurolens/eval/{llm-eval,llm-report}.mjs`. Tests: `tests/agent-llm.test.mjs`. Design: [agent-llm-provider.md](../architecture/agent-llm-provider.md).
 
 The default provider remains `mock`. `NEUROLENS_AGENT_PROVIDER=openai` plus `OPENAI_API_KEY` selects `createOpenAIProvider`. The existing runtime still validates every completion. There is no silent fallback from openai to mock.
 
@@ -30,6 +30,7 @@ The default provider remains `mock`. `NEUROLENS_AGENT_PROVIDER=openai` plus `OPE
 - `npm run test:flow` — PASS.
 - `npx --no-install tsc --noEmit` — exited 0.
 - `npm run eval:llm` — mock suite 22/22 e2e; live **NOT RUN**.
+- `npm run build` — vinext/Vite production build completed.
 - `tests/integration.mjs` was not run.
 - No live OpenAI call was made and no production API key was read.
 
