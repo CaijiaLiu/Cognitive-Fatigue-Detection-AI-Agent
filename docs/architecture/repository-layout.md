@@ -50,8 +50,14 @@ app.js remains the browser entrypoint. core.js, camera.js, storage.js, cloud.js,
 
 The session controller composes explicit task/tracking controllers and owns session/save/history UI state. Task and tracking controllers receive callbacks rather than import the coordinator; feature/export modules do not access the DOM. Display rendering belongs in reporting. Vendor assets, framework helpers and database migrations retain their required locations.
 
-## Future extraction (not implemented)
+## Analysis and agent tools
 
-Window features, screen-gaze calibration, new task adapters and protocol phases belong in the existing domain folders. Offline analysis goes under analysis/src/neurolens/, analysis/tests/, analysis/notebooks/ and analysis/configs/ when Step 6 starts. Do not create empty placeholder directories or V1/V2 copies.
+| Path | Contents |
+|---|---|
+| analysis/src/neurolens/agent/ | Read-only W1 tool interface, evidence artifacts, structured validators and deterministic fixture catalog |
+| tests/agent-tools.test.mjs | Numeric fidelity, missing evidence, protocol mismatch, unsupported-claim and request-rejection tests |
+| docs/architecture/agent-tools.md | Implemented W1 contract and open review questions |
+
+This is deterministic scaffolding over synthetic fixtures. It is not an LLM runtime, not a statistics pipeline, and not scientific validation. Window features, screen-gaze calibration, new task adapters and protocol phases still belong in the existing collection domain folders. Offline statistics/notebooks remain future work under analysis/tests/, analysis/notebooks/ and analysis/configs/ when Step 6 starts. Do not create empty placeholder directories or V1/V2 copies.
 
 Participant exports and generated models/reports stay outside tracked source by default. Public demonstration artifacts require synthetic or intentionally approved de-identified data and clear provenance.
