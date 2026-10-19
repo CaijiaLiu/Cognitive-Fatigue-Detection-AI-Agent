@@ -7,8 +7,20 @@ export const CONTRACT_VERSION = 'agent-tools/0.1';
 export const ANSWER_VERSION = 'agent-answer/0.1';
 export const ARTIFACT_SCHEMA_VERSION = 'evidence-artifact/0.1';
 export const ANALYSIS_VERSION = 'analysis-fixture/0.1';
+export const EXPORT_ANALYSIS_VERSION = 'analysis-export/0.1';
+export const SUPPORTED_ANALYSIS_VERSIONS = Object.freeze([
+  ANALYSIS_VERSION,
+  EXPORT_ANALYSIS_VERSION,
+]);
 export const PRODUCER_ID = 'neurolens.analysis.mock_tools';
+export const EXPORT_PRODUCER_ID = 'neurolens.analysis.export_adapter';
 export const PRODUCER_VERSION = '0.1.0';
+
+export const COMPUTATION = Object.freeze({
+  FIXTURE_LOOKUP: 'deterministic_fixture_lookup',
+  EXPORT_NORMALIZATION: 'deterministic_export_normalization',
+});
+export const ALLOWED_COMPUTATIONS = Object.freeze(Object.values(COMPUTATION));
 
 export const TOOL_NAMES = Object.freeze({
   GET_SESSION_SUMMARY: 'get_session_summary',
@@ -32,6 +44,7 @@ export const ANSWER_STATUS = Object.freeze({
 
 export const DATA_ORIGIN = Object.freeze({
   SYNTHETIC_FIXTURE: 'synthetic_fixture',
+  SESSION_EXPORT: 'session_export',
 });
 
 export const PARTICIPANT_SCOPE = Object.freeze({
@@ -59,9 +72,11 @@ export const REASON_CODES = Object.freeze({
   MALFORMED_OUTPUT: 'malformed_output',
   SESSION_MISMATCH: 'session_mismatch',
   INCONSISTENT_EVIDENCE: 'inconsistent_evidence',
+  UNSUPPORTED_SCHEMA: 'unsupported_schema',
 });
 
 export const SYNTHETIC_LIMIT = 'Synthetic fixture; not a fatigue diagnosis and not empirical evidence.';
+export const EXPORT_LIMIT = 'Session-export copy; not a fatigue diagnosis and not scientifically validated.';
 
 /**
  * Proposed metric identifiers mapped from existing collection summaries.
@@ -87,12 +102,17 @@ export const ALLOWED_METRIC_IDS = Object.freeze(Object.keys(ALLOWED_METRICS));
 export const PROTOCOL_VERSIONS = Object.freeze({
   FIXTURE_V01: 'fixture-protocol/0.1',
   FIXTURE_V02: 'fixture-protocol/0.2',
+  GO_NO_GO_V1: 'go-no-go/1.0',
 });
+
+export const SOURCE_PROTOCOL_GO_NO_GO_V1 = 'go-no-go-v1';
+export const COLLECTION_SCHEMA_V1 = '1.0.0';
 
 /** Exact-version match only unless listed here. */
 export const PROTOCOL_COMPATIBILITY = Object.freeze({
   [PROTOCOL_VERSIONS.FIXTURE_V01]: Object.freeze([PROTOCOL_VERSIONS.FIXTURE_V01]),
   [PROTOCOL_VERSIONS.FIXTURE_V02]: Object.freeze([PROTOCOL_VERSIONS.FIXTURE_V02]),
+  [PROTOCOL_VERSIONS.GO_NO_GO_V1]: Object.freeze([PROTOCOL_VERSIONS.GO_NO_GO_V1]),
 });
 
 export const UNSUPPORTED_CLAIM_TYPES = Object.freeze({

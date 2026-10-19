@@ -82,7 +82,7 @@ export function composeAnswer(intent, tools) {
     const request = {
       tool: TOOL_NAMES.GET_SESSION_SUMMARY,
       session_ref: intent.session_ref,
-      analysis_version: intent.analysis_version ?? ANALYSIS_VERSION,
+      analysis_version: intent.analysis_version ?? tools.analysis_version ?? ANALYSIS_VERSION,
     };
     const requestCheck = validateToolRequest(request);
     if (!requestCheck.ok) {
@@ -118,7 +118,7 @@ export function composeAnswer(intent, tools) {
       tool: TOOL_NAMES.COMPARE_SESSIONS,
       session_refs: intent.session_refs,
       metric_id: intent.metric_id,
-      analysis_version: intent.analysis_version ?? ANALYSIS_VERSION,
+      analysis_version: intent.analysis_version ?? tools.analysis_version ?? ANALYSIS_VERSION,
     };
     const requestCheck = validateToolRequest(request);
     if (!requestCheck.ok) {
@@ -153,7 +153,7 @@ export function composeAnswer(intent, tools) {
       status: ANSWER_STATUS.ANSWERED,
       claims,
       limitations: artifact.limitations,
-    }, [artifact], { expectedSessionRefs: [...intent.session_refs] });
+    }, [artifact], { expectedSessionRefs: [...intent.session_refs], coverage: 'all' });
   }
 
   if (intent.kind === 'lookup_artifact') {

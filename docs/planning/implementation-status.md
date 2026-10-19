@@ -6,7 +6,7 @@
 
 Implementation PR: [#5](https://github.com/CaijiaLiu/Cognitive-Fatigue-Detection-AI-Agent/pull/5) (`cursor/w1-eval-harness-4e29` @ `fe311fe`), based on PR #2 (`cursor/w1-agent-tools-4e29` @ `5e8f791`). Source: `analysis/src/neurolens/eval/`. Tests: `tests/agent-eval.test.mjs`. Design: [agent-eval.md](../architecture/agent-eval.md).
 
-This slice is **not stacked on W1.4**. It uses the PR #2 fixture catalog and answer validator. LLM output is never trusted without `validateAgentAnswer`.
+This slice originally shipped independently of W1.4. It uses the PR #2 fixture catalog and answer validator. LLM output is never trusted without `validateAgentAnswer`. W1.6 later wires the same harness to export-backed tools.
 
 | Capability | Status | Evidence / remaining work |
 |---|---|---|
@@ -18,7 +18,7 @@ This slice is **not stacked on W1.4**. It uses the PR #2 fixture catalog and ans
 | Live ChatGPT measurement | Not started | Researcher must paste prompts by hand |
 | LLM API / provider runtime | Out of scope | No keys or network |
 
-**Not changed:** collection, consent, production D1, camera, deployment, W1.4 adapter.
+**Not changed:** collection, consent, production D1, camera, deployment.
 
 **Checks actually run (2026-10-19, W1.5):**
 - `npm test` — 43 passed, 0 failed (11 agent-eval + 23 agent-tools + 4 collection + 5 research).
@@ -28,7 +28,36 @@ This slice is **not stacked on W1.4**. It uses the PR #2 fixture catalog and ans
 - `tests/integration.mjs` was not run (collection/cloud unchanged).
 - No ChatGPT session was submitted from this environment.
 
-**Next task:** optional human ChatGPT dry-run of one exported case; keep PR #2/#4 unmerged from this work.
+**Next task:** optional human ChatGPT dry-run of one exported case; keep PR #2/#4 unmerged from the original W1.5 work.
+
+## W1.4 offline session-export adapter (2026-10-19)
+
+**Status:** Implemented and verified in synthetic tests plus typecheck/build. Engineering integration only. Not scientifically validated, not an LLM runtime, not deployed, and not a reader of production D1 or camera streams.
+
+Implementation PR: [#4](https://github.com/CaijiaLiu/Cognitive-Fatigue-Detection-AI-Agent/pull/4) (`cursor/w1-export-adapter-4e29` @ `6ba029a`), based on PR #2 (`cursor/w1-agent-tools-4e29` @ `5e8f791`). Source: `analysis/src/neurolens/adapter/`. Tests: `tests/analysis-adapter.test.mjs`. Design: [analysis-export-adapter.md](../architecture/analysis-export-adapter.md).
+
+PRs #1, #2 and #3 had no reviews when this slice was coded. Caijia has not confirmed the three metric definitions or comparison-coverage science. The adapter therefore copies only the existing PR #2 allowlist and records blocked mappings in the adapter document.
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| Fail-closed V1 JSON accept/reject | Implemented | Rejects mission-preview, demo, CSV, unknown schema, missing `behavior_summary` |
+| Offline export store + tool retrieval | Implemented | `createExportAnalysisTools` serves `get_session_summary`, `compare_sessions`, `get_evidence` |
+| Allowlisted metric copy | Implemented as engineering copy | `reaction_time_median_ms`, `accuracy`, `valid_trial_count` only; no zero-fill |
+| Privacy redaction | Implemented | Artifacts omit participant id, user agent, notes, events, withdrawal tokens |
+| Multi-session citation coverage | Implemented | `validateAgentAnswer` `coverage: 'all'`; default remains `'any'` |
+| Scientific metric / comparison confirmation | Blocked | Pending Caijia review; ocular and fatigue fields stay unmapped |
+| Real-export / camera validation | Not started | Synthetic fixtures only |
+
+**Not changed:** collection modules, consent, cloud allowlists, production D1, mission preview, deployment.
+
+**Checks actually run (2026-10-19, W1.4):**
+- `npm test` — 48 passed, 0 failed (23 agent-tools + 16 analysis-adapter + 4 collection + 5 research).
+- `npm run test:flow` — PASS (collection graph unchanged; rerun for regression).
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run build` — vinext/Vite production build completed.
+- `tests/integration.mjs` was not run (requires initialized local D1 and preview; collection/cloud paths unchanged).
+
+**Next task:** Caijia review of metric identifiers, units, `n` definitions and whether simulated-vision behavioral numbers may ever be compared with camera sessions. Do not merge PR #2 or PR #3 from this work.
 
 ## W1 evidence-grounded agent tools (2026-10-19)
 

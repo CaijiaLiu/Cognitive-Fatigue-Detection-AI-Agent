@@ -24,9 +24,9 @@ Implementation lives under `analysis/src/neurolens/agent/`. Collection, consent 
 
 ## Evidence artifact (`evidence-artifact/0.1`)
 
-Every OK number is backed by an immutable artifact with `artifact_ref`, `analysis_version`, `protocol_version`, `data_origin`, `participant_scope`, `quality`, `payload.metrics`, `limitations`, and `provenance` (`producer`, `producer_version`, `computation: deterministic_fixture_lookup`, `immutable: true`, `inputs`).
+Every OK number is backed by an immutable artifact with `artifact_ref`, `analysis_version`, `protocol_version`, `data_origin`, `participant_scope`, `quality`, `payload.metrics`, `limitations`, and `provenance` (`producer`, `producer_version`, `computation` of `deterministic_fixture_lookup` or `deterministic_export_normalization`, `immutable: true`, `inputs`).
 
-W1 `data_origin` is always `synthetic_fixture`. Artifact refs are opaque tokens such as `fixture:session-summary:a`, not URLs or file paths.
+Fixture catalogs use `data_origin: synthetic_fixture`. Offline export artifacts use the additive origin `session_export` and analysis version `analysis-export/0.1`; the two analysis versions are incompatible. Artifact refs are opaque tokens such as `fixture:session-summary:a` or `export:session-summary:<uuid>`, not URLs or file paths.
 
 ## Agent answer (`agent-answer/0.1`)
 
@@ -70,6 +70,10 @@ Protocol compatibility is exact-version match unless listed in `PROTOCOL_COMPATI
 - OK tool envelopes are checked against the cited artifact for `artifact_ref`, versions, provenance, quality and metrics.
 - Every OK `artifact_ref` returned by `compare_sessions` is catalogued and retrievable via `get_evidence`.
 - Fixture artifacts are deep-frozen. Extra fields on public envelopes are rejected.
+
+`validateAgentAnswer(..., { expectedSessionRefs, coverage })` defaults to intersection (`coverage: 'any'`). Comparison answers pass `coverage: 'all'` so cited artifacts together must include every requested session.
+
+Offline V1 JSON → artifact mapping is documented in [analysis-export-adapter.md](analysis-export-adapter.md). Metric identifiers remain proposed names pending Caijia review.
 
 ## Open contract choices
 

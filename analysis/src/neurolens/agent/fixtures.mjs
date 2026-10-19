@@ -147,6 +147,9 @@ export function createFixtureStore() {
   const sessions = structuredClone(FIXTURE_SESSIONS);
   const artifacts = structuredClone(FIXTURE_ARTIFACTS);
   return Object.freeze({
+    analysis_version: ANALYSIS_VERSION,
+    data_origin: 'synthetic_fixture',
+    access: 'synthetic_fixture_catalog',
     getSession(sessionRef) {
       return Object.hasOwn(sessions, sessionRef) ? structuredClone(sessions[sessionRef]) : null;
     },

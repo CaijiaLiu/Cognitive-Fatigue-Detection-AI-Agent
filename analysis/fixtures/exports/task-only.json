@@ -1,0 +1,185 @@
+{
+  "schema_version": "1.0.0",
+  "session_id": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+  "started_at": "2026-10-18T17:00:00.000Z",
+  "ended_at": "2026-10-18T17:01:00.000Z",
+  "duration_ms": 60000,
+  "status": "completed",
+  "mode": "behavior",
+  "sources": {
+    "vision": "unavailable",
+    "behavior": "human",
+    "ratings": "self_report"
+  },
+  "consent": {
+    "version": "v1-2026-10-10",
+    "accepted_at": "2026-10-18T17:00:00.000Z"
+  },
+  "fatigue_pre": 3,
+  "fatigue_post": 5,
+  "config": {
+    "protocol": "go-no-go-v1",
+    "planned_duration_ms": 60000,
+    "response_window_ms": 1000,
+    "go_probability": 0.75,
+    "vision_sample_hz": 0,
+    "ear_baseline": null
+  },
+  "calibration": null,
+  "vision_summary": {
+    "blink_count": null,
+    "blink_rate_per_min": null,
+    "closed_time_ms": null,
+    "closed_fraction": null,
+    "valid_tracking_ms": 0,
+    "tracking_coverage": null,
+    "head_motion_deg_per_sec": null,
+    "gaze_position_sd_eye_width": null,
+    "mean_blink_duration_ms": null,
+    "sample_count": 0
+  },
+  "behavior_summary": {
+    "trial_count": 9,
+    "valid_trial_count": 8,
+    "invalid_trial_count": 1,
+    "accuracy": 0.75,
+    "go_accuracy": 0.8,
+    "no_go_accuracy": 0.6666666666666666,
+    "median_reaction_ms": 330,
+    "mean_reaction_ms": 330,
+    "reaction_sd_ms": 25.81988897471611,
+    "omissions": 1,
+    "false_alarms": 1,
+    "anticipations": 0
+  },
+  "samples": [],
+  "blink_events": [],
+  "trials": [
+    {
+      "index": 0,
+      "type": "go",
+      "onset_ms": 1000,
+      "deadline_ms": 2000,
+      "response_ms": 1300,
+      "reaction_ms": 300,
+      "responded": true,
+      "correct": true,
+      "invalid_reason": null,
+      "source": "human"
+    },
+    {
+      "index": 1,
+      "type": "go",
+      "onset_ms": 2500,
+      "deadline_ms": 3500,
+      "response_ms": 2840,
+      "reaction_ms": 340,
+      "responded": true,
+      "correct": true,
+      "invalid_reason": null,
+      "source": "human"
+    },
+    {
+      "index": 2,
+      "type": "go",
+      "onset_ms": 4000,
+      "deadline_ms": 5000,
+      "response_ms": 4360,
+      "reaction_ms": 360,
+      "responded": true,
+      "correct": true,
+      "invalid_reason": null,
+      "source": "human"
+    },
+    {
+      "index": 3,
+      "type": "go",
+      "onset_ms": 5500,
+      "deadline_ms": 6500,
+      "response_ms": 5820,
+      "reaction_ms": 320,
+      "responded": true,
+      "correct": true,
+      "invalid_reason": null,
+      "source": "human"
+    },
+    {
+      "index": 4,
+      "type": "go",
+      "onset_ms": 7000,
+      "deadline_ms": 8000,
+      "response_ms": null,
+      "reaction_ms": null,
+      "responded": false,
+      "correct": false,
+      "invalid_reason": null,
+      "source": "human"
+    },
+    {
+      "index": 5,
+      "type": "no-go",
+      "onset_ms": 8500,
+      "deadline_ms": 9500,
+      "response_ms": null,
+      "reaction_ms": null,
+      "responded": false,
+      "correct": true,
+      "invalid_reason": null,
+      "source": "human"
+    },
+    {
+      "index": 6,
+      "type": "no-go",
+      "onset_ms": 10000,
+      "deadline_ms": 11000,
+      "response_ms": null,
+      "reaction_ms": null,
+      "responded": false,
+      "correct": true,
+      "invalid_reason": null,
+      "source": "human"
+    },
+    {
+      "index": 7,
+      "type": "no-go",
+      "onset_ms": 11500,
+      "deadline_ms": 12500,
+      "response_ms": 11680,
+      "reaction_ms": 180,
+      "responded": true,
+      "correct": false,
+      "invalid_reason": null,
+      "source": "human"
+    },
+    {
+      "index": 8,
+      "type": "go",
+      "onset_ms": 13000,
+      "deadline_ms": 14000,
+      "response_ms": 13040,
+      "reaction_ms": 40,
+      "responded": true,
+      "correct": false,
+      "invalid_reason": "early_start",
+      "source": "human"
+    }
+  ],
+  "participant_id": "cccc1111-2222-4333-8444-555566667777",
+  "environment": {
+    "user_agent": "SecretUserAgent/9.9",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "notes": [
+    "SECRET_NOTE_DO_NOT_COPY"
+  ],
+  "events": [
+    {
+      "type": "note",
+      "text": "SECRET_EVENT_DO_NOT_COPY"
+    }
+  ],
+  "withdrawal_token": "SECRET_WITHDRAWAL_TOKEN"
+}

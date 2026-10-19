@@ -1,8 +1,8 @@
 import {
+  ALLOWED_COMPUTATIONS,
   ALLOWED_METRIC_IDS,
   ALLOWED_METRICS,
   ALLOWED_TOOLS,
-  ANALYSIS_VERSION,
   ANSWER_STATUS,
   ANSWER_VERSION,
   ARTIFACT_KIND,
@@ -19,6 +19,7 @@ import {
   PARTICIPANT_SCOPE,
   REASON_CODES,
   REF_PATTERN,
+  SUPPORTED_ANALYSIS_VERSIONS,
   TOOL_NAMES,
   TOOL_STATUS,
   VERSION_PATTERN,
@@ -218,11 +219,11 @@ export function validateToolResponse(input) {
   if (!TOOL_STATUS_VALUES.has(input.status)) {
     return fail(REASON_CODES.MALFORMED_OUTPUT, 'Tool response status is invalid.');
   }
-  if (input.analysis_version !== ANALYSIS_VERSION && input.status === TOOL_STATUS.OK) {
-    return fail(REASON_CODES.UNKNOWN_ANALYSIS_VERSION, 'OK responses must use the supported analysis_version.');
+  if (input.status === TOOL_STATUS.OK && !SUPPORTED_ANALYSIS_VERSIONS.includes(input.analysis_version)) {
+    return fail(REASON_CODES.UNKNOWN_ANALYSIS_VERSION, 'OK responses must use a supported analysis_version.');
   }
   if (!DATA_ORIGIN_VALUES.has(input.data_origin)) {
-    return fail(REASON_CODES.MALFORMED_OUTPUT, 'data_origin must be synthetic_fixture in W1.');
+    return fail(REASON_CODES.MALFORMED_OUTPUT, 'data_origin must be an allowlisted origin.');
   }
   const quality = validateQuality(input.quality);
   if (!quality.ok) return quality;
@@ -344,8 +345,8 @@ export function validateProvenance(provenance) {
   if (!isSafeString(provenance.producer, 80) || !isSafeString(provenance.producer_version, 40)) {
     return fail(REASON_CODES.MALFORMED_OUTPUT, 'provenance producer fields are invalid.');
   }
-  if (provenance.computation !== 'deterministic_fixture_lookup') {
-    return fail(REASON_CODES.MALFORMED_OUTPUT, 'W1 provenance computation must be deterministic_fixture_lookup.');
+  if (!ALLOWED_COMPUTATIONS.includes(provenance.computation)) {
+    return fail(REASON_CODES.MALFORMED_OUTPUT, 'provenance.computation is not an allowlisted deterministic method.');
   }
   if (provenance.immutable !== true) {
     return fail(REASON_CODES.MALFORMED_OUTPUT, 'Evidence artifacts must be marked immutable.');
@@ -394,7 +395,7 @@ export function validateEvidenceArtifact(input) {
   if (extraArtifact.length > 0) {
     return fail(REASON_CODES.MALFORMED_OUTPUT, `Evidence artifact has unexpected fields: ${extraArtifact.join(', ')}.`);
   }
-  if (input.contract_version !== CONTRACT_VERSION || input.analysis_version !== ANALYSIS_VERSION) {
+  if (input.contract_version !== CONTRACT_VERSION || !SUPPORTED_ANALYSIS_VERSIONS.includes(input.analysis_version)) {
     return fail(REASON_CODES.MALFORMED_OUTPUT, 'Artifact versions are unsupported.');
   }
   if (!isVersionToken(input.protocol_version) || !isIsoTimestamp(input.created_at)) {
@@ -413,7 +414,14 @@ export function validateEvidenceArtifact(input) {
   if (!isPlainObject(input.payload) || !Array.isArray(input.payload.metrics)) {
     return fail(REASON_CODES.MALFORMED_OUTPUT, 'payload.metrics must be an array.');
   }
-  const extraPayload = unexpectedKeys(input.payload, ['metrics', 'metric_id', 'analysis_version']);
+  const extraPayload = unexpectedKeys(input.payload, [
+    'metrics',
+    'metric_id',
+    'analysis_version',
+    'collection_schema_version',
+    'source_protocol',
+    'source_export_sha256',
+  ]);
   if (extraPayload.length > 0) {
     return fail(REASON_CODES.MALFORMED_OUTPUT, `Artifact payload has unexpected fields: ${extraPayload.join(', ')}.`);
   }
