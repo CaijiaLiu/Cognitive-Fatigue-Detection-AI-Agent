@@ -4,7 +4,7 @@
 
 **Status:** Implemented and verified in synthetic tests plus typecheck/build. Engineering integration of PR #4 and PR #5 only. Not an LLM API, not scientifically validated, not deployed, and not a reader of production D1 or camera streams.
 
-Implementation branch: `cursor/w1-integration-4e29`. Integration base: PR #5 (`cursor/w1-eval-harness-4e29` @ `4d7960d`) merged with PR #4 (`cursor/w1-export-adapter-4e29` @ `ae7f543`). Both remain stacked on PR #2 (`cursor/w1-agent-tools-4e29` @ `5e8f791`). Source: `analysis/src/neurolens/eval/pipeline.mjs`. Tests: `tests/analysis-integration.test.mjs`. Design: [analysis-integration.md](../architecture/analysis-integration.md).
+Implementation branch: `cursor/w1-integration-4e29` @ `d9b8b4c`. Integration base: PR #5 (`cursor/w1-eval-harness-4e29` @ `4d7960d`) merged with PR #4 (`cursor/w1-export-adapter-4e29` @ `ae7f543`). Both remain stacked on PR #2 (`cursor/w1-agent-tools-4e29` @ `5e8f791`). Source: `analysis/src/neurolens/eval/pipeline.mjs`. Tests: `tests/analysis-integration.test.mjs`. Design: [analysis-integration.md](../architecture/analysis-integration.md).
 
 This slice does **not** add an LLM provider. A valid synthetic V1 export can travel adapter → immutable evidence → read-only tools → prompt builder → `validateAgentAnswer` → `agent-eval-report/0.1`.
 
