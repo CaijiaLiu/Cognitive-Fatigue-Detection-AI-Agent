@@ -64,6 +64,7 @@ npm run test:llm
 npm run test:demo-security
 npm run test:preview
 npm run verify:preview-http
+npm run deploy:preflight
 npm run test:flow
 npx tsc --noEmit
 npm run build

@@ -1,10 +1,44 @@
 # Implementation status
 
+## W2.9A Sites preview deployment preparation (2026-10-19)
+
+**Status:** Deployment workflow prepared. Preview **not published**. Caijia local testing remains separately owned. Scientific review remains **Pending / Blocked**.
+
+Implementation branch: `feature/w2-sites-deployment-readiness`, based on `develop/neurolens-agent` after PR #14 fast-forward (`439f05b`). Runbook: [sites-preview-deployment.md](../operations/sites-preview-deployment.md). Architecture: [sites-deployment.md](../architecture/sites-deployment.md).
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| PR #14 consolidation | Merged | Fast-forward into develop @ `439f05b`. Main unchanged @ `c163f29`. |
+| Sites path | Documented | vinext build + Sites publish; no in-repo `wrangler deploy`. UI steps NOT_VERIFIED |
+| Preview config template | Implemented | `docs/operations/preview.env.example` — names only, mock, isolated D1 |
+| Isolated D1 plan | Documented | Proposed name `neurolens-preview-d1`; not created |
+| Offline preflight | Implemented | `npm run deploy:preflight` — local PASS, `deploy_allowed=false`, remote NOT_VERIFIED |
+| Future OpenAI review | Documented | Auth/rate-limit/log stack reusable; paid host still requires a new decision |
+| Sites Preview | NOT DEPLOYED | No D1, secrets, or publish |
+| Caijia local testing | Separate | Not performed in this slice |
+| Scientific metric review | Blocked | Pending Caijia review |
+
+**Not changed:** prompts, validator, fixture metrics, collection/camera, production D1, or Caijia review assignments.
+
+**Checks actually run (2026-10-19, W2.9A):**
+- `npm test` — 143 passed, 0 failed.
+- `npm run test:demo-security` — 15 passed.
+- `npm run test:preview` — 6 passed.
+- `npm run verify:preview-http` — 15/15 PASS (offline).
+- `npm run deploy:preflight` — ok=true, deploy_allowed=false.
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run build` — vinext/Vite production build completed.
+- No live OpenAI call. No remote D1 or Sites publish.
+- **CLOUDFLARE PREVIEW: NOT DEPLOYED**
+- **REMOTE E2E: NOT RUN**
+
+**Next task:** Caijia local functional testing, then human-authorized isolated D1 + Sites publish. Do not merge to `main`.
+
 ## W2.8 Cloudflare preview configuration and E2E readiness (2026-10-19)
 
 **Status:** Hosting audited. Isolated preview configured in-repo. Remote preview **not deployed**. Caijia scientific review remains **Pending / Blocked**.
 
-Implementation branch: `feature/w2-cloudflare-preview` @ `77cb63d` (Draft PR #14), based on `develop/neurolens-agent` after PR #13 fast-forward (`f18e46e`). Design: [cloudflare-preview.md](../architecture/cloudflare-preview.md). Gate: [w2-preview-readiness.md](w2-preview-readiness.md). Tests: `tests/agent-preview-deploy.test.mjs`.
+Implementation branch: `feature/w2-cloudflare-preview` @ `77cb63d` / `439f05b` (PR #14, fast-forwarded into `develop/neurolens-agent`). Design: [cloudflare-preview.md](../architecture/cloudflare-preview.md). Gate: [w2-preview-readiness.md](w2-preview-readiness.md). Tests: `tests/agent-preview-deploy.test.mjs`.
 
 | Capability | Status | Evidence / remaining work |
 |---|---|---|

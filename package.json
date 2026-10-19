@@ -21,6 +21,7 @@
     "test:preview": "node --test tests/agent-preview-deploy.test.mjs",
     "verify:preview-http": "node scripts/verify-preview-http.mjs --offline",
     "preview:readiness": "node scripts/preview-readiness.mjs",
+    "deploy:preflight": "node scripts/deploy-preflight.mjs",
     "eval:llm": "node scripts/eval-llm.mjs",
     "eval:agent": "node scripts/eval-agent.mjs",
     "eval:reliability": "node scripts/eval-reliability.mjs",

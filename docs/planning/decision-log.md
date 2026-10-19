@@ -4,6 +4,12 @@ This file is the durable record of **accepted project decisions**, not a specula
 
 ## Accepted decisions — 2026-10-19
 
+### DEC-011: Sites preview is prepared, not published, until Caijia local testing finishes
+**Accepted.** Sequence: Caijia local testing → fix reported issues → Sites Preview → later OpenAI. W2.9A documents the Sites path and adds offline `deploy:preflight`. Agents do not create D1, set remote secrets, publish, or perform Caijia's UI/science tests. There is no in-repo `wrangler deploy`.
+
+**Reason:** vinext/Sites publication is a control-plane action. Guessing Wrangler remote commands would be unsafe.
+**Implementation implications:** Keep preview fail-closed and mock-only. Mark Sites UI steps NOT_VERIFIED until a human records them. Do not merge to `main` as a deploy.
+
 ### DEC-010: Isolated preview D1 is required before any Cloudflare preview
 **Accepted.** A mock preview must use `NEUROLENS_DEMO_DEPLOYMENT=preview`, a non-production D1, and `NEUROLENS_DEMO_D1_ISOLATED=1`. The existing production `DB` holds collection sessions and must not be reused. Cloud resources, remote migrations, secret changes, and Worker publishes require explicit human approval. Offline tests do not verify a remote Worker.
 
