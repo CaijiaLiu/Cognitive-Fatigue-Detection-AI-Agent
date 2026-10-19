@@ -87,6 +87,20 @@ export function viewFromHttp({ loading = false, httpStatus = null, body = null, 
   if (!body) {
     return { kind: 'idle', title: 'Select a synthetic session and question.', detail: DEMO_DISCLAIMER.text };
   }
+  if (httpStatus === 401) {
+    return {
+      kind: 'unauthenticated',
+      title: 'Sign in required',
+      detail: 'This synthetic demo is limited to authorized visitors. Sign in with the demo password to continue.',
+    };
+  }
+  if (httpStatus === 429) {
+    return {
+      kind: 'error',
+      title: 'Too many requests',
+      detail: 'Please wait a moment before asking another question. The demo rate limit is server-enforced.',
+    };
+  }
   if (httpStatus === 403) {
     return { kind: 'error', title: 'Unauthorized session', detail: body.error ?? 'The server rejected this session scope.' };
   }

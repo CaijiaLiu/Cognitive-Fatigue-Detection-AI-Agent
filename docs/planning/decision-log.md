@@ -4,6 +4,12 @@ This file is the durable record of **accepted project decisions**, not a specula
 
 ## Accepted decisions — 2026-10-19
 
+### DEC-009: Public demo uses a shared-secret cookie and D1 rate limits
+**Accepted.** The Research Agent public demo is mock-only and requires a server-side shared-secret session cookie. Sites ChatGPT headers remain the researcher-dashboard gate and are not the demo login. Rate limits use the existing D1 `upload_limits` table. Public configuration fails closed if secrets, a shared store, or a non-mock provider are missing. Real OpenAI stays a later, separately approved deployment.
+
+**Reason:** `sameOrigin` is not authentication. An in-memory limiter is not safe across Worker isolates. OAuth and a new database are unnecessary for a single demo password.
+**Implementation implications:** Do not store passwords in URLs or `localStorage`. Do not trust `X-Forwarded-For`. Do not treat local unauthenticated tests as a public-deploy default.
+
 ### DEC-008: Baseline model metrics exclude runtime and validator substitutes
 **Accepted.** For the real-LLM baseline, grounded/numeric/citation rates use provider-invoked answered rows compared to authorized fixture evidence. Validator-forced abstention is not correct model abstention. Unknown cost is NOT_MEASURED, not $0. Prompts and the validator are not tuned on the same baseline run.
 

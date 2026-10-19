@@ -38,6 +38,7 @@ Create a `.dev.vars` file for local development. Do not commit it to Git:
 ```text
 RESEARCHER_EMAIL="seedy@sites.test"
 RATE_HASH_KEY="choose-a-development-only-random-value"
+NEUROLENS_DEMO_DEPLOYMENT="local"
 ```
 
 Initialize the **local** database, then start the preview:
@@ -60,6 +61,7 @@ npm run test:reliability
 npm run test:runtime
 npm run test:agent-api
 npm run test:llm
+npm run test:demo-security
 npm run test:flow
 npx tsc --noEmit
 npm run build
@@ -67,7 +69,7 @@ npm run build
 node tests/integration.mjs
 ```
 
-`npm run test:integration` is the offline W1.6 pipeline (V1 export → adapter → tools → prompt → validator). `npm run test:reliability` / `npm run eval:reliability` run W1.7 adversarial and metamorphic contract tests. `npm run test:runtime` runs the W2.1 mock-provider orchestrator. `npm run test:agent-api` runs the W2.2 HTTP handler and demo view-model tests. `npm run test:llm` / `npm run eval:llm` run the W2.3/W2.4 provider config and mock evaluation suite. They need no LLM API key and no network. Real OpenAI calls require `NEUROLENS_AGENT_PROVIDER=openai`, `OPENAI_API_KEY`, and `NEUROLENS_AGENT_ALLOW_LIVE=1`. `--live` is a dry-run. Paid evaluation is `NEUROLENS_AGENT_ALLOW_LIVE=1 npm run eval:llm -- --plan live-12 --live --execute --out /tmp/nl-llm-live.json` and is never part of `npm test`. They are not `tests/integration.mjs` (local D1 / collection cloud). The synthetic Research Agent demo is `/research-agent`.
+`npm run test:integration` is the offline W1.6 pipeline (V1 export → adapter → tools → prompt → validator). `npm run test:reliability` / `npm run eval:reliability` run W1.7 adversarial and metamorphic contract tests. `npm run test:runtime` runs the W2.1 mock-provider orchestrator. `npm run test:agent-api` runs the W2.2 HTTP handler and demo view-model tests. `npm run test:llm` / `npm run eval:llm` run the W2.3/W2.4 provider config and mock evaluation suite. They need no LLM API key and no network. Real OpenAI calls require `NEUROLENS_AGENT_PROVIDER=openai`, `OPENAI_API_KEY`, and `NEUROLENS_AGENT_ALLOW_LIVE=1`. `--live` is a dry-run. Paid evaluation is `NEUROLENS_AGENT_ALLOW_LIVE=1 npm run eval:llm -- --plan live-12 --live --execute --out /tmp/nl-llm-live.json` and is never part of `npm test`. They are not `tests/integration.mjs` (local D1 / collection cloud). The synthetic Research Agent demo is `/research-agent`. Public demo authentication and rate limits are documented in [docs/operations/public-demo.md](docs/operations/public-demo.md). `npm run test:demo-security` is offline.
 
 Completed verification: five data-validation tests, type checking, a production build, local consent gating, authorization, deduplication, exports, withdrawal, replay protection, and a 30-second browser flow using simulated visual features. The original local MVP's 12 core/camera-interface tests also passed. The deployed page, model, and WASM assets are accessible; unauthenticated exports are rejected, the researcher dashboard redirects to platform sign-in, and upload-ticket configuration works. These checks do not establish real-person camera capture, production owner sign-in, or medical validity.
 

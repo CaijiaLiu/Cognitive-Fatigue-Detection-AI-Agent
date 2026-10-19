@@ -30,6 +30,27 @@ export {
   validateAgentHttpBody,
 } from './http.mjs';
 export {
+  handleDemoSessionDelete,
+  handleDemoSessionGet,
+  handleDemoSessionPost,
+} from './demo-auth.mjs';
+export {
+  AUTH_FAILED_ERROR,
+  AUTH_REQUIRED_ERROR,
+  CONFIG_ERROR,
+  DEMO_COOKIE_NAME,
+  DEMO_ENV,
+  RATE_LIMITED_ERROR,
+  consumeRateLimit,
+  createMemoryRateLimitStore,
+  createMemorySessionStore,
+  createTestSecurity,
+  enforceDemoAccess,
+  loadDemoSecurityConfig,
+  parseCookies,
+  serializeDemoCookie,
+} from './demo-security.mjs';
+export {
   DEMO_DISCLAIMER,
   DEMO_QUESTIONS,
   DEMO_SESSIONS,

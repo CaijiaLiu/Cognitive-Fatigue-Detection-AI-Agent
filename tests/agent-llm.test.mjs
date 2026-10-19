@@ -223,7 +223,7 @@ test('HTTP API keeps client provider selection and credentials out', async () =>
       question_id: 'rt-median',
       request_id: 'llm:http-valid',
     });
-    const catalog = await handleResearchAgentGet({ env: {} }).json();
+    const catalog = await (await handleResearchAgentGet({ env: {} })).json();
     assert.equal(catalog.provider.kind, 'mock');
     const ok = await (await post(payload)).json();
     assert.equal(ok.answer.status, 'answered');

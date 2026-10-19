@@ -55,7 +55,7 @@ npm run dev
 # open http://127.0.0.1:5173/research-agent
 ```
 
-`sameOrigin` is not authentication. Do not deploy this as a public paid endpoint until authentication, rate limits, and hosting review exist.
+`sameOrigin` is not authentication. W2.7 adds a mock-only demo session cookie and D1 rate limits for public demonstration. A paid OpenAI endpoint still needs separate approval, `ALLOW_LIVE`, spend controls, and hosting review.
 
 ## Security boundaries
 

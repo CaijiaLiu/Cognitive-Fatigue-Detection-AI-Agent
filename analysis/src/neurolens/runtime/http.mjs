@@ -16,39 +16,20 @@ import { ProviderError, createMockProvider } from './provider.mjs';
 import { createResearchAgentRuntime } from './orchestrate.mjs';
 import { DEMO_DISCLAIMER, DEMO_QUESTIONS, DEMO_SESSIONS } from './demo-ui.mjs';
 import { createConfiguredProvider, loadAgentProviderConfig, publicProviderView } from './config.mjs';
+import { AGENT_API_VERSION, agentErrorBody, agentJson, sameOrigin } from './http-shared.mjs';
+import { enforceDemoAccess, writeDemoLog } from './demo-security.mjs';
 
-export const AGENT_API_VERSION = 'research-agent-http/0.1';
+export { AGENT_API_VERSION, sameOrigin } from './http-shared.mjs';
 export const MAX_AGENT_BODY_BYTES = 8192;
 export const ALLOWED_SESSION_REFS = Object.freeze(DEMO_SESSIONS.map((item) => item.session_ref));
 export const ALLOWED_INTENT_KINDS = Object.freeze(['report_metric', 'compare_metric', 'lookup_artifact']);
 
-const HEADERS = Object.freeze({
-  'Cache-Control': 'no-store',
-  'X-Content-Type-Options': 'nosniff',
-});
-
-function json(status, body) {
-  return Response.json(body, { status, headers: HEADERS });
+function json(status, body, extraHeaders = {}) {
+  return agentJson(status, body, extraHeaders);
 }
 
 function errorBody(error, extras = {}) {
-  return {
-    ok: false,
-    api_version: AGENT_API_VERSION,
-    error,
-    demo: DEMO_DISCLAIMER,
-    ...extras,
-  };
-}
-
-export function sameOrigin(request) {
-  const origin = request.headers.get('origin');
-  if (!origin) return false;
-  try {
-    return origin === new URL(request.url).origin;
-  } catch {
-    return false;
-  }
+  return agentErrorBody(error, extras);
 }
 
 export function createDemoRuntime({ tools, provider, timeout_ms, now, clock, env, config, fetchImpl } = {}) {
@@ -174,8 +155,21 @@ async function readJsonBody(request) {
   }
 }
 
-export function handleResearchAgentGet(options = {}) {
+export async function handleResearchAgentGet(options = {}) {
+  const request = options.request ?? new Request('http://127.0.0.1/api/research-agent');
+  const guard = await enforceDemoAccess(request, options, { endpoint: 'GET /api/research-agent' });
+  if (!guard.ok) {
+    return json(guard.status, errorBody(guard.error), guard.headers);
+  }
   const config = options.config ?? loadAgentProviderConfig(options.env ?? process.env);
+  writeDemoLog({
+    request_id: guard.request_id,
+    endpoint: 'GET /api/research-agent',
+    outcome: 'success',
+    authenticated: Boolean(guard.session?.ok),
+    provider_mode: guard.config.provider_kind,
+    latency_ms: (options.now?.() ?? Date.now()) - guard.started,
+  }, options.logger);
   return json(200, {
     ok: true,
     api_version: AGENT_API_VERSION,
@@ -185,20 +179,43 @@ export function handleResearchAgentGet(options = {}) {
     questions: DEMO_QUESTIONS,
     allowed_metrics: ALLOWED_METRICS,
     allowed_session_refs: ALLOWED_SESSION_REFS,
-  });
+    authenticated: Boolean(guard.session?.ok) || !guard.config.auth_required,
+  }, guard.headers);
 }
 
 export async function handleResearchAgentPost(request, options = {}) {
   if (!sameOrigin(request)) {
     return json(403, errorBody('Request origin is not allowed.'));
   }
+  const guard = await enforceDemoAccess(request, options, { endpoint: 'POST /api/research-agent' });
+  if (!guard.ok) {
+    return json(guard.status, errorBody(guard.error), guard.headers);
+  }
   const parsed = await readJsonBody(request);
   if (!parsed.ok) {
-    return json(parsed.status, errorBody(parsed.error));
+    writeDemoLog({
+      request_id: guard.request_id,
+      endpoint: 'POST /api/research-agent',
+      outcome: 'invalid',
+      authenticated: Boolean(guard.session?.ok),
+      provider_mode: guard.config.provider_kind,
+      error_category: 'malformed',
+      latency_ms: (options.now?.() ?? Date.now()) - guard.started,
+    }, options.logger);
+    return json(parsed.status, errorBody(parsed.error), guard.headers);
   }
   const checked = validateAgentHttpBody(parsed.value);
   if (!checked.ok) {
-    return json(checked.status, errorBody(checked.error, { reason_code: checked.reason_code }));
+    writeDemoLog({
+      request_id: guard.request_id,
+      endpoint: 'POST /api/research-agent',
+      outcome: checked.status === 403 ? 'unauthorized' : 'invalid',
+      authenticated: Boolean(guard.session?.ok),
+      provider_mode: guard.config.provider_kind,
+      error_category: checked.status === 403 ? 'session_allowlist' : 'rejected_request',
+      latency_ms: (options.now?.() ?? Date.now()) - guard.started,
+    }, options.logger);
+    return json(checked.status, errorBody(checked.error, { reason_code: checked.reason_code }), guard.headers);
   }
   let runtime;
   try {
@@ -207,9 +224,18 @@ export async function handleResearchAgentPost(request, options = {}) {
     const message = error instanceof ProviderError
       ? error.message
       : 'The configured research-agent provider is unavailable.';
+    writeDemoLog({
+      request_id: guard.request_id,
+      endpoint: 'POST /api/research-agent',
+      outcome: 'provider_error',
+      authenticated: Boolean(guard.session?.ok),
+      provider_mode: guard.config.provider_kind,
+      error_category: 'provider_unavailable',
+      latency_ms: (options.now?.() ?? Date.now()) - guard.started,
+    }, options.logger);
     return json(503, errorBody(message, {
       reason_code: error?.reason_code ?? REASON_CODES.PROVIDER_UNAVAILABLE,
-    }));
+    }), guard.headers);
   }
   let result;
   try {
@@ -218,12 +244,30 @@ export async function handleResearchAgentPost(request, options = {}) {
     const message = error instanceof ProviderError
       ? error.message
       : 'The configured research-agent provider is unavailable.';
+    writeDemoLog({
+      request_id: guard.request_id,
+      endpoint: 'POST /api/research-agent',
+      outcome: 'provider_error',
+      authenticated: Boolean(guard.session?.ok),
+      provider_mode: guard.config.provider_kind,
+      error_category: 'provider_unavailable',
+      latency_ms: (options.now?.() ?? Date.now()) - guard.started,
+    }, options.logger);
     return json(503, errorBody(message, {
       reason_code: error?.reason_code ?? REASON_CODES.PROVIDER_UNAVAILABLE,
-    }));
+    }), guard.headers);
   }
   const providerFailed = result.audit.failure_class === 'provider';
   const status = providerFailed ? 503 : 200;
+  writeDemoLog({
+    request_id: guard.request_id,
+    endpoint: 'POST /api/research-agent',
+    outcome: providerFailed ? 'provider_error' : 'success',
+    authenticated: Boolean(guard.session?.ok),
+    provider_mode: guard.config.provider_kind,
+    error_category: providerFailed ? 'provider' : null,
+    latency_ms: result.audit?.duration_ms ?? ((options.now?.() ?? Date.now()) - guard.started),
+  }, options.logger);
   return json(status, {
     ok: !providerFailed,
     api_version: AGENT_API_VERSION,
@@ -231,5 +275,5 @@ export async function handleResearchAgentPost(request, options = {}) {
     provider: publicProviderView(runtime.config ?? loadAgentProviderConfig(options.env ?? process.env)),
     answer: result.answer,
     audit: publicAudit(result.audit),
-  });
+  }, guard.headers);
 }

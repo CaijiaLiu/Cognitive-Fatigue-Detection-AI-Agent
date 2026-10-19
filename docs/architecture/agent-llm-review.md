@@ -52,7 +52,7 @@ Fix: document this as an estimate-only stop; tests for missing usage and post-ca
 
 **P2-2** Offline tests omitted HTTP 401, 429, 500, generic network failure, truncated `finish_reason`, and unexpected envelopes. `tests/agent-llm.test.mjs` 86–125.
 
-**P2-3** `sameOrigin` blocks cross-site browsers but not a visitor of the hosted origin, curl-with-forged-Origin-on-some-proxies, or Worker-to-Worker calls. Not sufficient for a paid deploy. Do not add a full auth system in this slice.
+**P2-3** `sameOrigin` blocks cross-site browsers but not a visitor of the hosted origin. W2.7 adds a server-side demo session and D1 rate limits for the mock public demo. A paid OpenAI deploy still needs separate approval.
 
 **P2-4** `validateAgentHttpBody` provider-field check (`http.mjs` 118–120) is dead: extra keys are rejected first.
 
@@ -111,7 +111,7 @@ Provider/model: configured openai / `gpt-4o-mini`. Max requests 12. Max output t
 | P1-6 | Documented as estimate-only. Missing usage / missing pricing stops a dollar cap; tests added. |
 | P2-1 | Fixed. `response_format: json_object`. |
 | P2-2 | Fixed. Offline contract tests cover 401/429/500/network/timeout/empty/truncated/schema. |
-| P2-3 | Remaining. `sameOrigin` is insufficient for a paid deploy. No full auth in this slice. |
+| P2-3 | Addressed for the mock public demo in W2.7. Paid OpenAI deploy still needs separate approval. |
 | P2-4 | Remaining. Dead extra-field check left as defense in depth. |
 | P2-5 | Fixed. Invalid `loadEvalBudget` returns `not_run`. |
 | P2-6 | Fixed. Usage reads both Chat Completions field names. |

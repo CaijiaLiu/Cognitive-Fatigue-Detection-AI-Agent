@@ -1,14 +1,52 @@
 # Implementation status
 
+## W2.7 Authenticated demo and deployment hardening (2026-10-19)
+
+**Status:** Implemented as a mock-only, fail-closed demo boundary. Not a real-LLM endpoint, not scientifically validated, not publicly deployed. Caijia scientific review remains **Pending / Blocked**.
+
+Implementation branch: `feature/w2-authenticated-demo`, based on `develop/neurolens-agent` after PR #12 fast-forward (`22be750`). Design: [agent-demo-security.md](../architecture/agent-demo-security.md). Operations: [public-demo.md](../operations/public-demo.md). Tests: `tests/agent-demo-security.test.mjs`.
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| PR #12 consolidation | Merged | Fast-forward into develop @ `22be750`. Main unchanged @ `c163f29`. |
+| Demo authentication | Implemented | Shared-secret password → HMAC HttpOnly `nl_demo` cookie; server-side session store |
+| Authorization | Implemented | Cookie required in public mode; fixture allowlist unchanged; client evidence still rejected |
+| Rate limiting | Implemented | Per-session D1/`upload_limits` buckets; optional trusted `cf-connecting-ip`; memory store is test/local only |
+| Public config fail-closed | Implemented | Missing secrets, openai/`ALLOW_LIVE`, or missing shared store → 503 |
+| Privacy-safe logs | Implemented | Request id, outcome, auth/rate-limit flags, provider mode, latency; no secrets/questions/outputs |
+| Demo UX | Implemented | Login/logout, synthetic disclaimer, 401/403/429 copy on `/research-agent` only |
+| Offline security tests | Implemented | 15 deterministic cases; no OpenAI calls |
+| Public deployment | NOT VERIFIED | No hosting credentials used; do not treat this as a live Sites deploy |
+| Scientific metric review | Blocked | Pending Caijia review; identifiers/units/clinical assumptions unchanged |
+
+**Not changed:** prompts, validator, fixture metrics, collection/camera, researcher ChatGPT auth, or Caijia review assignments. No OAuth, user database, or new hosting service.
+
+**Checks actually run (2026-10-19, W2.7):**
+- `npm test` — 135 passed, 0 failed.
+- `npm run test:runtime` — 14 passed.
+- `npm run test:agent-api` — 10 passed.
+- `npm run test:llm` — 23 passed.
+- `npm run test:demo-security` — 15 passed.
+- `npm run test:integration` — 6 passed.
+- `npm run test:reliability` — 7 passed.
+- `npm run test:flow` — PASS.
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run build` — vinext/Vite production build completed.
+- `tests/integration.mjs` was not run.
+- No live OpenAI call was made and no production API key was read.
+- **PUBLIC DEPLOYMENT: NOT VERIFIED**
+
+**Next task:** human-authorized mock preview on Sites, then a separately approved W2.8 real-LLM enablement review. Do not merge to `main`. Keep Caijia review blocked.
+
 ## W2.6A Real LLM baseline experiment (2026-10-19)
 
 **Status:** Baseline scoring integrity verified. Dry-run manifest recorded. Live paid baseline is **NOT RUN**. Not scientifically validated. Caijia scientific review remains **Pending / Blocked**.
 
-Implementation branch: `feature/w2-live-llm-baseline` @ `a7ccb9a` (Draft PR #12), based on `develop/neurolens-agent` after PR #11 fast-forward (`eaf44d9`). Design: [agent-llm-baseline.md](../architecture/agent-llm-baseline.md). Manifest: [w2-live-baseline-manifest.json](w2-live-baseline-manifest.json).
+Implementation branch: `feature/w2-live-llm-baseline` @ `a7ccb9a` / `22be750` (PR #12, fast-forwarded into `develop/neurolens-agent`). Design: [agent-llm-baseline.md](../architecture/agent-llm-baseline.md). Manifest: [w2-live-baseline-manifest.json](w2-live-baseline-manifest.json).
 
 | Capability | Status | Evidence / remaining work |
 |---|---|---|
-| PR #11 consolidation | Merged | Fast-forward into develop @ `eaf44d9` |
+| PR #11 consolidation | Merged | Fast-forward into develop @ `eaf44d9`; PR #12 later fast-forwarded @ `22be750` |
 | Model vs runtime denominators | Tightened | Runtime skips excluded; D ≠ model abstention; abstention ≠ numeric/citation success |
 | Evidence-based numeric/citation | Implemented | Compare answered claims to `composeAnswer` gold artifacts |
 | Dry-run manifest | Implemented | 12 cases, 6 expected invocations, no secrets |

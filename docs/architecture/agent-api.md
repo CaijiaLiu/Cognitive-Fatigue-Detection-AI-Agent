@@ -1,6 +1,6 @@
 # W2.2 — Research Agent HTTP API and interactive demo
 
-Status: **Implemented as a synthetic, mock-provider HTTP demo over the W2.1 runtime; not a public LLM service and not scientifically validated.** Owner: Linxi. Depends on W2.1 (`cursor/w2-runtime-4e29`, PR #8). Collection, consent, D1, deployment, metric identifiers, and Caijia's pending scientific review are unchanged.
+Status: **Implemented as a synthetic, mock-provider HTTP demo over the W2.1 runtime; W2.7 adds optional/public demo authentication. Not a public LLM service and not scientifically validated.** Owner: Linxi. Depends on W2.1 (`cursor/w2-runtime-4e29`, PR #8). Collection, consent, research D1 tables, metric identifiers, and Caijia's pending scientific review are unchanged.
 
 This slice exposes the existing read-only runtime through the current vinext/Next server. It does not add a second server, a second runtime, or a new client state library.
 
@@ -8,10 +8,10 @@ This slice exposes the existing read-only runtime through the current vinext/Nex
 
 ```text
 UI  /research-agent
-        │  same-origin fetch, catalog + typed form only
+        │  same-origin fetch + credentials, catalog + typed form only
         ▼
 API  POST /api/research-agent
-        │  origin, size, schema, server allowlist
+        │  origin, demo session cookie, rate limit, size, schema, server allowlist
         ▼
 Runtime  createResearchAgentRuntime().ask()
         │  chooses tool names/args; never trusts client evidence

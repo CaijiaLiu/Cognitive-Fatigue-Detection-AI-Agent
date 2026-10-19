@@ -32,7 +32,7 @@ async function read(response) {
 }
 
 test('GET catalog lists only the server-side synthetic allowlist', async () => {
-  const { status, body } = await read(handleResearchAgentGet());
+  const { status, body } = await read(await handleResearchAgentGet());
   assert.equal(status, 200);
   assert.equal(body.api_version, AGENT_API_VERSION);
   assert.equal(body.demo.synthetic, true);
@@ -197,6 +197,8 @@ test('demo UI view model covers loading, success, abstention, and error', () => 
   });
   assert.equal(abstained.kind, 'abstained');
   assert.equal(viewFromHttp({ httpStatus: 403, body: { error: 'blocked' } }).kind, 'error');
+  assert.equal(viewFromHttp({ httpStatus: 401, body: { error: 'Authentication required.' } }).kind, 'unauthenticated');
+  assert.equal(viewFromHttp({ httpStatus: 429, body: { error: 'Too many requests.' } }).title, 'Too many requests');
   assert.equal(viewFromHttp({ networkError: 'offline' }).kind, 'error');
   const payload = buildClientPayload({ session_ref: 'fixture:session:a', question_id: 'accuracy' });
   assert.equal(payload.intent.kind, 'report_metric');
