@@ -48,6 +48,8 @@ The wrapper still exposes the three existing read-only tools. It also adds local
 
 V1 Go/No-Go sessions may be adapted with or without a sidecar. Generic multi-slot sessions are accepted only with a matching provisional orchestration protocol. `mission-preview-1` is rejected and is not rewritten as V1.
 
+When a W3.1 sidecar is present, the adapter does not stop at per-event `validateResearchEvent()` checks. It clones the sidecar and runs W3.1 `replayOrchestration()` in event-only mode (`measurement_fidelity: false`). The sidecar is rejected if replay fails, events are out of order, task transitions violate protocol order, observations occur outside an active task, session identity or contract versions mismatch, the replayed terminal state disagrees with the sidecar, or replayed task boundaries disagree with the declared task records. Replay is read-only and does not mutate the submitted artifact.
+
 ## Evidence contract
 
 Each evidence item carries:
@@ -65,7 +67,11 @@ Each evidence item carries:
 - `evidence_contract_version`: `session-evidence/0.1`
 - original artifact reference (`session:v1:<id>` or `session:orchestration:<id>`)
 
+Evidence IDs are deterministic and unique within a session. Timeline events use the accepted-event index (`event-<n>`), not a timestamp-only key, so two accepted events with the same `session_elapsed_ms` keep distinct IDs. IDs are stable for identical input and do not use the current time or randomness.
+
 Evidence items are **not** Agent metrics. The only numeric claims `composeAnswer` may make still come from the existing allowlist: `reaction_time_median_ms`, `accuracy`, `valid_trial_count`. Those values are copied from V1 `behavior_summary` only when the protocol is `go-no-go-v1`.
+
+Duplicate `session_ref` values in one store are fail-closed: identical copies keep the first record; conflicting records are rejected and the previous usable artifact is withdrawn.
 
 ### Example
 

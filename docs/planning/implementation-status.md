@@ -16,7 +16,8 @@ W3.3 AGENT DEMO WIRING: NOT STARTED
 | Capability | Status | Evidence / remaining work |
 |---|---|---|
 | V1 session without sidecar | Implemented | Existing Go/No-Go metrics copied; evidence items added |
-| V1 session with W3.1 sidecar | Implemented | Session/protocol/event/mission versions checked; local-only |
+| V1 session with W3.1 sidecar | Implemented | Session/protocol/event/mission versions checked; full event-only replay; local-only |
+| Timeline / evidence integrity | Hardened | Replay validates order, active-task windows, terminal state, and declared task boundaries; evidence IDs are index-stable; conflicting duplicate `session_ref`s are rejected |
 | Generic multi-task session | Implemented | `slot-a` / `slot-b` stay unsigned; no invented PVT/GNG metrics |
 | Structured evidence items | Implemented | `session-evidence/0.1` with provenance, missingness, original refs |
 | Existing Agent tools | Extended in place | Same three read-only tools + `analysis-session-evidence/0.1` store |
@@ -26,17 +27,14 @@ W3.3 AGENT DEMO WIRING: NOT STARTED
 
 **Not changed:** V1 `schema_version` `1.0.0`, Go/No-Go trial semantics, allowlisted metric identifiers, cloud allowlist, Sites, OpenAI, `main`, Caijia scientific modules.
 
-**Checks actually run (2026-10-19, W3.2):**
-- `npm test` — 205 passed, 0 failed (16 session-evidence cases).
-- `npm run test:flow` — PASS (controlled DOM/clock; not a real camera).
-- `npm run test:integration` — 6 passed.
-- `npm run test:reliability` — 7 passed.
-- `npx --no-install tsc --noEmit` — exited 0.
-- `npm run build` — vinext/Vite production build completed.
-- `tests/integration.mjs` was not run.
-- No live OpenAI call, no remote D1, no Sites publish, no real-camera session.
+**W3.2 integrity review fixes (2026-10-19):**
+1. Sidecar acceptance now requires W3.1 `replayOrchestration()` success plus matching terminal state and declared task boundaries. Replay stays event-only and does not mutate the submitted artifact.
+2. Evidence IDs for timeline events use the accepted-event index, so repeated timestamps cannot collide.
+3. The evidence store rejects conflicting duplicate `session_ref`s and keeps identical copies once.
 
-**Next task:** Stop after W3.2. Do not merge. Do not start W3.3 until architecture review. Caijia reviews the combined Week 3 work before `develop/neurolens-agent`.
+**Checks actually run (2026-10-19, W3.2 integrity review):** recorded after the verification suite below.
+
+**Next task:** Stop after W3.2 integrity review. Do not merge. Do not start W3.3 until architecture review. Caijia reviews the combined Week 3 work before `develop/neurolens-agent`.
 
 ## W3.1 Versioned protocol and session orchestration (2026-10-19)
 

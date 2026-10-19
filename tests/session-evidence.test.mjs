@@ -17,6 +17,7 @@ import {
 } from '../analysis/src/neurolens/agent/index.mjs';
 import {
   createExportAnalysisTools,
+  createSessionEvidenceStore,
   createSessionEvidenceTools,
   adaptSessionEvidence,
   validateSessionEvidenceInput,
@@ -508,4 +509,174 @@ test('16. existing fixture and export agent contracts remain compatible', () => 
   });
   assert.equal(wrongVersion.status, TOOL_STATUS.INCOMPATIBLE);
   assert.equal(wrongVersion.reason_code, REASON_CODES.UNKNOWN_ANALYSIS_VERSION);
+});
+
+function genericTerminal(kind) {
+  const status = kind === 'failed' ? 'failed' : kind === 'interrupted' ? 'interrupted' : 'completed';
+  return withOrchestration(genericBase({ status }), PROVISIONAL_SEQUENCE_PROTOCOL, (orch, clock) => {
+    assert.equal(orch.prepare(clock.set(0)).ok, true);
+    assert.equal(orch.startSession({ startedAt: clock.set(0) }).ok, true);
+    assert.equal(orch.startTask('slot-a', { startedAt: clock.set(100) }).ok, true);
+    assert.equal(orch.recordObservation({
+      acquisitionTs: 150,
+      processedTs: clock.set(180),
+      source: 'simulated',
+      features: { face_present: true, ear: 0.3, gaze_x: 0, gaze_y: 0, rotation: null },
+    }).ok, true);
+    if (kind === 'interrupted') {
+      assert.equal(orch.interrupt({ reason: 'user_stop', endedAt: clock.set(300) }).ok, true);
+    } else if (kind === 'failed') {
+      assert.equal(orch.fail({ reason: 'tracking_lost', endedAt: clock.set(300) }).ok, true);
+    } else {
+      assert.equal(orch.endTask('slot-a', { endedAt: clock.set(300) }).ok, true);
+      assert.equal(orch.startTask('slot-b', { startedAt: clock.set(400) }).ok, true);
+      assert.equal(orch.endTask('slot-b', { endedAt: clock.set(500) }).ok, true);
+      assert.equal(orch.completeSession({ endedAt: clock.set(600) }).ok, true);
+    }
+  });
+}
+
+function duplicateTimestampSession() {
+  return withOrchestration(genericBase(), PROVISIONAL_SEQUENCE_PROTOCOL, (orch, clock) => {
+    assert.equal(orch.prepare(clock.set(0)).ok, true);
+    assert.equal(orch.startSession({ startedAt: clock.set(0) }).ok, true);
+    assert.equal(orch.startTask('slot-a', { startedAt: clock.set(100) }).ok, true);
+    assert.equal(orch.recordDropout({ at: 220, gap_ms: 50, source: 'simulated' }).ok, true);
+    assert.equal(orch.recordDropout({ at: 220, gap_ms: 50, source: 'simulated' }).ok, true);
+    assert.equal(orch.endTask('slot-a', { endedAt: clock.set(300) }).ok, true);
+    assert.equal(orch.startTask('slot-b', { startedAt: clock.set(400) }).ok, true);
+    assert.equal(orch.endTask('slot-b', { endedAt: clock.set(500) }).ok, true);
+    assert.equal(orch.completeSession({ endedAt: clock.set(600) }).ok, true);
+  });
+}
+
+test('integrity 1. invalid task order fails closed', () => {
+  const session = genericTwoSlot();
+  const before = JSON.stringify(session.orchestration);
+  const events = session.orchestration.events;
+  const first = events.findIndex((event) => event.type === 'task_started');
+  const second = events.findIndex((event, index) => event.type === 'task_started' && index > first);
+  [events[first], events[second]] = [events[second], events[first]];
+  const adapted = adaptSessionEvidence(session);
+  assert.equal(adapted.ok, false);
+  assert.equal(adapted.reason_code, REASON_CODES.INCONSISTENT_EVIDENCE);
+  assert.match(adapted.message, /replay failed|task_out_of_order/i);
+  const original = genericTwoSlot();
+  const snapshot = JSON.stringify(original.orchestration);
+  adaptSessionEvidence(original);
+  assert.equal(JSON.stringify(original.orchestration), snapshot);
+  assert.equal(before.length > 0, true);
+});
+
+test('integrity 2. observation after task end fails closed', () => {
+  const session = genericTwoSlot();
+  const events = session.orchestration.events;
+  const obsIdx = events.findIndex((event) => event.type === 'observation' && event.task_id === 'slot-a');
+  const [observation] = events.splice(obsIdx, 1);
+  const endIdx = events.findIndex((event) => event.type === 'task_ended' && event.task_id === 'slot-a');
+  events.splice(endIdx + 1, 0, observation);
+  const adapted = adaptSessionEvidence(session);
+  assert.equal(adapted.ok, false);
+  assert.equal(adapted.reason_code, REASON_CODES.INCONSISTENT_EVIDENCE);
+});
+
+test('integrity 3. terminal-state mismatch fails closed', () => {
+  const session = genericTwoSlot();
+  session.status = 'failed';
+  session.orchestration.state = 'failed';
+  const adapted = adaptSessionEvidence(session);
+  assert.equal(adapted.ok, false);
+  assert.equal(adapted.reason_code, REASON_CODES.INCONSISTENT_EVIDENCE);
+  assert.match(adapted.message, /terminal state/i);
+});
+
+test('integrity 4. corrupted task boundaries fail closed', () => {
+  const session = genericTwoSlot();
+  session.orchestration.tasks[0].ended_session_ms = 1;
+  const adapted = adaptSessionEvidence(session);
+  assert.equal(adapted.ok, false);
+  assert.equal(adapted.reason_code, REASON_CODES.INCONSISTENT_EVIDENCE);
+  assert.match(adapted.message, /task boundaries/i);
+});
+
+test('integrity 5. duplicate event timestamps keep distinct stable evidence IDs', () => {
+  const session = duplicateTimestampSession();
+  const first = adaptSessionEvidence(session);
+  const second = adaptSessionEvidence(session);
+  assert.equal(first.ok, true);
+  const dropouts = first.value.evidence_items.filter((item) => item.evidence_type === 'tracking_dropout');
+  assert.equal(dropouts.length >= 2, true);
+  const ids = dropouts.map((item) => item.evidence_id);
+  assert.equal(new Set(ids).size, ids.length);
+  assert.deepEqual(ids, second.value.evidence_items.filter((item) => item.evidence_type === 'tracking_dropout').map((item) => item.evidence_id));
+  assert.ok(ids.every((id) => /:event-\d+$/.test(id)));
+});
+
+test('integrity 6. evidence IDs stay stable across repeated adaptation', () => {
+  const session = duplicateTimestampSession();
+  const first = adaptSessionEvidence(structuredClone(session));
+  const second = adaptSessionEvidence(structuredClone(session));
+  assert.equal(first.ok, true);
+  assert.deepEqual(first.value.evidence_items.map((item) => item.evidence_id), second.value.evidence_items.map((item) => item.evidence_id));
+  assert.equal(new Set(first.value.evidence_items.map((item) => item.evidence_id)).size, first.value.evidence_items.length);
+});
+
+test('integrity 7. conflicting duplicate session IDs are rejected and identical copies are kept once', () => {
+  const identical = createSessionEvidenceStore([cameraSessionA(), cameraSessionA()]);
+  assert.deepEqual(identical.listSessionRefs(), [ref(IDS.cameraA)]);
+  assert.equal(identical.rejections.some((item) => item.message === 'Conflicting duplicate session_ref.'), false);
+  assert.equal(Boolean(identical.getSession(ref(IDS.cameraA)).ingest_error), false);
+
+  const conflicted = cameraSessionB();
+  conflicted.session_id = IDS.cameraA;
+  const store = createSessionEvidenceStore([cameraSessionA(), conflicted]);
+  assert.ok(store.rejections.some((item) => item.reason_code === REASON_CODES.INCONSISTENT_EVIDENCE && /duplicate session_ref/.test(item.message)));
+  const session = store.getSession(ref(IDS.cameraA));
+  assert.ok(session.ingest_error);
+  assert.deepEqual(session.metrics, []);
+  assert.equal(store.getArtifact(`evidence:session-summary:${IDS.cameraA}`), null);
+  const tools = createSessionEvidenceTools([cameraSessionA(), conflicted]);
+  const response = tools.invoke(summaryRequest(IDS.cameraA));
+  assert.equal(response.status, TOOL_STATUS.UNAVAILABLE);
+  assert.deepEqual(response.metrics, []);
+});
+
+test('integrity 8. valid completed, interrupted, and failed sessions adapt without invented metrics', () => {
+  for (const kind of ['completed', 'interrupted', 'failed']) {
+    const session = genericTerminal(kind);
+    assert.equal(session.orchestration.state, kind);
+    const adapted = adaptSessionEvidence(session);
+    assert.equal(adapted.ok, true, kind);
+    assert.equal(adapted.value.orchestration_present, true);
+    assert.deepEqual(adapted.value.metrics, []);
+    assert.equal(adapted.value.evidence_items.some((item) => item.evidence_id.includes('reaction_time_median_ms') && item.value != null), false);
+  }
+});
+
+test('integrity 9. existing V1 compatibility is unchanged', () => {
+  const tools = createSessionEvidenceTools(cameraSessionA());
+  const response = tools.invoke(summaryRequest(IDS.cameraA));
+  assert.equal(response.status, TOOL_STATUS.OK);
+  assert.equal(response.protocol_version, 'go-no-go/1.0');
+  assert.equal(response.metrics.find((item) => item.metric_id === 'accuracy').value, EXPECTED_A.accuracy);
+  const sidecar = withOrchestration(cameraSessionA(), V1_GO_NO_GO_PROTOCOL, (orch, clock) => {
+    runGoNoGo(orch, clock, { observation: true, source: 'camera' });
+  });
+  const withSide = createSessionEvidenceTools(sidecar).invoke(summaryRequest(IDS.cameraA));
+  assert.equal(withSide.status, TOOL_STATUS.OK);
+  assert.equal(withSide.metrics.find((item) => item.metric_id === 'reaction_time_median_ms').value, EXPECTED_A.reaction_time_median_ms);
+});
+
+test('integrity 10. adapter does not fabricate biomedical measurements', () => {
+  const generic = createSessionEvidenceTools(genericTwoSlot());
+  const summary = generic.invoke(summaryRequest(GENERIC_ID));
+  assert.equal(summary.status, TOOL_STATUS.INSUFFICIENT_DATA);
+  assert.deepEqual(summary.metrics, []);
+  const items = generic.listEvidence(ref(GENERIC_ID));
+  assert.ok(items.every((item) => item.evidence_type !== 'task_only_behavior' || item.value == null));
+  assert.equal(items.some((item) => item.evidence_type === 'camera_observation' && item.value != null && item.source === 'simulated'), false);
+  const failed = adaptSessionEvidence(genericTerminal('failed'));
+  assert.equal(failed.ok, true);
+  assert.deepEqual(failed.value.metrics, []);
+  assert.doesNotMatch(JSON.stringify(failed.value.evidence_items), /fatigue score|pvt_median|diagnosis/);
 });

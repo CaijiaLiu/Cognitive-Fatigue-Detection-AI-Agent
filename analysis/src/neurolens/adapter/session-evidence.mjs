@@ -32,7 +32,12 @@ import {
   validateResearchEvent,
 } from '../../../../public/collection/session/protocol.js';
 import { MISSION_EVENT_CONTRACT, readCompatibleSession } from '../../../../public/collection/session/mission-adapter.js';
-import { readMissionSidecar, readOrchestrationSidecar } from '../../../../public/collection/session/orchestration-export.js';
+import {
+  readMissionSidecar,
+  readOrchestrationSidecar,
+  replayOrchestration,
+  stableStringify,
+} from '../../../../public/collection/session/orchestration-export.js';
 import { validateV1Session } from './validate-export.mjs';
 import { ingestError, normalizeAcceptedSession, redactSession } from './normalize.mjs';
 
@@ -64,6 +69,8 @@ export const SESSION_EVIDENCE_CONTRACT = Object.freeze({
     'generic slots interpreted as PVT or Go/No-Go science',
     'preview coercion into V1',
     'implicit upload of orchestration or biomedical sidecars',
+    'orchestration timelines that fail event-only replay',
+    'conflicting duplicate session_ref records',
   ]),
 });
 
@@ -254,6 +261,63 @@ function validateOrchestration(session, orchestration) {
   }
   if (protocolId === GENERIC_PROTOCOL_ID && Array.isArray(session.trials) && session.trials.some((trial) => trial?.type === 'go' || trial?.type === 'no-go')) {
     return rejected(REASON_CODES.INCONSISTENT_EVIDENCE, 'Generic-slot sessions cannot carry Go/No-Go trial records.', TOOL_STATUS.INCOMPATIBLE);
+  }
+  if (STATUSES.has(session.status) && snap.state && session.status !== snap.state) {
+    return rejected(REASON_CODES.INCONSISTENT_EVIDENCE, 'V1 session status does not match orchestration state.');
+  }
+  return validateOrchestrationTimeline(session, snap);
+}
+
+function declaredTasks(tasks) {
+  return (tasks || []).map((task) => ({
+    task_id: task.task_id ?? null,
+    started_session_ms: Number.isFinite(task.started_session_ms) ? task.started_session_ms : null,
+    ended_session_ms: Number.isFinite(task.ended_session_ms) ? task.ended_session_ms : null,
+    reason: task.reason ?? null,
+  }));
+}
+
+function observationOutsideTask(event, tasks) {
+  if (event.type !== 'observation' && event.type !== 'dropout') return false;
+  if (event.task_id == null) return event.type === 'observation';
+  const task = (tasks || []).find((item) => item.task_id === event.task_id);
+  if (!task || !Number.isFinite(task.started_session_ms)) return true;
+  const at = Number.isFinite(event.acquired_elapsed_ms) ? event.acquired_elapsed_ms : event.session_elapsed_ms;
+  if (!Number.isFinite(at)) return event.type === 'observation';
+  if (at < task.started_session_ms) return true;
+  if (Number.isFinite(task.ended_session_ms) && at >= task.ended_session_ms) return true;
+  return false;
+}
+
+function validateOrchestrationTimeline(session, snap) {
+  const original = cloneJson(snap);
+  const replayed = replayOrchestration({ orchestration: cloneJson(snap) });
+  if (stableStringify(snap) !== stableStringify(original)) {
+    return rejected(REASON_CODES.INCONSISTENT_EVIDENCE, 'Orchestration replay mutated the submitted sidecar.');
+  }
+  if (!replayed.replay || replayed.replay.ok !== true) {
+    return rejected(
+      replayed.replay?.reason === 'session_mismatch' ? REASON_CODES.SESSION_MISMATCH : REASON_CODES.INCONSISTENT_EVIDENCE,
+      `Orchestration timeline replay failed (${replayed.replay?.reason || 'replay_failed'}).`,
+    );
+  }
+  if (replayed.replay.measurement_fidelity !== false || replayed.replay.kind !== 'event_only') {
+    return rejected(REASON_CODES.INCONSISTENT_EVIDENCE, 'Evidence adapter requires event-only replay with measurement_fidelity false.');
+  }
+  if (replayed.session_id !== session.session_id || replayed.session_id !== snap.session_id) {
+    return rejected(REASON_CODES.SESSION_MISMATCH, 'Replayed session identity does not match the V1 session.');
+  }
+  if (replayed.state !== snap.state) {
+    return rejected(REASON_CODES.INCONSISTENT_EVIDENCE, 'Replayed terminal state does not match the sidecar.');
+  }
+  const replayedSnap = replayed.snapshot();
+  if (stableStringify(declaredTasks(replayedSnap.tasks)) !== stableStringify(declaredTasks(snap.tasks))) {
+    return rejected(REASON_CODES.INCONSISTENT_EVIDENCE, 'Replayed task boundaries do not match the sidecar.');
+  }
+  for (const event of snap.events || []) {
+    if (observationOutsideTask(event, replayedSnap.tasks)) {
+      return rejected(REASON_CODES.INCONSISTENT_EVIDENCE, 'An observation or dropout occurs outside an active task.');
+    }
   }
   return { ok: true, orchestration: snap };
 }
@@ -497,7 +561,7 @@ function buildEvidenceItems(session, orchestration, protocolId, scientificReview
     }));
   });
 
-  for (const event of orchestration?.events || []) {
+  (orchestration?.events || []).forEach((event, index) => {
     if (event.type === 'observation') {
       const eventSource = event.source === 'camera' || event.source === 'simulated' ? event.source : 'task-only';
       items.push(item({
@@ -506,7 +570,7 @@ function buildEvidenceItems(session, orchestration, protocolId, scientificReview
         protocolVersion,
         taskId: event.task_id,
         type: eventSource === 'simulated' ? 'simulated_observation' : eventSource === 'camera' ? 'camera_observation' : 'task_only_behavior',
-        key: `event-${event.session_elapsed_ms ?? 'na'}`,
+        key: `event-${index}`,
         value: null,
         unit: null,
         window: {
@@ -528,7 +592,7 @@ function buildEvidenceItems(session, orchestration, protocolId, scientificReview
         protocolVersion,
         taskId: event.task_id,
         type: 'tracking_dropout',
-        key: `dropout-${event.session_elapsed_ms ?? 'na'}`,
+        key: `event-${index}`,
         value: null,
         unit: null,
         window: {
@@ -543,7 +607,7 @@ function buildEvidenceItems(session, orchestration, protocolId, scientificReview
         artifactRef,
       }));
     }
-  }
+  });
 
   items.sort((left, right) => left.evidence_id.localeCompare(right.evidence_id));
   return items;
@@ -648,6 +712,10 @@ export function adaptSessionEvidence(input) {
   }
 
   const items = buildEvidenceItems(session, orchestration, protocolId, scientificReview);
+  const ids = items.map((entry) => entry.evidence_id);
+  if (new Set(ids).size !== ids.length) {
+    return rejected(REASON_CODES.INCONSISTENT_EVIDENCE, 'Evidence IDs collided within one session.');
+  }
   const sequence = taskSequenceFrom(session, orchestration, protocolId);
   const metrics = copied.metrics;
   return ok({
@@ -817,6 +885,36 @@ export function createSessionEvidenceStore(input) {
       });
     }
     if (!record.session_ref) continue;
+    if (Object.hasOwn(sessions, record.session_ref)) {
+      const existing = sessions[record.session_ref];
+      const sameHash = existing.source_export_sha256
+        && record.source_export_sha256
+        && existing.source_export_sha256 === record.source_export_sha256;
+      const sameRejection = Boolean(existing.ingest_error)
+        && Boolean(record.ingest_error)
+        && existing.ingest_error.reason_code === record.ingest_error.reason_code
+        && existing.ingest_error.limitations?.[0] === record.ingest_error.limitations?.[0];
+      if ((sameHash && !existing.ingest_error && !record.ingest_error) || sameRejection) {
+        continue;
+      }
+      rejections.push({
+        session_id: record.session_id,
+        reason_code: REASON_CODES.INCONSISTENT_EVIDENCE,
+        message: 'Conflicting duplicate session_ref.',
+        status: TOOL_STATUS.UNAVAILABLE,
+      });
+      delete artifacts[summaryRefFor(record.session_id)];
+      sessions[record.session_ref] = deepFreeze({
+        ...rejectedStub(document, rejected(
+          REASON_CODES.INCONSISTENT_EVIDENCE,
+          'Conflicting duplicate session_ref.',
+        )),
+        session_ref: record.session_ref,
+        session_id: record.session_id,
+      });
+      summaryRefs[record.session_ref] = summaryRefFor(record.session_id);
+      continue;
+    }
     sessions[record.session_ref] = deepFreeze(record);
     summaryRefs[record.session_ref] = summaryRefFor(record.session_id);
     if (!record.ingest_error) {
@@ -910,6 +1008,7 @@ export function createSessionEvidenceTools(input) {
     allowedMetrics: tools.allowedMetrics,
     inspectArtifact: tools.inspectArtifact,
     invokeCount: tools.invokeCount,
+    rejections: store.rejections,
     listEvidence: (sessionRef) => store.listEvidence(sessionRef),
     getTaskSequence: (sessionRef) => store.getTaskSequence(sessionRef),
     compareWindows: (sessionRef) => store.compareWindows(sessionRef),
