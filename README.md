@@ -103,3 +103,5 @@ The stable entrypoint is `public/collection/app.js`. Implementations are grouped
 | `lib/research/` | Server authorization/request helpers and upload validation |
 
 Legacy module paths remain thin compatibility facades. Schema 1.0.0, IndexedDB database name and task protocol remain unchanged. `npm run test:flow` exercises the collection module graph with a controlled DOM/clock and memory persistence; it does not validate real-browser hardware or IndexedDB.
+
+Offline read-only analysis tools and the V1 export adapter live under `analysis/src/neurolens/`. They consume already-exported JSON or synthetic fixtures and do not change collection, consent, or cloud paths.

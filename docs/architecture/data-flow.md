@@ -18,6 +18,8 @@ Phase/event timestamps join ocular, facial, head, task and self-report observati
 
 Exports feed a reproducible offline pipeline: validate -> provenance filtering -> quality checks -> windowing -> labels -> grouped split -> training-only preprocessing -> statistics/models -> report.
 
+The W1.4 adapter is a bounded first step of that export boundary: validated V1 JSON is copied into versioned evidence artifacts for the read-only agent tools. It is not the statistics/model pipeline and is not scientific validation.
+
 Derived results retain input IDs, schema/protocol/algorithm versions and exclusion reasons. Reports distinguish unavailable, poor-quality and simulated observations.
 
 ## Privacy

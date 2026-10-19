@@ -28,6 +28,10 @@ Use a new compatible minor schema for additive fields with documented defaults; 
 4. Test an old session, a new session, missing tracking and mixed/synthetic provenance.
 5. Update status and protocol/feature documents before announcing availability.
 
+## Offline export-adapter contract (implemented, not scientifically validated)
+
+The analysis adapter accepts already-exported V1 JSON (`schema_version` `1.0.0`, protocol `go-no-go-v1`) and emits `evidence-artifact/0.1` records with `analysis_version` `analysis-export/0.1`, `data_origin` `session_export`, and `protocol_version` `go-no-go/1.0`. Raw collection protocol `go-no-go-v1` is preserved in provenance. Mission-preview, demo, CSV and unknown schemas are rejected. See [analysis-export-adapter.md](analysis-export-adapter.md).
+
 ## Analysis contract
 
 An observation is not a label. Fatigue ratings and thought-probe responses are separate outcomes. Pre/post fatigue ratings must not be copied onto every window as verified fatigue state.

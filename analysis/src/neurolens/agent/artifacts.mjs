@@ -1,6 +1,7 @@
 import {
   ANALYSIS_VERSION,
   ARTIFACT_SCHEMA_VERSION,
+  COMPUTATION,
   CONTRACT_VERSION,
   DATA_ORIGIN,
   PRODUCER_ID,
@@ -24,10 +25,13 @@ export function deepFreeze(value) {
 }
 
 export function sessionAlias(sessionRef) {
-  return String(sessionRef).replace(/^fixture:session:/, '');
+  return String(sessionRef).replace(/^(?:fixture|export):session:/, '');
 }
 
-export function comparisonArtifactRef(sessionRefs, metricId) {
+export function comparisonArtifactRef(sessionRefs, metricId, prefix = 'fixture') {
+  if (prefix === 'export') {
+    return `export:compare:${sessionRefs.map(sessionAlias).join(':')}:${metricId}`;
+  }
   return `fixture:session-compare:${sessionRefs.map(sessionAlias).join('-')}:${metricId}`;
 }
 
@@ -42,24 +46,31 @@ export function createEvidenceArtifact({
   metrics,
   limitations,
   extra_payload = {},
+  analysis_version = ANALYSIS_VERSION,
+  data_origin = DATA_ORIGIN.SYNTHETIC_FIXTURE,
+  computation = COMPUTATION.FIXTURE_LOOKUP,
+  producer = PRODUCER_ID,
+  producer_version = PRODUCER_VERSION,
+  provenance_extra = {},
 }) {
   const artifact = {
     artifact_schema_version: ARTIFACT_SCHEMA_VERSION,
     artifact_ref,
     artifact_kind,
     contract_version: CONTRACT_VERSION,
-    analysis_version: ANALYSIS_VERSION,
+    analysis_version,
     protocol_version,
     created_at,
-    data_origin: DATA_ORIGIN.SYNTHETIC_FIXTURE,
+    data_origin,
     participant_scope,
     source_session_refs: [...source_session_refs],
     provenance: {
-      producer: PRODUCER_ID,
-      producer_version: PRODUCER_VERSION,
-      computation: 'deterministic_fixture_lookup',
+      producer,
+      producer_version,
+      computation,
       immutable: true,
       inputs: [...source_session_refs],
+      ...cloneJson(provenance_extra),
     },
     quality: {
       usable: quality.usable,

@@ -24,35 +24,47 @@ function emptyQuality(reasonCodes = []) {
   return { usable: false, reason_codes: [...reasonCodes] };
 }
 
-function baseEnvelope(tool, extras) {
+function catalogAnalysisVersion(store) {
+  return store.analysis_version ?? ANALYSIS_VERSION;
+}
+
+function catalogDataOrigin(store) {
+  return store.data_origin ?? DATA_ORIGIN.SYNTHETIC_FIXTURE;
+}
+
+function catalogLimit(store) {
+  return store.limit ?? SYNTHETIC_LIMIT;
+}
+
+function baseEnvelope(store, tool, extras) {
   return {
     contract_version: CONTRACT_VERSION,
     tool,
-    analysis_version: extras.analysis_version ?? ANALYSIS_VERSION,
-    data_origin: DATA_ORIGIN.SYNTHETIC_FIXTURE,
+    analysis_version: extras.analysis_version ?? catalogAnalysisVersion(store),
+    data_origin: catalogDataOrigin(store),
     quality: extras.quality ?? emptyQuality(),
     metrics: extras.metrics ?? [],
-    limitations: extras.limitations ?? [SYNTHETIC_LIMIT],
+    limitations: extras.limitations ?? [catalogLimit(store)],
     ...extras,
   };
 }
 
-function rejectEnvelope(tool, message) {
+function rejectEnvelope(store, tool, message) {
   const safeTool = ALLOWED_TOOLS.includes(tool) ? tool : 'rejected';
-  return finalize(baseEnvelope(safeTool, {
+  return finalize(baseEnvelope(store, safeTool, {
     status: TOOL_STATUS.UNAVAILABLE,
     reason_code: REASON_CODES.REJECTED_REQUEST,
     quality: emptyQuality([REASON_CODES.REJECTED_REQUEST]),
-    limitations: [SYNTHETIC_LIMIT, message, 'Request rejected before execution; no catalog lookup was performed.'],
+    limitations: [catalogLimit(store), message, 'Request rejected before execution; no catalog lookup was performed.'],
   }));
 }
 
-function failEnvelope(tool, status, reason_code, limitations, extras = {}) {
-  return finalize(baseEnvelope(tool, {
+function failEnvelope(store, tool, status, reason_code, limitations, extras = {}) {
+  return finalize(baseEnvelope(store, tool, {
     status,
     reason_code,
     quality: extras.quality ?? emptyQuality([reason_code]),
-    limitations: [SYNTHETIC_LIMIT, ...limitations],
+    limitations: [catalogLimit(store), ...limitations],
     ...extras,
   }));
 }
@@ -69,8 +81,13 @@ function protocolsCompatible(left, right) {
   return Boolean(PROTOCOL_COMPATIBILITY[left]?.includes(right));
 }
 
-function okFromArtifact(tool, artifact) {
-  const envelope = baseEnvelope(tool, {
+function visionProvenanceCompatible(sessions) {
+  const flags = sessions.map((session) => (session.quality?.reason_codes ?? []).includes('simulated_vision'));
+  return flags.every((flag) => flag === flags[0]);
+}
+
+function okFromArtifact(store, tool, artifact) {
+  const envelope = baseEnvelope(store, tool, {
     status: TOOL_STATUS.OK,
     artifact_ref: artifact.artifact_ref,
     protocol_version: artifact.protocol_version,
@@ -81,7 +98,7 @@ function okFromArtifact(tool, artifact) {
   });
   const agreement = validateResponseAgreesWithArtifact(envelope, artifact);
   if (!agreement.ok) {
-    return failEnvelope(tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.INCONSISTENT_EVIDENCE, [
+    return failEnvelope(store, tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.INCONSISTENT_EVIDENCE, [
       agreement.message,
     ]);
   }
@@ -135,19 +152,26 @@ export function buildComparisonArtifact(sessions, metricId) {
 }
 
 function getSessionSummary(store, request) {
-  if (request.analysis_version !== ANALYSIS_VERSION) {
-    return failEnvelope(request.tool, TOOL_STATUS.INCOMPATIBLE, REASON_CODES.UNKNOWN_ANALYSIS_VERSION, [
+  if (request.analysis_version !== catalogAnalysisVersion(store)) {
+    return failEnvelope(store, request.tool, TOOL_STATUS.INCOMPATIBLE, REASON_CODES.UNKNOWN_ANALYSIS_VERSION, [
       `Unsupported analysis_version ${request.analysis_version}.`,
     ]);
   }
   const session = store.getSession(request.session_ref);
   if (!session) {
-    return failEnvelope(request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.UNKNOWN_SESSION, [
-      'No fixture session exists for the requested session_ref.',
+    return failEnvelope(store, request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.UNKNOWN_SESSION, [
+      'No catalogued session exists for the requested session_ref.',
     ]);
   }
+  if (session.ingest_error) {
+    return failEnvelope(store, request.tool, session.ingest_error.status, session.ingest_error.reason_code, session.ingest_error.limitations, {
+      protocol_version: session.protocol_version,
+      participant_scope: session.participant_scope,
+      quality: session.quality,
+    });
+  }
   if (!session.quality.usable || session.metrics.length === 0) {
-    return failEnvelope(request.tool, TOOL_STATUS.INSUFFICIENT_DATA, REASON_CODES.INSUFFICIENT_DATA, [
+    return failEnvelope(store, request.tool, TOOL_STATUS.INSUFFICIENT_DATA, REASON_CODES.INSUFFICIENT_DATA, [
       'Session quality is insufficient or required features are missing.',
       'Do not impute a fatigue label or substitute a clinical conclusion.',
     ], {
@@ -159,46 +183,62 @@ function getSessionSummary(store, request) {
   const artifactRef = store.summaryRefFor(session.session_ref);
   const artifact = artifactRef ? store.getArtifact(artifactRef) : null;
   if (!artifact) {
-    return failEnvelope(request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.UNKNOWN_ARTIFACT, [
+    return failEnvelope(store, request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.UNKNOWN_ARTIFACT, [
       'Session exists but no immutable summary artifact is catalogued.',
     ]);
   }
   if (!artifact.source_session_refs.includes(request.session_ref)) {
-    return failEnvelope(request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.SESSION_MISMATCH, [
+    return failEnvelope(store, request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.SESSION_MISMATCH, [
       'The catalogued summary artifact does not belong to the requested session.',
     ]);
   }
   if (artifact.protocol_version !== session.protocol_version || !artifactMatchesSessionMetrics(artifact, [session])) {
-    return failEnvelope(request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.INCONSISTENT_EVIDENCE, [
+    return failEnvelope(store, request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.INCONSISTENT_EVIDENCE, [
       'The catalogued summary artifact does not match the session metrics or protocol.',
     ]);
   }
-  return okFromArtifact(request.tool, artifact);
+  return okFromArtifact(store, request.tool, artifact);
 }
 
 function compareSessions(store, request) {
-  if (request.analysis_version !== ANALYSIS_VERSION) {
-    return failEnvelope(request.tool, TOOL_STATUS.INCOMPATIBLE, REASON_CODES.UNKNOWN_ANALYSIS_VERSION, [
+  if (request.analysis_version !== catalogAnalysisVersion(store)) {
+    return failEnvelope(store, request.tool, TOOL_STATUS.INCOMPATIBLE, REASON_CODES.UNKNOWN_ANALYSIS_VERSION, [
       `Unsupported analysis_version ${request.analysis_version}.`,
     ]);
   }
   const sessions = request.session_refs.map((ref) => store.getSession(ref));
   if (sessions.some((session) => session === null)) {
-    return failEnvelope(request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.UNKNOWN_SESSION, [
-      'One or more session_refs are not in the fixture catalog.',
+    return failEnvelope(store, request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.UNKNOWN_SESSION, [
+      'One or more session_refs are not in the catalog.',
     ]);
+  }
+  const blocked = sessions.find((session) => session.ingest_error);
+  if (blocked) {
+    return failEnvelope(store, request.tool, blocked.ingest_error.status, blocked.ingest_error.reason_code, blocked.ingest_error.limitations, {
+      protocol_version: blocked.protocol_version,
+      participant_scope: PARTICIPANT_SCOPE.TWO_PSEUDONYMOUS,
+    });
   }
   const protocols = sessions.map((session) => session.protocol_version);
   if (protocols.some((protocol) => !protocolsCompatible(protocols[0], protocol))) {
-    return failEnvelope(request.tool, TOOL_STATUS.INCOMPATIBLE, REASON_CODES.INCOMPATIBLE_PROTOCOL, [
+    return failEnvelope(store, request.tool, TOOL_STATUS.INCOMPATIBLE, REASON_CODES.INCOMPATIBLE_PROTOCOL, [
       'Requested sessions use incompatible protocol versions and were not compared.',
     ], {
       protocol_version: protocols[0],
       participant_scope: PARTICIPANT_SCOPE.TWO_PSEUDONYMOUS,
     });
   }
+  if (!visionProvenanceCompatible(sessions)) {
+    return failEnvelope(store, request.tool, TOOL_STATUS.INCOMPATIBLE, REASON_CODES.INCOMPATIBLE_PROTOCOL, [
+      'Requested sessions do not share comparable vision provenance and were not compared.',
+      'Simulated vision is not compared with camera evidence.',
+    ], {
+      protocol_version: protocols[0],
+      participant_scope: PARTICIPANT_SCOPE.TWO_PSEUDONYMOUS,
+    });
+  }
   if (sessions.some((session) => !session.quality.usable)) {
-    return failEnvelope(request.tool, TOOL_STATUS.INSUFFICIENT_DATA, REASON_CODES.INSUFFICIENT_DATA, [
+    return failEnvelope(store, request.tool, TOOL_STATUS.INSUFFICIENT_DATA, REASON_CODES.INSUFFICIENT_DATA, [
       'At least one session is missing usable evidence; no comparison metrics were produced.',
     ], {
       protocol_version: protocols[0],
@@ -207,7 +247,7 @@ function compareSessions(store, request) {
     });
   }
   if (sessions.some((session) => !session.metrics.some((metric) => metric.metric_id === request.metric_id))) {
-    return failEnvelope(request.tool, TOOL_STATUS.INSUFFICIENT_DATA, REASON_CODES.UNKNOWN_METRIC, [
+    return failEnvelope(store, request.tool, TOOL_STATUS.INSUFFICIENT_DATA, REASON_CODES.UNKNOWN_METRIC, [
       `Metric ${request.metric_id} is missing from at least one session.`,
     ], {
       protocol_version: protocols[0],
@@ -217,29 +257,29 @@ function compareSessions(store, request) {
   const catalogRef = store.comparisonRefFor(request.session_refs, request.metric_id);
   const artifact = catalogRef ? store.getArtifact(catalogRef) : null;
   if (!artifact) {
-    return failEnvelope(request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.UNKNOWN_ARTIFACT, [
+    return failEnvelope(store, request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.UNKNOWN_ARTIFACT, [
       'Compatible sessions were found but no immutable comparison artifact is catalogued.',
     ]);
   }
   if (!request.session_refs.every((sessionRef) => artifact.source_session_refs.includes(sessionRef))) {
-    return failEnvelope(request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.SESSION_MISMATCH, [
+    return failEnvelope(store, request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.SESSION_MISMATCH, [
       'The catalogued comparison artifact does not belong to the requested sessions.',
     ]);
   }
   if (artifact.protocol_version !== protocols[0] || !artifactMatchesSessionMetrics(artifact, sessions)) {
-    return failEnvelope(request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.INCONSISTENT_EVIDENCE, [
+    return failEnvelope(store, request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.INCONSISTENT_EVIDENCE, [
       'The catalogued comparison artifact does not match the session metrics or protocol.',
     ]);
   }
-  return okFromArtifact(request.tool, artifact);
+  return okFromArtifact(store, request.tool, artifact);
 }
 
 function getEvidence(store, request) {
   const artifact = store.getArtifact(request.artifact_ref);
   if (artifact) {
-    return okFromArtifact(request.tool, artifact);
+    return okFromArtifact(store, request.tool, artifact);
   }
-  return failEnvelope(request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.UNKNOWN_ARTIFACT, [
+  return failEnvelope(store, request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.UNKNOWN_ARTIFACT, [
     'No immutable evidence artifact exists for the requested artifact_ref.',
   ]);
 }
@@ -252,7 +292,7 @@ export function createAnalysisTools({ store } = {}) {
     invokeCount += 1;
     const validated = validateToolRequest(request);
     if (!validated.ok) {
-      return rejectEnvelope(request && typeof request === 'object' ? request.tool : undefined, validated.message);
+      return rejectEnvelope(catalog, request && typeof request === 'object' ? request.tool : undefined, validated.message);
     }
     if (validated.value.tool === TOOL_NAMES.GET_SESSION_SUMMARY) {
       return getSessionSummary(catalog, validated.value);
@@ -265,13 +305,13 @@ export function createAnalysisTools({ store } = {}) {
 
   return Object.freeze({
     contract_version: CONTRACT_VERSION,
-    analysis_version: ANALYSIS_VERSION,
+    analysis_version: catalogAnalysisVersion(catalog),
     invoke,
     listTools() {
       return ALLOWED_TOOLS.map((name) => ({
         name,
         read_only: true,
-        access: 'synthetic_fixture_catalog',
+        access: catalog.access ?? 'synthetic_fixture_catalog',
       }));
     },
     allowedMetrics() {

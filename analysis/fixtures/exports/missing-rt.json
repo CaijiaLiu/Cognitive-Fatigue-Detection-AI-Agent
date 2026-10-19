@@ -1,0 +1,101 @@
+{
+  "schema_version": "1.0.0",
+  "session_id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+  "started_at": "2026-10-18T19:00:00.000Z",
+  "ended_at": "2026-10-18T19:00:20.000Z",
+  "duration_ms": 20000,
+  "status": "completed",
+  "mode": "behavior",
+  "sources": {
+    "vision": "unavailable",
+    "behavior": "human",
+    "ratings": "self_report"
+  },
+  "consent": {
+    "version": "v1-2026-10-10",
+    "accepted_at": "2026-10-18T19:00:00.000Z"
+  },
+  "fatigue_pre": 3,
+  "fatigue_post": 5,
+  "config": {
+    "protocol": "go-no-go-v1",
+    "planned_duration_ms": 20000,
+    "response_window_ms": 1000,
+    "go_probability": 0.75,
+    "vision_sample_hz": 0,
+    "ear_baseline": null
+  },
+  "calibration": null,
+  "vision_summary": {
+    "blink_count": null,
+    "blink_rate_per_min": null,
+    "closed_time_ms": null,
+    "closed_fraction": null,
+    "valid_tracking_ms": 0,
+    "tracking_coverage": null,
+    "head_motion_deg_per_sec": null,
+    "gaze_position_sd_eye_width": null,
+    "mean_blink_duration_ms": null,
+    "sample_count": 0
+  },
+  "behavior_summary": {
+    "trial_count": 2,
+    "valid_trial_count": 0,
+    "invalid_trial_count": 2,
+    "accuracy": null,
+    "go_accuracy": null,
+    "no_go_accuracy": null,
+    "median_reaction_ms": null,
+    "mean_reaction_ms": null,
+    "reaction_sd_ms": null,
+    "omissions": 0,
+    "false_alarms": 0,
+    "anticipations": 0
+  },
+  "samples": [],
+  "blink_events": [],
+  "trials": [
+    {
+      "index": 0,
+      "type": "go",
+      "onset_ms": 1000,
+      "deadline_ms": 2000,
+      "response_ms": 1020,
+      "reaction_ms": 20,
+      "responded": true,
+      "correct": false,
+      "invalid_reason": "early_start",
+      "source": "human"
+    },
+    {
+      "index": 1,
+      "type": "go",
+      "onset_ms": 2500,
+      "deadline_ms": 3500,
+      "response_ms": null,
+      "reaction_ms": null,
+      "responded": false,
+      "correct": false,
+      "invalid_reason": "timeout_setup",
+      "source": "human"
+    }
+  ],
+  "participant_id": "cccc1111-2222-4333-8444-555566667777",
+  "environment": {
+    "user_agent": "SecretUserAgent/9.9",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "notes": [
+    "SECRET_NOTE_DO_NOT_COPY"
+  ],
+  "events": [
+    {
+      "type": "note",
+      "text": "SECRET_EVENT_DO_NOT_COPY"
+    }
+  ],
+  "withdrawal_token": "SECRET_WITHDRAWAL_TOKEN"
+}

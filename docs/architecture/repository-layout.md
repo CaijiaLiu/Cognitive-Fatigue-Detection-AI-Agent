@@ -55,8 +55,12 @@ The session controller composes explicit task/tracking controllers and owns sess
 | Path | Contents |
 |---|---|
 | analysis/src/neurolens/agent/ | Read-only W1 tool interface, evidence artifacts, structured validators and deterministic fixture catalog |
+| analysis/src/neurolens/adapter/ | Offline V1 JSON export → evidence-artifact store for the same tool interface |
+| analysis/fixtures/exports/ | Synthetic V1-format export fixtures only; not real participant records |
 | tests/agent-tools.test.mjs | Numeric fidelity, missing evidence, protocol mismatch, unsupported-claim and request-rejection tests |
+| tests/analysis-adapter.test.mjs | Export accept/reject, privacy redaction, comparison coverage and tool retrieval tests |
 | docs/architecture/agent-tools.md | Implemented W1 contract and open review questions |
+| docs/architecture/analysis-export-adapter.md | Implemented offline adapter boundary and blocked scientific mappings |
 
 This is deterministic scaffolding over synthetic fixtures. It is not an LLM runtime, not a statistics pipeline, and not scientific validation. Window features, screen-gaze calibration, new task adapters and protocol phases still belong in the existing collection domain folders. Offline statistics/notebooks remain future work under analysis/tests/, analysis/notebooks/ and analysis/configs/ when Step 6 starts. Do not create empty placeholder directories or V1/V2 copies.
 
