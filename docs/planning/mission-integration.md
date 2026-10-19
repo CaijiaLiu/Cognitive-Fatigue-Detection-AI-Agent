@@ -1,6 +1,6 @@
 # Mission preview integration plan
 
-Updated 2026-10-13 Toronto. Source snapshot: [663ed79](https://github.com/CaijiaLiu/Cognitive-Fatigue-Detection-AI-Agent/tree/663ed797841e46cd2bc7779673d52a5120b1b9a3/previews/mission). Canonical runtime base: main 3c3f0aa.
+Updated 2026-10-19. Source snapshot (still latest preview head): [663ed79](https://github.com/CaijiaLiu/Cognitive-Fatigue-Detection-AI-Agent/tree/663ed797841e46cd2bc7779673d52a5120b1b9a3/previews/mission) on `preview/mission-live-camera-v0.3`. Canonical runtime for this work: `develop/neurolens-agent`. W3.0 ports **lifecycle fixes and a provisional adapter** into `public/collection/{tracking,session,features}`; it does not merge the preview tree or claim 1B–1E complete.
 
 ## Scope and already-done work
 
@@ -10,11 +10,16 @@ It does not add facial blendshapes, screen-gaze calibration, thought probes, con
 
 ## 1A — Stabilize before claiming readiness
 
-- In dist/app.js onFeature, compute elapsed and discard captures before task.started. A frame captured before task onset can return asynchronously after start; current code passes the negative difference straight to the accumulator. Test the first frame, delayed frames and the transition between tasks.
-- In dist/tracking.js, implement a standalone calibration deadline. The present 15-second check runs only on result messages; model-ready but stalled inference/video can wait indefinitely. Clear the deadline on ready, failure, stop and generation change.
-- Test stale callbacks, stop/restart, missing frames and dropout. Keep no-face/unknown distinct from open eyes.
+**W3.0 engineering (canonical modules, 2026-10-19):** implemented offline in `public/collection/tracking/lifecycle.js` and `tracking/controller.js`. The preview `dist/app.js` / `dist/tracking.js` files were **not** edited.
 
-These are reviewed code risks awaiting fixes; do not report them as observed real-device failures.
+- Discard frames whose **acquisition** timestamp is before task start or after task end, even if processed later (`pre_task` / `post_task`).
+- Store `acquired_elapsed_ms` and `processed_elapsed_ms` separately; V1 `elapsed_ms` remains acquisition-based session time.
+- Independent 15 s calibration watchdog starts on Worker `ready` and fires with zero inference callbacks. Cleared on calibrated-ready, failure, stop, and generation change. Deadline is exclusive on acquisition time (`>=`); late “enough” frames cannot calibrate.
+- Stale callbacks after stop/restart are rejected (`stale_generation`). Stale `acquire`, `video.play`, track `ended`, and bitmap completions cannot terminate a newer camera generation. Non-finite, future, and out-of-order acquisitions are rejected before accumulator updates.
+- Missingness/dropout stay `tracking_gap` / `no_face`, not open eyes. `noteDropout` records an explicit gap sample.
+- Tests: `tests/collection-mission.test.mjs`. Synthetic only; not real-device proof.
+
+Still pending: browser/camera verification (1B/1E) and preview UI port (1C).
 
 ## 1B — Experience verification
 

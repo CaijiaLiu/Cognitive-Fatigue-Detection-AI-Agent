@@ -1,5 +1,50 @@
 # Implementation status
 
+## W3.0 Mission integration foundation (2026-10-19)
+
+**Status:** Linxi-owned Stage A/B engineering prerequisites implemented on canonical collection modules. Preview snapshot is **not** merged. Real-camera accuracy is **not** claimed. Scientific review remains **Pending / Blocked**.
+
+Implementation branch: `feature/w3-mission-foundation` (Draft PR #18), based on `develop/neurolens-agent` @ `690c05d`. Design: [mission-adapter.md](../architecture/mission-adapter.md). Tests: `tests/collection-mission.test.mjs`.
+
+```text
+W3.0 MISSION FOUNDATION: IMPLEMENTED OFFLINE
+REAL CAMERA VALIDATION: NOT RUN
+MISSION PREVIEW PORT: NOT COMPLETE
+CAIJIA SCIENTIFIC REVIEW: PENDING / BLOCKED
+```
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| Preview vs canonical audit | Done | Latest preview head is still `preview/mission-live-camera-v0.3` @ `663ed79`. No open Caijia PRs. |
+| Pre/post-task frame admission | Implemented | Acquisition timestamp, not processed time. `tracking/lifecycle.js` + `admitResult` |
+| Independent calibration timeout | Hardened | Success requires in-window **acquisition** and still-active **commit** (`completeCalibration` uses the injected clock). Deadline exclusive (`>=`). Watchdog/UI clear only when `ok === true`. EAR min/max and 20-frame/3s gates unchanged. |
+| Timestamp / order integrity | Hardened | `classifyResult` / `noteAdmitted` reject non-finite, future acquisition, and out-of-order frames before accumulator updates |
+| Camera async generation races | Hardened | Stale `acquire`, `video.play`, track `ended`, and `createImageBitmap` completions cannot stop a newer session |
+| Dropout ≠ open eyes | Already present; explicit marker added | `FeatureAccumulator.noteDropout` / `tracking_gap` |
+| Mission adapter | Implemented, provisional | `mission-event/0.1-provisional`; V1 schema unchanged; local-only |
+| PVT / three ratings / preview UI | Not implemented | Caijia-owned; unsigned contracts stay `PENDING_SCIENTIFIC_REVIEW` |
+| Cloud / consent | Unchanged | `sanitizeSession` still requires upload consent and strips `mission` |
+| Real device / Safari | NOT RUN | Synthetic tests only |
+
+**Not changed:** Research Agent W1–W2 contracts, metric identifiers/units, production D1, Sites, OpenAI, `main`, preview snapshot files, Caijia PRs.
+
+**PR #18 review defects fixed (2026-10-19):**
+1. Calibration could succeed after the deadline if 20 valid frames arrived late (`enough` checked before `expired`). Deadline is now exclusive on **acquisition** time; late frames are discarded; `completeCalibration` refuses a closed window.
+2. Invalid / future / out-of-order timestamps could reach `noteAdmitted` and the accumulator. They are now rejected first and do not move `lastAdmittedAcquisition`, blinks, or valid tracking time.
+3. Stale `ended` handlers and async `acquire` / `play` / bitmap completions could call `cameraFailure` on a newer generation or clear `frameBusy` for the live session.
+
+**Checks actually run (2026-10-19, W3.0 review fixes):**
+- `npm test` — 166 passed, 0 failed (23 mission-foundation cases).
+- `npm run test:flow` — PASS (controlled DOM/clock; not a real camera).
+- `npm run test:integration` — 6 passed.
+- `npm run test:reliability` — 7 passed.
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run build` — vinext/Vite production build completed.
+- `tests/integration.mjs` was not run.
+- No live OpenAI call, no remote D1, no Sites publish, no real-camera session.
+
+**Next task:** W3.1 only after review of this Draft PR. Do not merge to `main`. Do not start protocol orchestration until Caijia’s event dictionary is available or a new provisional contract is accepted.
+
 ## Week 2 closeout (2026-10-19)
 
 **Status:** Linxi Week 2 engineering is complete offline on `develop/neurolens-agent`. Live LLM, Cloudflare/Sites preview, remote E2E, and Caijia scientific review are **not** complete. `main` is unchanged.

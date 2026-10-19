@@ -45,3 +45,7 @@ Reviewed source `663ed79` uses `mission-preview-1`, protocol `mission-explorator
 The integrated contract must record task start/end offsets relative to the session clock, task-specific protocol/timing parameters, presentation/feedback settings and source/quality metadata. Preserve original schema identity on imported data. Explicitly distinguish product milestone, protocol, schema and presentation versions: preview v0.3 does not mean V3 modeling is implemented.
 
 Do not silently convert the three preview ratings to V1 pre/post or upload old preview sessions. Old-reader compatibility and a deliberate consented upload path are gates in [mission integration](../planning/mission-integration.md).
+
+## Mission event contract (provisional, local-only)
+
+W3.0 adds `mission-event/0.1-provisional` on local V1 records as `session.mission`. Scientific review: **PENDING_SCIENTIFIC_REVIEW**. It records task start/end offsets and frame-admission events. It does not change `schema_version` `1.0.0`, cloud allowlists, or metric identifiers. Preview `mission-preview-1` remains incompatible and is not rewritten. See [mission-adapter.md](mission-adapter.md).

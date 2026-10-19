@@ -6,4 +6,6 @@ export * from './features/accumulator.js';
 export * from './tasks/summary.js';
 export * from './tracking/simulated.js';
 export * from './session/demo.js';
+export * from './session/mission-adapter.js';
+export * from './tracking/lifecycle.js';
 export * from './reporting/export.js';
