@@ -7,6 +7,7 @@ import { simulatedFeatures } from '../tracking/simulated.js';
 import { createTrackingController } from '../tracking/controller.js';
 import { makeDemo } from './demo.js';
 import { sources, sourceLabel } from './provenance.js';
+import { createMissionAdapter } from './mission-adapter.js';
 import { putSession, allSessions, deleteSession, clearSessions, participantId } from '../persistence/local.js';
 import { uploadSession } from '../persistence/cloud.js';
 import { toCSV, exportRows } from '../reporting/export.js';
@@ -14,7 +15,7 @@ import { format, percent } from '../reporting/format.js';
 import { renderResult as renderDashboard } from '../reporting/dashboard.js';
 import { download } from '../reporting/download.js';
 const $=id=>document.getElementById(id);
-let active=null,awaitingRating=null,selected=null,acc=null;
+let active=null,awaitingRating=null,selected=null,acc=null,mission=null;
 let tickTimer,autoSaveTimer,simulationTimer;
 let sessionStart=0,participant=null,history=[],toastTimer,storageFailed=false,saving=false;
 const status=(text,error=false)=>{ $('tracking-status').textContent=text;$('tracking-status').classList.toggle('error',error); };
@@ -54,6 +55,10 @@ async function start(){
   try {participant ||= participantId();}catch {participant ||= crypto.randomUUID();toast('匿名 ID 无法跨刷新保存；本次仍使用临时匿名 ID。',true);}
   const mode=$('mode').value,planned=Number($('duration').value)*1000;
   sessionStart=performance.now();acc=new FeatureAccumulator(mode==='camera'?tracking.baseline:.3);task.reset();
+  mission=createMissionAdapter({now:()=>performance.now()});
+  mission.beginSession({mode,startedAt:sessionStart});
+  mission.beginTask({kind:'go-no-go',protocol_id:'go-no-go-v1',startedAt:sessionStart});
+  mission.markResources({timers:1,listeners:1,tracking:mode==='camera'});
   active={schema_version:SCHEMA_VERSION,session_id:crypto.randomUUID(),participant_id:participant,started_at:new Date().toISOString(),ended_at:null,duration_ms:0,status:'in_progress',mode,sources:sources(mode),consent:{version:CONSENT_VERSION,accepted_at:new Date().toISOString()},fatigue_pre:Number($('pre').value),fatigue_post:null,config:{protocol:'go-no-go-v1',planned_duration_ms:planned,response_window_ms:1000,inter_trial_ms:[600,1300],go_probability:.75,vision_sample_hz:mode==='behavior'?0:10,ear_baseline:acc.baseline,close_ratio:.65,open_ratio:.8,blink_range_ms:[80,800],max_gap_ms:250,timing:'performance.now / animation-frame estimated stimulus onset'},calibration:mode==='camera'?{source:'camera',ear_baseline:tracking.baseline,frame_count:tracking.calibrationFrames.length,frame_width:$('video').videoWidth,frame_height:$('video').videoHeight}:mode==='simulated'?{source:'simulated',ear_baseline:.3}:null,environment:{user_agent:navigator.userAgent,viewport:{width:innerWidth,height:innerHeight},device_pixel_ratio:devicePixelRatio},trials:[],events:[],notes:['Research feature collection; no diagnostic or prediction score.','Browser stimulus onset and input timing are estimates, not laboratory timing.']};
   if(mode==='simulated')active.notes.push('Visual features are synthetic; behavior and fatigue ratings are human data.');
   $('task-panel').hidden=false;$('post-panel').hidden=true;$('task-source').textContent=sourceLabel(active);$('task-source').classList.toggle('simulated',mode==='simulated');
@@ -77,8 +82,9 @@ function finish(state,reason){
   clearTaskTimers();task.close('session_ended_before_deadline');
   const duration=performance.now()-sessionStart;
   active.events.push({type:state,elapsed_ms:duration,reason});
+  if(mission){mission.endTask({reason:state});mission.endSession();mission.cleanup();mission.attachLocalMetadata(active);}
   const result={...snapshot(active),duration_ms:duration,status:state,ended_at:new Date().toISOString()};
-  active=null;awaitingRating=result;tracking.stop();$('upload-consent').checked=false;
+  active=null;mission=null;awaitingRating=result;tracking.stop();$('upload-consent').checked=false;
   $('task-panel').hidden=true;$('post-panel').hidden=false;$('post').value=$('pre').value;$('post-value').textContent=`${$('post').value} / 10`;$('end-reason').textContent=reason;
   setStage(3);updateSetup();renderResult(result);persist(result).then(()=>refreshHistory());
   if(document.visibilityState==='visible')$('post-panel').scrollIntoView({behavior:'smooth',block:'center'});
@@ -97,7 +103,7 @@ async function save(){
 async function discard(){
   const s=active||awaitingRating;if(!s)return;
   if(!confirm('撤回并丢弃本次会话？本次记录将从本地删除。'))return;
-  clearTaskTimers();active=null;awaitingRating=null;task.discard();tracking.stop();$('task-panel').hidden=true;$('post-panel').hidden=true;
+  clearTaskTimers();mission?.cleanup();active=null;mission=null;awaitingRating=null;task.discard();tracking.stop();$('task-panel').hidden=true;$('post-panel').hidden=true;
   try {await deleteSession(s.session_id);}catch {toast('删除失败。请关闭其他页面后重试。',true);return;}
   if(selected?.session_id===s.session_id){selected=null;$('result').hidden=true;$('empty-result').hidden=false;$('result-badge').textContent='等待数据';}
   setStage(1);updateSetup();await refreshHistory();toast('本次会话已删除；摄像头已关闭。');
@@ -121,7 +127,7 @@ async function refreshHistory(){
   }
   $('delete-all').disabled=!!active||!!awaitingRating;
 }
-const tracking=createTrackingController({$,status,updateSetup,getActive:()=>active,getSessionStart:()=>sessionStart,finish,updateLive,getAccumulator:()=>acc,getAwaitingRating:()=>awaitingRating});
+const tracking=createTrackingController({$,status,updateSetup,getActive:()=>active,getSessionStart:()=>sessionStart,getTaskWindow:()=>mission?.currentWindow()??null,onRejectedFrame:decision=>mission?.rejectFrame(decision),onDropout:info=>mission?.recordDropout(info),finish,updateLive,getAccumulator:()=>acc,getAwaitingRating:()=>awaitingRating});
 const task=createGoNoGoTask({getSession:()=>active,getElapsed:()=>performance.now()-sessionStart,shape:$('shape'),stimulus:$('stimulus')});
 $('consent').addEventListener('change',()=>{if(!$('consent').checked){tracking.stop();status('等待知情同意。');}else status('可以启用摄像头，或选择模拟视觉 / 仅任务模式。');updateSetup();});
 $('mode').addEventListener('change',()=>{tracking.stop();status($('mode').value==='simulated'?'模拟眼部特征将明确标记；任务表现仍由你实际完成。':$('mode').value==='behavior'?'仅记录任务表现与自评。':'请启用摄像头并完成校准。');updateSetup();});

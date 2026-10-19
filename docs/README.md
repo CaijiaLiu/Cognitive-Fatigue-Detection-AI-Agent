@@ -23,6 +23,7 @@ NeuroLens is the target research platform; Focus Lab is the existing V1 collecti
 | Sites deployment path | [Sites deployment](architecture/sites-deployment.md) |
 | Future paid-provider gates | [LLM future enablement](architecture/agent-llm-future-enablement.md) |
 | Mission preview stabilization and integration | [Mission integration](planning/mission-integration.md) |
+| Provisional mission event adapter | [Mission adapter](architecture/mission-adapter.md) |
 | Ordered implementation steps and release gates | [Roadmap](planning/roadmap.md) |
 | Audited implementation status | [Status](planning/implementation-status.md) |
 | Week 2 engineering closeout (offline) | [Week 2 completion](planning/week2-completion.md) |

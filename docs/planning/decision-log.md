@@ -4,6 +4,12 @@ This file is the durable record of **accepted project decisions**, not a specula
 
 ## Accepted decisions — 2026-10-19
 
+### DEC-012: Mission foundation uses a provisional local event contract
+**Accepted.** W3.0 lifecycle fixes and the mission adapter live in canonical `public/collection` modules. The event contract is `mission-event/0.1-provisional` and is **PENDING_SCIENTIFIC_REVIEW**. It does not change V1 `schema_version` `1.0.0`, upload consent, cloud allowlists, PVT/Go-No-Go science, or metric identifiers. Preview snapshot code is not merged as a second tracking engine.
+
+**Reason:** Stage A/B timing defects must be fixed before protocol orchestration, but Caijia owns unsigned scientific definitions.
+**Implementation implications:** Keep `session.mission` local-only (`upload_eligible: false`). Readers must not coerce `mission-preview-1` into V1. Do not start W3.1 protocol orchestration from this decision alone.
+
 ### DEC-011: Sites preview is prepared, not published, until Caijia local testing finishes
 **Accepted.** Sequence: Caijia local testing → fix reported issues → Sites Preview → later OpenAI. W2.9A documents the Sites path and adds offline `deploy:preflight`. Agents do not create D1, set remote secrets, publish, or perform Caijia's UI/science tests. There is no in-repo `wrangler deploy`.
 

@@ -1,7 +1,8 @@
 import { mean, sd } from '../shared/statistics.js';
 export class FeatureAccumulator {
   constructor(baseline=.3) { this.baseline=baseline; this.samples=[]; this.blinks=[]; this.previous=null; this.closedStart=null; this.validMs=0; this.closedMs=0; this.headTravel=0; this.headMs=0; this.gaze=[]; }
-  add(time, f, source='camera') {
+  add(time, f, source='camera', timing=null) {
+    if (!Number.isFinite(time) || time < 0) return null;
     const valid=f.face_present && Number.isFinite(f.ear);
     const dt=this.previous ? time-this.previous.time : 0;
     const continuous=dt>0&&dt<=250&&this.previous?.valid&&valid;
@@ -30,8 +31,18 @@ export class FeatureAccumulator {
     }
     this.gaze=this.gaze.filter(g=>g.time>=time-5000);
     const sample={elapsed_ms:time,source,face_present:!!f.face_present,eye_aspect_ratio:valid?f.ear:null,eyes_closed:valid?closed:null,gaze_x:valid&&!closed?f.gaze_x:null,gaze_y:valid&&!closed?f.gaze_y:null,head_rotation:f.rotation||null,quality:!f.face_present?'no_face':!valid?'eyes_unavailable':gap?'tracking_gap':closed?'closed_eyes':'valid'};
+    if (timing && Number.isFinite(timing.acquired_elapsed_ms)) sample.acquired_elapsed_ms = timing.acquired_elapsed_ms;
+    if (timing && Number.isFinite(timing.processed_elapsed_ms)) sample.processed_elapsed_ms = timing.processed_elapsed_ms;
     this.samples.push(sample);
     this.previous={time,valid,closed,rotation:f.rotation};
+    return sample;
+  }
+  noteDropout(time, source='camera') {
+    if (!Number.isFinite(time) || time < 0) return null;
+    this.closedStart=null;
+    const sample={elapsed_ms:time,source,face_present:false,eye_aspect_ratio:null,eyes_closed:null,gaze_x:null,gaze_y:null,head_rotation:null,quality:'tracking_gap'};
+    this.samples.push(sample);
+    this.previous={time,valid:false,closed:false,rotation:null};
     return sample;
   }
   summary(durationMs) {
