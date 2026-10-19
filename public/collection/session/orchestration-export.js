@@ -4,6 +4,7 @@ import {
   ORCHESTRATION_CONTRACT_ID,
   PROTOCOL_CONTRACT_ID,
   RESEARCH_EVENT_CONTRACT_ID,
+  V1_GO_NO_GO_PROTOCOL,
   defineProtocol
 } from './protocol.js';
 import { createSessionOrchestrator } from './orchestrate.js';
@@ -183,9 +184,52 @@ export function readSessionArtifact(session) {
   };
 }
 
+const TIMELINE_FIELDS = Object.freeze([
+  'contract_id',
+  'contract_version',
+  'session_id',
+  'task_id',
+  'type',
+  'session_elapsed_ms',
+  'task_elapsed_ms',
+  'acquired_elapsed_ms',
+  'processed_elapsed_ms',
+  'source',
+  'quality',
+  'missingness'
+]);
+
+export function acceptedTimeline(events) {
+  return (events || []).map((event) => Object.fromEntries(
+    TIMELINE_FIELDS.map((key) => [key, event?.[key] ?? null])
+  ));
+}
+
+function failReplay(orch, reason, event = null) {
+  orch.replay = {
+    ...ORCHESTRATION_REPLAY_CONTRACT,
+    ok: false,
+    reason,
+    failed_event: event?.type || null
+  };
+  return orch;
+}
+
 export function replayOrchestration(artifact, { protocol = null } = {}) {
   const snap = artifact.orchestration || artifact;
-  const resolved = protocol || defineProtocol(snap.protocol);
+  let resolved = protocol;
+  if (!resolved) {
+    try {
+      resolved = defineProtocol(snap.protocol);
+    } catch {
+      const failed = createSessionOrchestrator({
+        protocol: V1_GO_NO_GO_PROTOCOL,
+        session_id: snap.session_id || 'invalid-replay',
+        mode: snap.mode || 'simulated'
+      });
+      return failReplay(failed, 'invalid_protocol');
+    }
+  }
   let now = 0;
   const orch = createSessionOrchestrator({
     now: () => now,
@@ -193,45 +237,45 @@ export function replayOrchestration(artifact, { protocol = null } = {}) {
     session_id: snap.session_id,
     mode: snap.mode
   });
-  for (const event of snap.events || []) {
-    if (event.type === 'resources_cleared') continue;
+  const events = snap.events;
+  if (events != null && !Array.isArray(events)) {
+    return failReplay(orch, 'malformed_timeline');
+  }
+  for (const event of events || []) {
+    if (event.type === 'resources_cleared') {
+      if (orch.state !== 'completed' && orch.state !== 'interrupted' && orch.state !== 'failed') {
+        return failReplay(orch, 'unexpected_resources_cleared', event);
+      }
+      continue;
+    }
     const elapsed = Number.isFinite(event.session_elapsed_ms) ? event.session_elapsed_ms : 0;
     const processed = Number.isFinite(event.processed_elapsed_ms) ? event.processed_elapsed_ms : elapsed;
     now = processed;
+    let result;
     if (event.type === 'session_ready') {
-      orch.prepare(now);
-      continue;
-    }
-    if (event.type === 'session_started') {
+      result = orch.prepare(now);
+    } else if (event.type === 'session_started') {
       now = 0;
-      orch.startSession({ startedAt: 0 });
-      continue;
+      result = orch.startSession({ startedAt: 0 });
+    } else if (event.type === 'task_started') {
+      result = orch.startTask(event.task_id, { startedAt: elapsed });
+    } else if (event.type === 'task_ended') {
+      result = orch.endTask(event.task_id, { reason: event.reason || 'completed', endedAt: elapsed });
+    } else if (event.type === 'observation' || event.type === 'dropout') {
+      result = orch.importTimelineEvent(event);
+    } else if (event.type === 'session_completed') {
+      result = orch.completeSession({ endedAt: elapsed });
+    } else if (event.type === 'session_interrupted') {
+      result = orch.interrupt({ reason: event.reason || 'interrupted', endedAt: elapsed });
+    } else if (event.type === 'session_failed') {
+      result = orch.fail({ reason: event.reason || 'failed', endedAt: elapsed });
+    } else {
+      return failReplay(orch, 'unsupported_replay_event', event);
     }
-    if (event.type === 'task_started') {
-      orch.startTask(event.task_id, { startedAt: elapsed });
-      continue;
-    }
-    if (event.type === 'task_ended') {
-      orch.endTask(event.task_id, { reason: event.reason || 'completed', endedAt: elapsed });
-      continue;
-    }
-    if (event.type === 'observation' || event.type === 'dropout') {
-      orch.importTimelineEvent(event);
-      continue;
-    }
-    if (event.type === 'session_completed') {
-      orch.completeSession({ endedAt: elapsed });
-      continue;
-    }
-    if (event.type === 'session_interrupted') {
-      orch.interrupt({ reason: event.reason || 'interrupted', endedAt: elapsed });
-      continue;
-    }
-    if (event.type === 'session_failed') {
-      orch.fail({ reason: event.reason || 'failed', endedAt: elapsed });
-      continue;
+    if (!result || result.ok !== true) {
+      return failReplay(orch, result?.reason || 'replay_failed', event);
     }
   }
-  orch.replay = ORCHESTRATION_REPLAY_CONTRACT;
+  orch.replay = { ...ORCHESTRATION_REPLAY_CONTRACT, ok: true };
   return orch;
 }

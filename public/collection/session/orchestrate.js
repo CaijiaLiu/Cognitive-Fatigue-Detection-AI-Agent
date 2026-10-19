@@ -3,6 +3,7 @@ import { createMissionAdapter } from './mission-adapter.js';
 import {
   ORCHESTRATION_CONTRACT_ID,
   RESEARCH_EVENT_CONTRACT_ID,
+  RESEARCH_EVENT_CONTRACT_VERSION,
   V1_GO_NO_GO_PROTOCOL,
   validateResearchEvent,
   visionSourceFromMode
@@ -81,7 +82,7 @@ export function createSessionOrchestrator({
     const task = currentTask();
     const event = {
       contract_id: RESEARCH_EVENT_CONTRACT_ID,
-      contract_version: '0.1.0',
+      contract_version: RESEARCH_EVENT_CONTRACT_VERSION,
       scientific_review: protocol.scientific_review,
       protocol_id: protocol.protocol_id,
       protocol_version: protocol.protocol_version,
@@ -295,10 +296,16 @@ export function createSessionOrchestrator({
     return commitEvent(preview);
   }
 
-  function importTimelineEvent(event) {
-    if (!event || typeof event !== 'object') return rejectEvent('invalid_event_contract', { type: 'import' });
-    const preview = previewEvent(event.type, {
+  function copyTimelineEvent(event) {
+    const copied = {
+      contract_id: event.contract_id,
+      contract_version: event.contract_version,
+      scientific_review: event.scientific_review,
+      protocol_id: event.protocol_id,
+      protocol_version: event.protocol_version,
+      session_id: event.session_id,
       task_id: event.task_id,
+      type: event.type,
       session_elapsed_ms: event.session_elapsed_ms,
       task_elapsed_ms: event.task_elapsed_ms,
       acquired_elapsed_ms: event.acquired_elapsed_ms,
@@ -306,13 +313,61 @@ export function createSessionOrchestrator({
       source: event.source,
       quality: event.quality,
       missingness: event.missingness,
-      ...('reason' in event ? { reason: event.reason } : {})
-    }, sessionStart == null ? clock() : sessionStart + (event.processed_elapsed_ms ?? event.session_elapsed_ms ?? 0));
-    if (!preview.ok) return rejectPreview(preview);
-    if (event.type === 'observation' && finite(event.acquired_elapsed_ms) && sessionStart != null) {
-      lastAcquisition = sessionStart + event.acquired_elapsed_ms;
+      local_only: event.local_only,
+      upload_eligible: event.upload_eligible
+    };
+    if ('reason' in event) copied.reason = event.reason;
+    return copied;
+  }
+
+  function importTimelineEvent(event) {
+    if (!event || typeof event !== 'object') {
+      return rejectEvent('invalid_event_contract', { type: 'import' });
     }
-    return commitEvent(preview);
+    if (event.session_id !== session_id) {
+      return rejectEvent('session_mismatch', { type: event.type, session_id: event.session_id });
+    }
+    if (event.contract_id !== RESEARCH_EVENT_CONTRACT_ID) {
+      return rejectEvent('invalid_event_contract', { type: event.type });
+    }
+    if (event.contract_version !== RESEARCH_EVENT_CONTRACT_VERSION) {
+      return rejectEvent('invalid_event_version', { type: event.type });
+    }
+    if (event.task_id != null && !taskIndex.has(event.task_id)) {
+      return rejectEvent('task_membership', { type: event.type, task_id: event.task_id });
+    }
+    if (event.type === 'observation') {
+      if (TERMINAL.has(state)) return rejectEvent('session_closed', { type: event.type });
+      if (state !== 'running' || !currentTaskId) return rejectEvent('no_active_task', { type: event.type });
+      if (event.task_id !== currentTaskId) {
+        return rejectEvent('task_membership', { type: event.type, task_id: event.task_id, active: currentTaskId });
+      }
+    }
+    if (event.type === 'dropout') {
+      if (TERMINAL.has(state)) return rejectEvent('session_closed', { type: event.type });
+      if (sessionStart == null) return rejectEvent('session_not_started', { type: event.type });
+      if (event.task_id !== currentTaskId) {
+        return rejectEvent('task_membership', { type: event.type, task_id: event.task_id, active: currentTaskId });
+      }
+    }
+    const copied = copyTimelineEvent(event);
+    const valid = validateResearchEvent(copied, { taskIds: taskIndex });
+    if (!valid.ok) return rejectEvent(valid.reason, { type: event.type });
+    if (copied.session_elapsed_ms != null && lastSessionElapsed != null && copied.session_elapsed_ms < lastSessionElapsed) {
+      return rejectEvent('out_of_order', { type: event.type, session_elapsed_ms: copied.session_elapsed_ms });
+    }
+    if (copied.type === 'observation' && finite(copied.acquired_elapsed_ms) && sessionStart != null) {
+      const acquisitionTs = sessionStart + copied.acquired_elapsed_ms;
+      if (lastAcquisition != null && acquisitionTs <= lastAcquisition) {
+        return rejectEvent('out_of_order', { type: event.type, session_elapsed_ms: copied.session_elapsed_ms });
+      }
+    }
+    events.push(copied);
+    if (copied.session_elapsed_ms != null) lastSessionElapsed = copied.session_elapsed_ms;
+    if (copied.type === 'observation' && finite(copied.acquired_elapsed_ms) && sessionStart != null) {
+      lastAcquisition = sessionStart + copied.acquired_elapsed_ms;
+    }
+    return { ok: true, event: copied, state };
   }
 
   function cleanup(ts = clock()) {

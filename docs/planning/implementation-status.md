@@ -30,8 +30,17 @@ W4 DATASET INGEST: NOT IMPLEMENTED
 **PR #19 review fixes (2026-10-19):**
 1. Orchestrator operations preview the candidate event and only then mutate state, tasks, clocks, accumulator, mission adapter, and the accepted timeline.
 2. Replay is event-only. It no longer regenerates observations with default facial features or claims summary equivalence.
+3. `importTimelineEvent` copies stored timeline fields, validates session/contract/task boundaries, and does not rewrite acquisition timestamps. Replay fails closed on a corrupted timeline instead of skipping a failed import.
 
-**Checks actually run (2026-10-19, W3.1 review fixes):** recorded after the verification suite in this update.
+**Checks actually run (2026-10-19, W3.1 replay integrity review):**
+- `npm test` — recorded after the verification suite.
+- `npm run test:flow` — PASS (controlled DOM/clock; not a real camera).
+- `npm run test:integration` — 6 passed.
+- `npm run test:reliability` — 7 passed.
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run build` — vinext/Vite production build completed.
+- `tests/integration.mjs` was not run.
+- No live OpenAI call, no remote D1, no Sites publish, no real-camera session.
 
 **Next task:** Stop after W3.1 review fixes. Do not merge to `main`. Do not start W3.2.
 

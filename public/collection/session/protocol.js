@@ -1,6 +1,7 @@
 export const PROTOCOL_CONTRACT_ID = 'research-protocol/0.1-provisional';
 export const ORCHESTRATION_CONTRACT_ID = 'research-session/0.1-provisional';
 export const RESEARCH_EVENT_CONTRACT_ID = 'research-event/0.1-provisional';
+export const RESEARCH_EVENT_CONTRACT_VERSION = '0.1.0';
 
 const VISION_SOURCES = new Set(['camera', 'simulated', 'unavailable', 'optional']);
 const BEHAVIOR_SOURCES = new Set(['human', 'optional']);
@@ -128,6 +129,9 @@ export function visionSourceFromMode(mode) {
 export function validateResearchEvent(event, { taskIds = null } = {}) {
   if (!event || event.contract_id !== RESEARCH_EVENT_CONTRACT_ID) {
     return { ok: false, reason: 'invalid_event_contract' };
+  }
+  if (event.contract_version !== RESEARCH_EVENT_CONTRACT_VERSION) {
+    return { ok: false, reason: 'invalid_event_version' };
   }
   if (typeof event.type !== 'string' || !event.type.trim()) {
     return { ok: false, reason: 'invalid_event_type' };

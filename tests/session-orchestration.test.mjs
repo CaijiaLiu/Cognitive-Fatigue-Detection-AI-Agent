@@ -24,6 +24,7 @@ import {
   readOrchestrationSidecar,
   serializeOrchestration,
   replayOrchestration,
+  acceptedTimeline,
   stableStringify
 } from '../public/collection/session/orchestration-export.js';
 
@@ -400,11 +401,9 @@ test('13. deterministic replay and serialization', () => {
   const second = serializeOrchestration(orch);
   assert.equal(stableStringify(first), stableStringify(second));
   const replayed = replayOrchestration(first);
+  assert.equal(replayed.replay.ok, true);
   assert.equal(replayed.state, 'completed');
-  assert.deepEqual(
-    replayed.events().map((event) => [event.type, event.session_elapsed_ms, event.task_id, event.source]),
-    orch.events().map((event) => [event.type, event.session_elapsed_ms, event.task_id, event.source])
-  );
+  assert.deepEqual(acceptedTimeline(replayed.events()), acceptedTimeline(orch.events()));
   assert.equal(stableStringify(serializeOrchestration(replayed).orchestration.events), stableStringify(first.orchestration.events));
   assert.equal(first.upload_eligible, false);
   assert.equal(first.schema_version, '1.0.0');
@@ -545,13 +544,11 @@ test('event-only replay does not fabricate measurement fidelity', () => {
   assert.equal(original.closed_time_ms > 0, true);
 
   const replayed = replayOrchestration(serializeOrchestration(orch));
+  assert.equal(replayed.replay.ok, true);
   assert.equal(replayed.replay.kind, ORCHESTRATION_REPLAY_CONTRACT.kind);
   assert.equal(replayed.replay.measurement_fidelity, false);
   assert.equal(replayed.state, 'completed');
-  assert.deepEqual(
-    replayed.events().map((event) => [event.type, event.session_elapsed_ms, event.quality]),
-    orch.events().map((event) => [event.type, event.session_elapsed_ms, event.quality])
-  );
+  assert.deepEqual(acceptedTimeline(replayed.events()), acceptedTimeline(orch.events()));
   assert.equal(replayed.accumulator.samples.length, 0);
   assert.equal(replayed.snapshot().vision_summary.sample_count, 0);
   assert.equal(replayed.snapshot().vision_summary.closed_time_ms, 0);
@@ -608,4 +605,105 @@ test('W4 artifact reader rejects malformed sidecars and unsupported contracts', 
   const sidecar = readOrchestrationSidecar({ contract_id: ORCHESTRATION_CONTRACT_ID, contract_version: '0.1.0', events: [] });
   assert.equal(sidecar.ok, true);
   assert.equal(W4_SESSION_ADAPTER_CONTRACT.replay.measurement_fidelity, false);
+});
+
+test('late-processed observations keep acquisition timestamps on event-only replay', () => {
+  const clock = createClock(0);
+  const orch = createSessionOrchestrator({
+    now: clock.now,
+    protocol: PROVISIONAL_SEQUENCE_PROTOCOL,
+    session_id: 'late-processed',
+    mode: 'camera'
+  });
+  orch.prepare();
+  orch.startSession({ startedAt: 0 });
+  orch.startTask('slot-a', { startedAt: 0 });
+  const first = orch.recordObservation({
+    acquisitionTs: 100,
+    processedTs: clock.set(400),
+    source: 'camera',
+    quality: 'valid',
+    features: openFace(0.28)
+  });
+  const second = orch.recordObservation({
+    acquisitionTs: 250,
+    processedTs: clock.set(450),
+    source: 'camera',
+    quality: 'closed_eyes',
+    features: openFace(0.05)
+  });
+  assert.equal(first.ok, true);
+  assert.equal(second.ok, true);
+  assert.equal(second.event.acquired_elapsed_ms < first.event.processed_elapsed_ms, true);
+  assert.equal(first.event.session_elapsed_ms, 100);
+  assert.equal(second.event.session_elapsed_ms, 250);
+  assert.equal(second.event.acquired_elapsed_ms, 250);
+  assert.equal(second.event.processed_elapsed_ms, 450);
+  assert.equal(second.event.quality, 'closed_eyes');
+  orch.endTask('slot-a', { endedAt: clock.set(500) });
+  orch.startTask('slot-b', { startedAt: clock.set(600) });
+  orch.recordDropout({ at: clock.set(650), source: 'camera' });
+  orch.endTask('slot-b', { endedAt: clock.set(700) });
+  orch.completeSession({ endedAt: clock.set(800) });
+
+  const replayed = replayOrchestration(serializeOrchestration(orch));
+  assert.equal(replayed.replay.ok, true);
+  assert.equal(replayed.replay.measurement_fidelity, false);
+  assert.deepEqual(acceptedTimeline(replayed.events()), acceptedTimeline(orch.events()));
+  const replayedSecond = replayed.events().find((event) => event.type === 'observation' && event.acquired_elapsed_ms === 250);
+  assert.equal(replayedSecond.session_elapsed_ms, 250);
+  assert.equal(replayedSecond.acquired_elapsed_ms, 250);
+  assert.equal(replayedSecond.processed_elapsed_ms, 450);
+  assert.equal(replayedSecond.quality, 'closed_eyes');
+  assert.equal(replayedSecond.source, 'camera');
+  assert.equal(replayedSecond.session_id, 'late-processed');
+  assert.notEqual(replayed.snapshot().vision_summary.sample_count, orch.snapshot().vision_summary.sample_count);
+});
+
+test('corrupted timelines fail replay instead of skipping imports', () => {
+  const { orch } = runTwoSlotSession('simulated', 0);
+  const artifact = serializeOrchestration(orch);
+  const observation = artifact.orchestration.events.find((event) => event.type === 'observation');
+
+  const wrongSession = structuredClone(artifact);
+  wrongSession.orchestration.events.find((event) => event.type === 'observation').session_id = 'other-session';
+  const sessionMismatch = replayOrchestration(wrongSession);
+  assert.equal(sessionMismatch.replay.ok, false);
+  assert.equal(sessionMismatch.replay.reason, 'session_mismatch');
+  assert.equal(sessionMismatch.state, 'running');
+  assert.equal(sessionMismatch.events().some((event) => event.type === 'session_completed'), false);
+
+  const wrongContract = structuredClone(artifact);
+  wrongContract.orchestration.events.find((event) => event.type === 'observation').contract_id = 'research-event/9.0';
+  assert.equal(replayOrchestration(wrongContract).replay.reason, 'invalid_event_contract');
+
+  const wrongVersion = structuredClone(artifact);
+  wrongVersion.orchestration.events.find((event) => event.type === 'observation').contract_version = '9.0.0';
+  assert.equal(replayOrchestration(wrongVersion).replay.reason, 'invalid_event_version');
+
+  const wrongTask = structuredClone(artifact);
+  wrongTask.orchestration.events.find((event) => event.type === 'observation').task_id = 'slot-b';
+  const membership = replayOrchestration(wrongTask);
+  assert.equal(membership.replay.reason, 'task_membership');
+  assert.equal(membership.currentTaskId(), 'slot-a');
+
+  const afterEnd = structuredClone(artifact);
+  const endedIndex = afterEnd.orchestration.events.findIndex((event) => event.type === 'task_ended');
+  afterEnd.orchestration.events.splice(endedIndex + 1, 0, {
+    ...observation,
+    session_elapsed_ms: 410,
+    acquired_elapsed_ms: 410,
+    processed_elapsed_ms: 420,
+    task_id: 'slot-a'
+  });
+  assert.equal(replayOrchestration(afterEnd).replay.reason, 'no_active_task');
+
+  const unknownType = structuredClone(artifact);
+  unknownType.orchestration.events.splice(2, 0, { ...observation, type: 'fabricated_metric' });
+  assert.equal(replayOrchestration(unknownType).replay.reason, 'unsupported_replay_event');
+
+  const importRejected = orch.importTimelineEvent(orch.events().find((event) => event.type === 'observation'));
+  assert.equal(importRejected.ok, false);
+  assert.equal(importRejected.reason, 'session_closed');
+  assert.equal(orch.events().at(-1).type, 'resources_cleared');
 });

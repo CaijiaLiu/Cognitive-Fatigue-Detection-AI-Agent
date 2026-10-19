@@ -59,11 +59,15 @@ Each accepted event records session id, optional task id, type, session-relative
 
 `replayOrchestration` is **event-only**. It reconstructs session state, task membership, and the accepted timeline. It does **not** call `recordObservation` with default facial features and does **not** claim `FeatureAccumulator` or blink/closure fidelity.
 
+`importTimelineEvent` copies accepted timeline fields as stored. It validates session id, event contract id/version, task membership, and active-task boundaries before any mutation. It does not rewrite acquisition timestamps or fill missing source/quality/missingness from the current mode. An observation may have been acquired before a previous event's processing time and still be accepted if acquisition order is monotonic.
+
+Corrupted timelines fail closed (`replay.ok === false` plus a reason). Replay does not skip a failed import and continue.
+
 | Guarantees | Does not guarantee |
 |---|---|
 | Terminal state and task start/end order | Reconstructed EAR / facial features |
-| Event types, sources, quality/missingness flags | Blink, closed-time, or coverage summaries |
-| Session-relative and acquisition/processing timestamps | Scientific measurement equivalence |
+| Event types, ids, sources, quality/missingness flags | Blink, closed-time, or coverage summaries |
+| Stored session-relative and acquisition/processing timestamps | Scientific measurement equivalence |
 
 `measurement_fidelity` is always `false` in this phase. Full measurement replay would require stored input features and is deferred so we do not invent samples or change privacy/science contracts.
 
