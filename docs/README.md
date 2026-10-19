@@ -13,6 +13,7 @@ NeuroLens is the target research platform; Focus Lab is the existing V1 collecti
 | Manual LLM evaluation harness | [Agent eval](architecture/agent-eval.md) |
 | Offline export → agent integration | [Analysis integration](architecture/analysis-integration.md) |
 | Research Agent reliability / adversarial tests | [Agent reliability](architecture/agent-reliability.md) |
+| Research Agent runtime / mock provider | [Agent runtime](architecture/agent-runtime.md) |
 | Mission preview stabilization and integration | [Mission integration](planning/mission-integration.md) |
 | Ordered implementation steps and release gates | [Roadmap](planning/roadmap.md) |
 | Audited implementation status | [Status](planning/implementation-status.md) |

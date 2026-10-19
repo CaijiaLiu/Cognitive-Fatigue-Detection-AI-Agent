@@ -73,6 +73,8 @@ export const REASON_CODES = Object.freeze({
   SESSION_MISMATCH: 'session_mismatch',
   INCONSISTENT_EVIDENCE: 'inconsistent_evidence',
   UNSUPPORTED_SCHEMA: 'unsupported_schema',
+  PROVIDER_TIMEOUT: 'provider_timeout',
+  PROVIDER_UNAVAILABLE: 'provider_unavailable',
 });
 
 export const SYNTHETIC_LIMIT = 'Synthetic fixture; not a fatigue diagnosis and not empirical evidence.';

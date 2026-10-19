@@ -1,5 +1,40 @@
 # Implementation status
 
+## W2.1 Research Agent runtime and orchestration (2026-10-19)
+
+**Status:** Implemented and verified with a deterministic mock provider. Engineering runtime only. Not a hosted LLM, not scientifically validated, not deployed.
+
+Implementation branch: `cursor/w2-runtime-4e29`, based on W1.7 `cursor/w1-reliability-4e29` @ `181f305` (PR #7). Source: `analysis/src/neurolens/runtime/`. Tests: `tests/agent-runtime.test.mjs`. Design: [agent-runtime.md](../architecture/agent-runtime.md).
+
+The runtime reuses the existing export adapter, evidence store, read-only tools, prompt builder, and `validateAgentAnswer`. Provider output is never returned until it passes the validator. Unvalidated claims are replaced with a contract-compliant abstention.
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| Provider interface + mock | Implemented | `createMockProvider` scripted / timeout / unavailable; no keys or network |
+| Orchestrated ask() | Implemented | question + intent + session_scope → tools → prompt → provider → validator |
+| Fail-closed provider errors | Implemented | `provider_timeout` and `provider_unavailable` are distinct from `insufficient_data` |
+| Fail-closed validation | Implemented | malformed JSON, fabricated values, foreign citations discarded |
+| Evidence short-circuit | Implemented | missing / incompatible / unknown / unsupported intents skip the provider |
+| Scope lock | Implemented | intent sessions must be ⊆ session_scope; paths/URLs rejected |
+| Audit trail | Implemented | `agent-runtime-audit/0.1` without raw prompts or model bodies |
+| Real LLM provider | Out of scope | Interface only; no paid API dependency |
+| Scientific metric review | Blocked | Pending Caijia review; unchanged |
+
+**Not changed:** collection, consent, production D1, camera, deployment, metric identifiers, units, protocol compatibility, or Caijia review items.
+
+**Checks actually run (2026-10-19, W2.1):**
+- `npm test` — 86 passed, 0 failed (11 agent-eval + 7 agent-reliability + 14 agent-runtime + 23 agent-tools + 16 analysis-adapter + 6 analysis-integration + 4 collection + 5 research).
+- `npm run test:runtime` — 14 passed, 0 failed.
+- `npm run test:integration` — 6 passed, 0 failed.
+- `npm run test:reliability` — 7 passed, 0 failed.
+- `npm run test:flow` — PASS.
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run build` — vinext/Vite production build completed.
+- `tests/integration.mjs` was not run (collection/cloud unchanged).
+- No LLM API call was made and no API key was read.
+
+**Next task:** keep scientific review blocked. A later isolated HTTP provider may implement `complete()`; do not treat mock-provider tests as real LLM behavior. Do not merge this PR to `main`.
+
 ## W1.7 Research Agent reliability and adversarial testing (2026-10-19)
 
 **Status:** Implemented and verified in synthetic contract tests plus typecheck/build. Deterministic validator and prompt-boundary checks only. Not LLM robustness, not scientifically validated, not deployed.
