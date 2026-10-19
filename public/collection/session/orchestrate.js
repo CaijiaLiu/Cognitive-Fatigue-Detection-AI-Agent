@@ -320,6 +320,100 @@ export function createSessionOrchestrator({
     return copied;
   }
 
+  function alreadyAccepted(type) {
+    return events.some((event) => event.type === type);
+  }
+
+  function elapsedClock(event) {
+    return sessionStart == null ? 0 : sessionStart + (finite(event.session_elapsed_ms) ? event.session_elapsed_ms : 0);
+  }
+
+  function applyImportedLifecycle(event) {
+    if (event.type === 'session_ready') {
+      if (alreadyAccepted('session_ready')) return { ok: false, reason: 'duplicate_lifecycle' };
+      if (!ALLOWED[state].has('ready')) return { ok: false, reason: 'invalid_transition' };
+      state = 'ready';
+      return { ok: true };
+    }
+    if (event.type === 'session_started') {
+      if (alreadyAccepted('session_started') || state === 'running') return { ok: false, reason: 'duplicate_lifecycle' };
+      if (!ALLOWED[state].has('running')) return { ok: false, reason: 'invalid_transition' };
+      state = 'running';
+      sessionStart = 0;
+      adapter.beginSession({ mode, startedAt: 0 });
+      resources = { timers: 1, listeners: 1, tracking: mode === 'camera' };
+      adapter.markResources(resources);
+      return { ok: true };
+    }
+    if (event.type === 'task_started') {
+      if (TERMINAL.has(state)) return { ok: false, reason: 'session_closed' };
+      if (state !== 'running') return { ok: false, reason: 'invalid_transition' };
+      const descriptor = taskIndex.get(event.task_id);
+      if (!descriptor) return { ok: false, reason: 'unknown_task' };
+      const task = tasks[descriptor.index];
+      if (task.started_at != null) return { ok: false, reason: 'duplicate_task_start' };
+      if (currentTaskId) return { ok: false, reason: 'task_overlap' };
+      if (descriptor.index !== nextTaskIndex) return { ok: false, reason: 'task_out_of_order' };
+      currentTaskId = event.task_id;
+      task.started_at = elapsedClock(event);
+      adapter.beginTask({ kind: task.kind, protocol_id: task.protocol_id, startedAt: task.started_at });
+      return { ok: true };
+    }
+    if (event.type === 'task_ended') {
+      if (TERMINAL.has(state) && currentTaskId == null) return { ok: false, reason: 'session_closed' };
+      const descriptor = taskIndex.get(event.task_id);
+      if (!descriptor) return { ok: false, reason: 'unknown_task' };
+      const task = tasks[descriptor.index];
+      if (task.started_at == null) return { ok: false, reason: 'task_not_started' };
+      if (task.ended_at != null) return { ok: false, reason: 'duplicate_lifecycle' };
+      if (currentTaskId !== event.task_id) return { ok: false, reason: 'task_membership' };
+      task.ended_at = elapsedClock(event);
+      task.reason = event.reason || 'completed';
+      adapter.endTask({ reason: task.reason, endedAt: task.ended_at });
+      currentTaskId = null;
+      nextTaskIndex = descriptor.index + 1;
+      return { ok: true };
+    }
+    if (event.type === 'session_completed' || event.type === 'session_interrupted' || event.type === 'session_failed') {
+      const next = event.type.slice('session_'.length);
+      if (alreadyAccepted(event.type) || state === next) return { ok: false, reason: 'duplicate_lifecycle' };
+      if (!ALLOWED[state].has(next)) return { ok: false, reason: 'invalid_transition' };
+      if (currentTaskId) return { ok: false, reason: 'active_task' };
+      if (next === 'completed' && nextTaskIndex < tasks.length) {
+        return { ok: false, reason: 'incomplete_sequence' };
+      }
+      state = next;
+      adapter.endSession({ endedAt: elapsedClock(event) });
+      return { ok: true };
+    }
+    if (event.type === 'resources_cleared') {
+      if (!TERMINAL.has(state)) return { ok: false, reason: 'unexpected_resources_cleared' };
+      if (alreadyAccepted('resources_cleared')) return { ok: false, reason: 'duplicate_cleanup' };
+      resources = { timers: 0, listeners: 0, tracking: false };
+      adapter.cleanup();
+      return { ok: true };
+    }
+    if (event.type === 'observation') {
+      if (TERMINAL.has(state)) return { ok: false, reason: 'session_closed' };
+      if (state !== 'running' || !currentTaskId) return { ok: false, reason: 'no_active_task' };
+      if (event.task_id !== currentTaskId) return { ok: false, reason: 'task_membership' };
+      if (finite(event.acquired_elapsed_ms) && sessionStart != null) {
+        const acquisitionTs = sessionStart + event.acquired_elapsed_ms;
+        if (lastAcquisition != null && acquisitionTs <= lastAcquisition) {
+          return { ok: false, reason: 'out_of_order' };
+        }
+      }
+      return { ok: true };
+    }
+    if (event.type === 'dropout') {
+      if (TERMINAL.has(state)) return { ok: false, reason: 'session_closed' };
+      if (sessionStart == null) return { ok: false, reason: 'session_not_started' };
+      if (event.task_id !== currentTaskId) return { ok: false, reason: 'task_membership' };
+      return { ok: true };
+    }
+    return { ok: false, reason: 'unsupported_replay_event' };
+  }
+
   function importTimelineEvent(event) {
     if (!event || typeof event !== 'object') {
       return rejectEvent('invalid_event_contract', { type: 'import' });
@@ -336,32 +430,17 @@ export function createSessionOrchestrator({
     if (event.task_id != null && !taskIndex.has(event.task_id)) {
       return rejectEvent('task_membership', { type: event.type, task_id: event.task_id });
     }
-    if (event.type === 'observation') {
-      if (TERMINAL.has(state)) return rejectEvent('session_closed', { type: event.type });
-      if (state !== 'running' || !currentTaskId) return rejectEvent('no_active_task', { type: event.type });
-      if (event.task_id !== currentTaskId) {
-        return rejectEvent('task_membership', { type: event.type, task_id: event.task_id, active: currentTaskId });
-      }
-    }
-    if (event.type === 'dropout') {
-      if (TERMINAL.has(state)) return rejectEvent('session_closed', { type: event.type });
-      if (sessionStart == null) return rejectEvent('session_not_started', { type: event.type });
-      if (event.task_id !== currentTaskId) {
-        return rejectEvent('task_membership', { type: event.type, task_id: event.task_id, active: currentTaskId });
-      }
-    }
     const copied = copyTimelineEvent(event);
     const valid = validateResearchEvent(copied, { taskIds: taskIndex });
     if (!valid.ok) return rejectEvent(valid.reason, { type: event.type });
+    if ((copied.type === 'observation' || copied.type === 'dropout') && TERMINAL.has(state)) {
+      return rejectEvent('session_closed', { type: event.type });
+    }
     if (copied.session_elapsed_ms != null && lastSessionElapsed != null && copied.session_elapsed_ms < lastSessionElapsed) {
       return rejectEvent('out_of_order', { type: event.type, session_elapsed_ms: copied.session_elapsed_ms });
     }
-    if (copied.type === 'observation' && finite(copied.acquired_elapsed_ms) && sessionStart != null) {
-      const acquisitionTs = sessionStart + copied.acquired_elapsed_ms;
-      if (lastAcquisition != null && acquisitionTs <= lastAcquisition) {
-        return rejectEvent('out_of_order', { type: event.type, session_elapsed_ms: copied.session_elapsed_ms });
-      }
-    }
+    const applied = applyImportedLifecycle(copied);
+    if (!applied.ok) return rejectEvent(applied.reason, { type: event.type, task_id: event.task_id });
     events.push(copied);
     if (copied.session_elapsed_ms != null) lastSessionElapsed = copied.session_elapsed_ms;
     if (copied.type === 'observation' && finite(copied.acquired_elapsed_ms) && sessionStart != null) {

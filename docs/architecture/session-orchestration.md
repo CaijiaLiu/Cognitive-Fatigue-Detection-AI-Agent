@@ -57,16 +57,16 @@ Each accepted event records session id, optional task id, type, session-relative
 
 ## Replay contract (event-only)
 
-`replayOrchestration` is **event-only**. It reconstructs session state, task membership, and the accepted timeline. It does **not** call `recordObservation` with default facial features and does **not** claim `FeatureAccumulator` or blink/closure fidelity.
+`replayOrchestration` is **event-only**. Every stored event, including lifecycle and `resources_cleared`, is validated against the state machine and then imported with its original fields. Replay does **not** regenerate lifecycle metadata, skip cleanup events, call `recordObservation` with default facial features, or claim `FeatureAccumulator` fidelity.
 
-`importTimelineEvent` copies accepted timeline fields as stored. It validates session id, event contract id/version, task membership, and active-task boundaries before any mutation. It does not rewrite acquisition timestamps or fill missing source/quality/missingness from the current mode. An observation may have been acquired before a previous event's processing time and still be accepted if acquisition order is monotonic.
+`replay.ok === true` only after `acceptedTimeline(original.events)` equals `acceptedTimeline(replayed.events)` by structural comparison. A mismatch fails with `timeline_mismatch`.
 
-Corrupted timelines fail closed (`replay.ok === false` plus a reason). Replay does not skip a failed import and continue.
+`resources_cleared` is accepted only after a terminal state, only once, and is preserved on the timeline. Cleanup is not fabricated when the original session omitted it. Cleanup before a terminal transition, or a second cleanup, is rejected.
 
 | Guarantees | Does not guarantee |
 |---|---|
-| Terminal state and task start/end order | Reconstructed EAR / facial features |
-| Event types, ids, sources, quality/missingness flags | Blink, closed-time, or coverage summaries |
+| Exact accepted timeline equality | Reconstructed EAR / facial features |
+| Event order, count, ids, sources, quality/missingness | Blink, closed-time, or coverage summaries |
 | Stored session-relative and acquisition/processing timestamps | Scientific measurement equivalence |
 
 `measurement_fidelity` is always `false` in this phase. Full measurement replay would require stored input features and is deferred so we do not invent samples or change privacy/science contracts.

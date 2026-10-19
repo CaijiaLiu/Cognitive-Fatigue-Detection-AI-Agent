@@ -21,7 +21,7 @@ W3.1 produces a local-only artifact so W4 can ingest versioned sessions without 
 4. Keep acquisition time and processing time separate. Do not substitute processed time for task-boundary admission.
 5. Keep camera, simulated, and task-only provenance unmixed unless a later scientific decision says otherwise.
 6. Split future training/evaluation by `participant_id` / group. Do not leak session-level labels onto every window.
-7. Replay fixtures with `replayOrchestration` only for timeline/state checks. Compare `acceptedTimeline()` fields. Replay is event-only (`measurement_fidelity: false`) and must not be used as proof of blink, EAR, or closure equivalence. A failed import stops replay (`replay.ok === false`).
+7. Replay fixtures with `replayOrchestration` only for timeline/state checks. Successful replay requires `acceptedTimeline(original) === acceptedTimeline(replayed)`. Replay is event-only (`measurement_fidelity: false`) and must not be used as proof of blink, EAR, or closure equivalence. A failed import or `timeline_mismatch` stops replay (`replay.ok === false`).
 
 ## Explicit non-goals
 

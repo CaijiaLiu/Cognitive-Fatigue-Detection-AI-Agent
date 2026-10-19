@@ -25,6 +25,7 @@ import {
   serializeOrchestration,
   replayOrchestration,
   acceptedTimeline,
+  timelinesEqual,
   stableStringify
 } from '../public/collection/session/orchestration-export.js';
 
@@ -111,6 +112,36 @@ function runTwoSlotSession(mode = 'simulated', start = 0) {
   assert.equal(orch.endTask('slot-b', { endedAt: clock.set(start + 800) }).ok, true);
   assert.equal(orch.completeSession({ endedAt: clock.set(start + 900) }).ok, true);
   return { orch, clock };
+}
+
+function runTerminalSession(kind, mode = 'simulated') {
+  const clock = createClock(0);
+  const orch = createSessionOrchestrator({
+    now: clock.now,
+    protocol: PROVISIONAL_SEQUENCE_PROTOCOL,
+    session_id: `orch-${kind}`,
+    mode
+  });
+  orch.prepare();
+  orch.startSession({ startedAt: 0 });
+  orch.startTask('slot-a', { startedAt: clock.set(100) });
+  orch.recordObservation({
+    acquisitionTs: 150,
+    processedTs: clock.set(180),
+    source: mode === 'camera' ? 'camera' : 'simulated',
+    features: openFace(0.11)
+  });
+  if (kind === 'interrupted') {
+    assert.equal(orch.interrupt({ reason: 'user_stop', endedAt: clock.set(300) }).ok, true);
+  } else if (kind === 'failed') {
+    assert.equal(orch.fail({ reason: 'tracking_lost', endedAt: clock.set(300) }).ok, true);
+  } else {
+    orch.endTask('slot-a', { endedAt: clock.set(300) });
+    orch.startTask('slot-b', { startedAt: clock.set(400) });
+    orch.endTask('slot-b', { endedAt: clock.set(500) });
+    assert.equal(orch.completeSession({ endedAt: clock.set(600) }).ok, true);
+  }
+  return orch;
 }
 
 test('protocol contract is generic, versioned, and does not redefine Caijia science', () => {
@@ -706,4 +737,76 @@ test('corrupted timelines fail replay instead of skipping imports', () => {
   assert.equal(importRejected.ok, false);
   assert.equal(importRejected.reason, 'session_closed');
   assert.equal(orch.events().at(-1).type, 'resources_cleared');
+});
+
+test('completed, interrupted, and failed sessions round-trip with exact accepted timelines', () => {
+  for (const kind of ['completed', 'interrupted', 'failed']) {
+    const orch = runTerminalSession(kind, 'camera');
+    const replayed = replayOrchestration(serializeOrchestration(orch));
+    assert.equal(replayed.replay.ok, true, kind);
+    assert.equal(replayed.replay.measurement_fidelity, false, kind);
+    assert.equal(replayed.state, kind === 'completed' ? 'completed' : kind, kind);
+    assert.equal(timelinesEqual(replayed.events(), orch.events()), true, kind);
+    assert.equal(replayed.events().filter((event) => event.type === 'resources_cleared').length, 1, kind);
+    assert.equal(replayed.accumulator.samples.length, 0, kind);
+  }
+});
+
+test('resources_cleared is preserved once and rejected when misplaced or duplicated', () => {
+  const orch = runTerminalSession('completed');
+  const artifact = serializeOrchestration(orch);
+  assert.equal(artifact.orchestration.events.filter((event) => event.type === 'resources_cleared').length, 1);
+
+  const replayed = replayOrchestration(artifact);
+  assert.equal(replayed.replay.ok, true);
+  assert.equal(replayed.events().filter((event) => event.type === 'resources_cleared').length, 1);
+  assert.deepEqual(replayed.snapshot().resources, { timers: 0, listeners: 0, tracking: false });
+
+  const beforeTerminal = structuredClone(artifact);
+  const readyIndex = beforeTerminal.orchestration.events.findIndex((event) => event.type === 'session_ready');
+  const cleanup = beforeTerminal.orchestration.events.find((event) => event.type === 'resources_cleared');
+  beforeTerminal.orchestration.events.splice(readyIndex + 1, 0, { ...cleanup, session_elapsed_ms: 0 });
+  assert.equal(replayOrchestration(beforeTerminal).replay.reason, 'unexpected_resources_cleared');
+
+  const duplicated = structuredClone(artifact);
+  duplicated.orchestration.events.push({
+    ...cleanup,
+    session_elapsed_ms: 600
+  });
+  const duplicateReplay = replayOrchestration(duplicated);
+  assert.equal(duplicateReplay.replay.ok, false);
+  assert.equal(duplicateReplay.replay.reason, 'duplicate_cleanup');
+});
+
+test('corrupted lifecycle metadata that old replay would accept now fails closed', () => {
+  const orch = runTerminalSession('completed');
+  const artifact = serializeOrchestration(orch);
+
+  const skippedReady = structuredClone(artifact);
+  skippedReady.orchestration.events = skippedReady.orchestration.events.filter((event) => event.type !== 'session_ready');
+  assert.equal(replayOrchestration(skippedReady).replay.reason, 'invalid_transition');
+
+  const duplicateStart = structuredClone(artifact);
+  const started = duplicateStart.orchestration.events.find((event) => event.type === 'session_started');
+  const startedIndex = duplicateStart.orchestration.events.findIndex((event) => event.type === 'session_started');
+  duplicateStart.orchestration.events.splice(startedIndex + 1, 0, { ...started });
+  assert.equal(replayOrchestration(duplicateStart).replay.reason, 'duplicate_lifecycle');
+
+  const wrongTaskOrder = structuredClone(artifact);
+  wrongTaskOrder.orchestration.events.find((event) => event.type === 'task_started').task_id = 'slot-b';
+  assert.equal(replayOrchestration(wrongTaskOrder).replay.reason, 'task_out_of_order');
+
+  const badVersion = structuredClone(artifact);
+  badVersion.orchestration.events.find((event) => event.type === 'session_completed').contract_version = '8.0.0';
+  assert.equal(replayOrchestration(badVersion).replay.reason, 'invalid_event_version');
+
+  const badSession = structuredClone(artifact);
+  badSession.orchestration.events.find((event) => event.type === 'task_ended').session_id = 'other-session';
+  assert.equal(replayOrchestration(badSession).replay.reason, 'session_mismatch');
+
+  const mutatedElapsed = structuredClone(artifact);
+  mutatedElapsed.orchestration.events.find((event) => event.type === 'task_started').session_elapsed_ms = -5;
+  const mutatedReplay = replayOrchestration(mutatedElapsed);
+  assert.equal(mutatedReplay.replay.ok, false);
+  assert.ok(['out_of_order', 'invalid_timestamp', 'timeline_mismatch'].includes(mutatedReplay.replay.reason));
 });
