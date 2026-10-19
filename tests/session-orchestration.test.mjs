@@ -18,8 +18,10 @@ import { createSessionOrchestrator } from '../public/collection/session/orchestr
 import {
   W4_SESSION_ADAPTER_CONTRACT,
   SESSION_ARTIFACT_ID,
+  ORCHESTRATION_REPLAY_CONTRACT,
   attachLocalOrchestration,
   readSessionArtifact,
+  readOrchestrationSidecar,
   serializeOrchestration,
   replayOrchestration,
   stableStringify
@@ -58,6 +60,26 @@ function createClock(start = 0) {
 
 function openFace(ear = 0.3) {
   return { face_present: true, ear, gaze_x: 0.5, gaze_y: 0, rotation: null };
+}
+
+function acceptedState(orch) {
+  return {
+    state: orch.state,
+    currentTaskId: orch.currentTaskId(),
+    nextTaskIndex: orch.nextTaskIndex(),
+    lastAcquisition: orch.lastAcquisition(),
+    events: orch.events(),
+    samples: orch.accumulator.samples.slice(),
+    summary: orch.snapshot().vision_summary,
+    mission: orch.mission.events(),
+    tasks: orch.snapshot().tasks.map((task) => ({
+      task_id: task.task_id,
+      started_at: task.started_at,
+      ended_at: task.ended_at,
+      reason: task.reason
+    })),
+    resources: orch.snapshot().resources
+  };
 }
 
 function runTwoSlotSession(mode = 'simulated', start = 0) {
@@ -386,6 +408,8 @@ test('13. deterministic replay and serialization', () => {
   assert.equal(stableStringify(serializeOrchestration(replayed).orchestration.events), stableStringify(first.orchestration.events));
   assert.equal(first.upload_eligible, false);
   assert.equal(first.schema_version, '1.0.0');
+  assert.equal(replayed.replay.kind, 'event_only');
+  assert.equal(replayed.replay.measurement_fidelity, false);
 });
 
 test('14. resource cleanup and repeated session starts', () => {
@@ -414,4 +438,174 @@ test('14. resource cleanup and repeated session starts', () => {
   assert.equal(orch.completeSession({ endedAt: clock.set(320) }).ok, true);
   assert.equal(orch.state, 'completed');
   assert.deepEqual(orch.snapshot().resources, { timers: 0, listeners: 0, tracking: false });
+});
+
+test('rejected operations do not partially mutate accepted state', () => {
+  const clock = createClock(0);
+  const orch = createSessionOrchestrator({
+    now: clock.now,
+    protocol: PROVISIONAL_SEQUENCE_PROTOCOL,
+    session_id: 'atomic',
+    mode: 'camera'
+  });
+  orch.prepare();
+  orch.startSession({ startedAt: 0 });
+  orch.startTask('slot-a', { startedAt: clock.set(100) });
+  orch.recordObservation({
+    acquisitionTs: 200,
+    processedTs: clock.set(220),
+    source: 'camera',
+    features: openFace(0.12)
+  });
+  const afterValid = acceptedState(orch);
+
+  const lateDropoutFirst = orch.recordDropout({ at: clock.set(500), source: 'camera' });
+  assert.equal(lateDropoutFirst.ok, true);
+  const afterDropout = acceptedState(orch);
+
+  const staleObservation = orch.recordObservation({
+    acquisitionTs: 400,
+    processedTs: 450,
+    source: 'camera',
+    features: openFace(0.04)
+  });
+  assert.equal(staleObservation.ok, false);
+  assert.equal(staleObservation.reason, 'out_of_order');
+  const afterStaleObs = acceptedState(orch);
+  assert.equal(afterStaleObs.state, afterDropout.state);
+  assert.equal(afterStaleObs.currentTaskId, 'slot-a');
+  assert.equal(afterStaleObs.nextTaskIndex, 0);
+  assert.equal(afterStaleObs.lastAcquisition, 200);
+  assert.equal(afterStaleObs.events.length, afterDropout.events.length);
+  assert.equal(afterStaleObs.samples.length, afterDropout.samples.length);
+  assert.deepEqual(afterStaleObs.summary, afterDropout.summary);
+  assert.equal(afterStaleObs.mission.length, afterDropout.mission.length);
+  assert.equal(afterStaleObs.tasks[0].ended_at, null);
+
+  const staleEnd = orch.endTask('slot-a', { endedAt: 50 });
+  assert.equal(staleEnd.ok, false);
+  assert.equal(staleEnd.reason, 'out_of_order');
+  assert.equal(orch.currentTaskId(), 'slot-a');
+  assert.equal(orch.nextTaskIndex(), 0);
+  assert.equal(orch.snapshot().tasks[0].ended_at, null);
+  assert.equal(orch.events().filter((event) => event.type === 'task_ended').length, 0);
+
+  orch.endTask('slot-a', { endedAt: clock.set(600) });
+  const staleNextStart = orch.startTask('slot-b', { startedAt: 80 });
+  assert.equal(staleNextStart.ok, false);
+  assert.equal(staleNextStart.reason, 'out_of_order');
+  assert.equal(orch.currentTaskId(), null);
+  assert.equal(orch.nextTaskIndex(), 1);
+  assert.equal(orch.snapshot().tasks[1].started_at, null);
+  assert.equal(orch.mission.events().filter((event) => event.type === 'mission_task_started').length, 1);
+
+  orch.startTask('slot-b', { startedAt: clock.set(700) });
+  orch.endTask('slot-b', { endedAt: clock.set(800) });
+  const staleComplete = orch.completeSession({ endedAt: 10 });
+  assert.equal(staleComplete.ok, false);
+  assert.equal(staleComplete.reason, 'out_of_order');
+  assert.equal(orch.state, 'running');
+  assert.deepEqual(orch.snapshot().resources, { timers: 1, listeners: 1, tracking: true });
+  assert.equal(orch.events().some((event) => event.type === 'session_completed'), false);
+
+  assert.equal(afterValid.lastAcquisition, 200);
+  assert.equal(orch.accumulator.samples.some((sample) => sample.eye_aspect_ratio === 0.04), false);
+});
+
+test('event-only replay does not fabricate measurement fidelity', () => {
+  const clock = createClock(0);
+  const orch = createSessionOrchestrator({
+    now: clock.now,
+    protocol: PROVISIONAL_SEQUENCE_PROTOCOL,
+    session_id: 'replay-features',
+    mode: 'simulated'
+  });
+  orch.prepare();
+  orch.startSession({ startedAt: 0 });
+  orch.startTask('slot-a', { startedAt: 0 });
+  assert.equal(orch.recordObservation({
+    acquisitionTs: 0,
+    processedTs: clock.set(20),
+    source: 'simulated',
+    features: openFace(0.05)
+  }).ok, true);
+  assert.equal(orch.recordObservation({
+    acquisitionTs: 200,
+    processedTs: clock.set(220),
+    source: 'simulated',
+    features: openFace(0.05)
+  }).ok, true);
+  orch.endTask('slot-a', { endedAt: clock.set(300) });
+  orch.startTask('slot-b', { startedAt: clock.set(400) });
+  orch.endTask('slot-b', { endedAt: clock.set(500) });
+  orch.completeSession({ endedAt: clock.set(600) });
+
+  const original = orch.snapshot().vision_summary;
+  assert.equal(original.sample_count, 2);
+  assert.equal(original.closed_time_ms > 0, true);
+
+  const replayed = replayOrchestration(serializeOrchestration(orch));
+  assert.equal(replayed.replay.kind, ORCHESTRATION_REPLAY_CONTRACT.kind);
+  assert.equal(replayed.replay.measurement_fidelity, false);
+  assert.equal(replayed.state, 'completed');
+  assert.deepEqual(
+    replayed.events().map((event) => [event.type, event.session_elapsed_ms, event.quality]),
+    orch.events().map((event) => [event.type, event.session_elapsed_ms, event.quality])
+  );
+  assert.equal(replayed.accumulator.samples.length, 0);
+  assert.equal(replayed.snapshot().vision_summary.sample_count, 0);
+  assert.equal(replayed.snapshot().vision_summary.closed_time_ms, 0);
+  assert.notEqual(replayed.snapshot().vision_summary.closed_time_ms, original.closed_time_ms);
+  assert.equal(replayed.events().some((event) => event.eye_aspect_ratio === 0.05), false);
+  assert.equal(JSON.stringify(replayed.events()).includes('"ear"'), false);
+});
+
+test('W4 artifact reader rejects malformed sidecars and unsupported contracts', () => {
+  const valid = v1Session();
+  assert.equal(readSessionArtifact(valid).compatible, true);
+  assert.equal(readSessionArtifact(valid).orchestration, null);
+
+  const malformed = v1Session({ orchestration: 'not-an-object' });
+  const malformedRead = readSessionArtifact(malformed);
+  assert.equal(malformedRead.compatible, false);
+  assert.equal(malformedRead.coerced, false);
+  assert.equal(malformedRead.kind, 'malformed-orchestration');
+  assert.equal(malformed.schema_version, '1.0.0');
+
+  const badVersion = v1Session({
+    orchestration: { contract_id: ORCHESTRATION_CONTRACT_ID, contract_version: '9.9.9', events: [] }
+  });
+  assert.equal(readSessionArtifact(badVersion).kind, 'invalid-orchestration-version');
+  assert.equal(readSessionArtifact(badVersion).compatible, false);
+
+  const badContract = v1Session({
+    orchestration: { contract_id: 'research-session/9.0', events: [] }
+  });
+  assert.equal(readSessionArtifact(badContract).kind, 'unsupported-orchestration');
+
+  const badEvents = v1Session({
+    orchestration: { contract_id: ORCHESTRATION_CONTRACT_ID, contract_version: '0.1.0', events: { type: 'observation' } }
+  });
+  assert.equal(readSessionArtifact(badEvents).kind, 'malformed-orchestration');
+
+  const badEventContract = v1Session({
+    orchestration: {
+      contract_id: ORCHESTRATION_CONTRACT_ID,
+      contract_version: '0.1.0',
+      events: [{ contract_id: 'unknown-event/1', type: 'observation' }]
+    }
+  });
+  assert.equal(readSessionArtifact(badEventContract).kind, 'unsupported-event-contract');
+  assert.equal(readSessionArtifact(badEventContract).compatible, false);
+  assert.equal(readSessionArtifact(badEventContract).coerced, false);
+
+  const badMission = v1Session({ mission: ['not-an-object'] });
+  assert.equal(readSessionArtifact(badMission).kind, 'malformed-mission');
+
+  const unsupportedMission = v1Session({ mission: { contract_id: 'mission-event/9.0' } });
+  assert.equal(readSessionArtifact(unsupportedMission).kind, 'unsupported-mission');
+
+  const sidecar = readOrchestrationSidecar({ contract_id: ORCHESTRATION_CONTRACT_ID, contract_version: '0.1.0', events: [] });
+  assert.equal(sidecar.ok, true);
+  assert.equal(W4_SESSION_ADAPTER_CONTRACT.replay.measurement_fidelity, false);
 });

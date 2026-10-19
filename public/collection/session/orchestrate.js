@@ -61,33 +61,22 @@ export function createSessionOrchestrator({
     return currentTaskId ? tasks.find((task) => task.task_id === currentTaskId) : null;
   }
 
-  function transition(next, ts, extra = {}) {
-    if (state === next && TERMINAL.has(next)) {
-      return { ok: true, idempotent: true, state };
-    }
-    if (!ALLOWED[state].has(next)) {
-      return rejectEvent('invalid_transition', { from: state, to: next }, ts);
-    }
-    state = next;
-    return appendEvent(`${next === 'ready' ? 'session_ready' : next === 'running' ? 'session_started' : `session_${next}`}`, extra, ts);
-  }
-
   function rejectEvent(reason, extra = {}, ts = clock()) {
     const record = {
       ok: false,
       reason,
       state,
       ...extra,
-      session_elapsed_ms: sessionElapsed(ts)
+      session_elapsed_ms: extra.session_elapsed_ms ?? sessionElapsed(ts)
     };
     rejected.push(record);
     return record;
   }
 
-  function appendEvent(type, extra = {}, ts = clock()) {
+  function previewEvent(type, extra = {}, ts = clock(), lastElapsed = lastSessionElapsed) {
     const elapsed = extra.session_elapsed_ms ?? sessionElapsed(ts);
-    if (elapsed != null && lastSessionElapsed != null && elapsed < lastSessionElapsed) {
-      return rejectEvent('out_of_order', { type, session_elapsed_ms: elapsed }, ts);
+    if (elapsed != null && lastElapsed != null && elapsed < lastElapsed) {
+      return { ok: false, reason: 'out_of_order', type, session_elapsed_ms: elapsed };
     }
     const task = currentTask();
     const event = {
@@ -111,10 +100,32 @@ export function createSessionOrchestrator({
       ...('reason' in extra ? { reason: extra.reason } : {})
     };
     const valid = validateResearchEvent(event, { taskIds: taskIndex });
-    if (!valid.ok) return rejectEvent(valid.reason, { type }, ts);
-    events.push(event);
-    if (elapsed != null) lastSessionElapsed = elapsed;
-    return { ok: true, event, state };
+    if (!valid.ok) return { ok: false, reason: valid.reason, type, session_elapsed_ms: elapsed };
+    return { ok: true, event, elapsed };
+  }
+
+  function commitEvent(preview) {
+    events.push(preview.event);
+    if (preview.elapsed != null) lastSessionElapsed = preview.elapsed;
+    return { ok: true, event: preview.event, state };
+  }
+
+  function rejectPreview(preview, ts = clock()) {
+    return rejectEvent(preview.reason, { type: preview.type, session_elapsed_ms: preview.session_elapsed_ms }, ts);
+  }
+
+  function transition(next, ts, extra = {}) {
+    if (state === next && TERMINAL.has(next)) {
+      return { ok: true, idempotent: true, state };
+    }
+    if (!ALLOWED[state].has(next)) {
+      return rejectEvent('invalid_transition', { from: state, to: next }, ts);
+    }
+    const type = next === 'ready' ? 'session_ready' : next === 'running' ? 'session_started' : `session_${next}`;
+    const preview = previewEvent(type, extra, ts);
+    if (!preview.ok) return rejectPreview(preview, ts);
+    state = next;
+    return commitEvent(preview);
   }
 
   function prepare(ts = clock()) {
@@ -123,15 +134,20 @@ export function createSessionOrchestrator({
 
   function startSession({ startedAt = clock() } = {}) {
     if (state === 'running') return { ok: true, idempotent: true, state };
-    const moved = transition('running', startedAt, { source: visionSourceFromMode(mode) });
-    if (!moved.ok) return moved;
+    if (!ALLOWED[state].has('running')) {
+      return rejectEvent('invalid_transition', { from: state, to: 'running', type: 'session_started' }, startedAt);
+    }
+    const preview = previewEvent('session_started', {
+      source: visionSourceFromMode(mode),
+      session_elapsed_ms: 0
+    }, startedAt);
+    if (!preview.ok) return rejectPreview(preview, startedAt);
+    state = 'running';
     sessionStart = startedAt;
     adapter.beginSession({ mode, startedAt });
     resources = { timers: 1, listeners: 1, tracking: mode === 'camera' };
     adapter.markResources(resources);
-    moved.event.session_elapsed_ms = 0;
-    lastSessionElapsed = 0;
-    return moved;
+    return commitEvent(preview);
   }
 
   function startTask(task_id, { startedAt = clock() } = {}) {
@@ -143,10 +159,12 @@ export function createSessionOrchestrator({
     if (task.started_at != null) return rejectEvent('duplicate_task_start', { task_id }, startedAt);
     if (currentTaskId) return rejectEvent('task_overlap', { task_id, active: currentTaskId }, startedAt);
     if (descriptor.index !== nextTaskIndex) return rejectEvent('task_out_of_order', { task_id, expected: protocol.tasks[nextTaskIndex]?.task_id }, startedAt);
+    const preview = previewEvent('task_started', { task_id, source: visionSourceFromMode(mode) }, startedAt);
+    if (!preview.ok) return rejectPreview(preview, startedAt);
     currentTaskId = task_id;
     task.started_at = startedAt;
     adapter.beginTask({ kind: task.kind, protocol_id: task.protocol_id, startedAt });
-    return appendEvent('task_started', { task_id, source: visionSourceFromMode(mode) }, startedAt);
+    return commitEvent(preview);
   }
 
   function endTask(task_id, { reason = 'completed', endedAt = clock() } = {}) {
@@ -157,47 +175,67 @@ export function createSessionOrchestrator({
     if (task.started_at == null) return rejectEvent('task_not_started', { task_id }, endedAt);
     if (task.ended_at != null) return { ok: true, idempotent: true, state, task_id };
     if (currentTaskId !== task_id) return rejectEvent('task_membership', { task_id, active: currentTaskId }, endedAt);
+    const preview = previewEvent('task_ended', { task_id, reason }, endedAt);
+    if (!preview.ok) return rejectPreview(preview, endedAt);
     task.ended_at = endedAt;
     task.reason = reason;
-    const result = appendEvent('task_ended', { task_id, reason }, endedAt);
     adapter.endTask({ reason, endedAt });
     currentTaskId = null;
     nextTaskIndex = descriptor.index + 1;
-    return result;
+    return commitEvent(preview);
+  }
+
+  function commitTerminal(next, extra, endedAt) {
+    if (state === next && TERMINAL.has(next)) return { ok: true, idempotent: true, state };
+    if (!ALLOWED[state].has(next)) {
+      return rejectEvent('invalid_transition', { from: state, to: next, type: `session_${next}` }, endedAt);
+    }
+    const previews = [];
+    let last = lastSessionElapsed;
+    const openId = currentTaskId;
+    if (openId && (next === 'interrupted' || next === 'failed')) {
+      const endPreview = previewEvent('task_ended', { task_id: openId, reason: extra.reason }, endedAt, last);
+      if (!endPreview.ok) return rejectPreview(endPreview, endedAt);
+      previews.push(endPreview);
+      last = endPreview.elapsed ?? last;
+    } else if (next === 'completed') {
+      if (currentTaskId) return rejectEvent('active_task', { task_id: currentTaskId }, endedAt);
+      if (nextTaskIndex < tasks.length) return rejectEvent('incomplete_sequence', { remaining: tasks.length - nextTaskIndex }, endedAt);
+    }
+    const sessionPreview = previewEvent(`session_${next}`, extra, endedAt, last);
+    if (!sessionPreview.ok) return rejectPreview(sessionPreview, endedAt);
+    previews.push(sessionPreview);
+    last = sessionPreview.elapsed ?? last;
+    const clearPreview = previewEvent('resources_cleared', { source: visionSourceFromMode(mode) }, endedAt, last);
+    if (!clearPreview.ok) return rejectPreview(clearPreview, endedAt);
+    previews.push(clearPreview);
+
+    if (openId && (next === 'interrupted' || next === 'failed')) {
+      const task = tasks[taskIndex.get(openId).index];
+      task.ended_at = endedAt;
+      task.reason = extra.reason;
+      adapter.endTask({ reason: extra.reason, endedAt });
+      currentTaskId = null;
+      nextTaskIndex = taskIndex.get(openId).index + 1;
+    }
+    state = next;
+    adapter.endSession({ endedAt });
+    resources = { timers: 0, listeners: 0, tracking: false };
+    adapter.cleanup();
+    for (const preview of previews) commitEvent(preview);
+    return { ok: true, event: sessionPreview.event, state };
   }
 
   function completeSession({ endedAt = clock() } = {}) {
-    if (state === 'completed') return { ok: true, idempotent: true, state };
-    if (currentTaskId) return rejectEvent('active_task', { task_id: currentTaskId }, endedAt);
-    if (nextTaskIndex < tasks.length) return rejectEvent('incomplete_sequence', { remaining: tasks.length - nextTaskIndex }, endedAt);
-    const moved = transition('completed', endedAt);
-    if (moved.ok) {
-      adapter.endSession({ endedAt });
-      cleanup(endedAt);
-    }
-    return moved;
+    return commitTerminal('completed', {}, endedAt);
   }
 
   function interrupt({ reason = 'interrupted', endedAt = clock() } = {}) {
-    if (state === 'interrupted') return { ok: true, idempotent: true, state };
-    if (currentTaskId) endTask(currentTaskId, { reason, endedAt });
-    const moved = transition('interrupted', endedAt, { reason });
-    if (moved.ok) {
-      adapter.endSession({ endedAt });
-      cleanup(endedAt);
-    }
-    return moved;
+    return commitTerminal('interrupted', { reason }, endedAt);
   }
 
   function fail({ reason = 'failed', endedAt = clock() } = {}) {
-    if (state === 'failed') return { ok: true, idempotent: true, state };
-    if (currentTaskId) endTask(currentTaskId, { reason, endedAt });
-    const moved = transition('failed', endedAt, { reason });
-    if (moved.ok) {
-      adapter.endSession({ endedAt });
-      cleanup(endedAt);
-    }
-    return moved;
+    return commitTerminal('failed', { reason }, endedAt);
   }
 
   function recordObservation({
@@ -216,47 +254,73 @@ export function createSessionOrchestrator({
     if (acquired_elapsed_ms < 0) return rejectEvent('pre_session', { type: 'observation' }, processedTs);
     const window = adapter.currentWindow();
     if (window?.started != null && acquisitionTs < window.started) {
-      adapter.rejectFrame({ reason: 'pre_task', session_elapsed_ms: acquired_elapsed_ms, processed_elapsed_ms });
       return rejectEvent('pre_task', { type: 'observation' }, processedTs);
     }
     if (window?.ended != null && acquisitionTs >= window.ended) {
-      adapter.rejectFrame({ reason: 'post_task', session_elapsed_ms: acquired_elapsed_ms, processed_elapsed_ms });
       return rejectEvent('post_task', { type: 'observation' }, processedTs);
     }
     if (lastAcquisition != null && acquisitionTs <= lastAcquisition) {
       return rejectEvent('out_of_order', { type: 'observation' }, processedTs);
     }
-    lastAcquisition = acquisitionTs;
-    acc.add(acquired_elapsed_ms, features, source === 'task-only' ? 'unavailable' : source, {
-      acquired_elapsed_ms,
-      processed_elapsed_ms
-    });
-    return appendEvent('observation', {
+    const preview = previewEvent('observation', {
       source,
       quality,
       acquired_elapsed_ms,
       processed_elapsed_ms,
       session_elapsed_ms: acquired_elapsed_ms
     }, processedTs);
+    if (!preview.ok) return rejectPreview(preview, processedTs);
+    lastAcquisition = acquisitionTs;
+    acc.add(acquired_elapsed_ms, features, source === 'task-only' ? 'unavailable' : source, {
+      acquired_elapsed_ms,
+      processed_elapsed_ms
+    });
+    return commitEvent(preview);
   }
 
   function recordDropout({ at = clock(), gap_ms = 400, source = visionSourceFromMode(mode) } = {}) {
     if (TERMINAL.has(state)) return rejectEvent('session_closed', { type: 'dropout' }, at);
+    if (sessionStart == null) return rejectEvent('session_not_started', { type: 'dropout' }, at);
     const elapsed = sessionElapsed(at);
-    acc.noteDropout(elapsed < 0 ? 0 : elapsed, source === 'task-only' ? 'unavailable' : source);
-    adapter.recordDropout({ session_elapsed_ms: elapsed, gap_ms });
-    return appendEvent('dropout', {
+    if (!finite(at) || elapsed == null || elapsed < 0) return rejectEvent('invalid_timestamp', { type: 'dropout' }, at);
+    const preview = previewEvent('dropout', {
       source,
       quality: 'tracking_gap',
       missingness: 'dropout',
       session_elapsed_ms: elapsed
     }, at);
+    if (!preview.ok) return rejectPreview(preview, at);
+    acc.noteDropout(elapsed, source === 'task-only' ? 'unavailable' : source);
+    adapter.recordDropout({ session_elapsed_ms: elapsed, gap_ms });
+    return commitEvent(preview);
+  }
+
+  function importTimelineEvent(event) {
+    if (!event || typeof event !== 'object') return rejectEvent('invalid_event_contract', { type: 'import' });
+    const preview = previewEvent(event.type, {
+      task_id: event.task_id,
+      session_elapsed_ms: event.session_elapsed_ms,
+      task_elapsed_ms: event.task_elapsed_ms,
+      acquired_elapsed_ms: event.acquired_elapsed_ms,
+      processed_elapsed_ms: event.processed_elapsed_ms,
+      source: event.source,
+      quality: event.quality,
+      missingness: event.missingness,
+      ...('reason' in event ? { reason: event.reason } : {})
+    }, sessionStart == null ? clock() : sessionStart + (event.processed_elapsed_ms ?? event.session_elapsed_ms ?? 0));
+    if (!preview.ok) return rejectPreview(preview);
+    if (event.type === 'observation' && finite(event.acquired_elapsed_ms) && sessionStart != null) {
+      lastAcquisition = sessionStart + event.acquired_elapsed_ms;
+    }
+    return commitEvent(preview);
   }
 
   function cleanup(ts = clock()) {
+    const preview = previewEvent('resources_cleared', { source: visionSourceFromMode(mode) }, ts);
+    if (!preview.ok) return rejectPreview(preview, ts);
     resources = { timers: 0, listeners: 0, tracking: false };
     adapter.cleanup();
-    return appendEvent('resources_cleared', { source: visionSourceFromMode(mode) }, ts);
+    return commitEvent(preview);
   }
 
   function reset() {
@@ -297,11 +361,13 @@ export function createSessionOrchestrator({
     fail,
     recordObservation,
     recordDropout,
+    importTimelineEvent,
     cleanup,
     reset,
     snapshot() {
       return {
         contract_id: ORCHESTRATION_CONTRACT_ID,
+        contract_version: '0.1.0',
         scientific_review: protocol.scientific_review,
         local_only: true,
         upload_eligible: false,
@@ -317,6 +383,8 @@ export function createSessionOrchestrator({
         events: events.slice(),
         rejected: rejected.slice(),
         resources: { ...resources },
+        last_acquisition_ts: lastAcquisition,
+        next_task_index: nextTaskIndex,
         vision_summary: acc.summary(sessionElapsed() || 0)
       };
     },
@@ -328,6 +396,8 @@ export function createSessionOrchestrator({
     get mission() { return adapter; },
     events: () => events.slice(),
     rejectedEvents: () => rejected.slice(),
-    currentTaskId: () => currentTaskId
+    currentTaskId: () => currentTaskId,
+    nextTaskIndex: () => nextTaskIndex,
+    lastAcquisition: () => lastAcquisition
   };
 }

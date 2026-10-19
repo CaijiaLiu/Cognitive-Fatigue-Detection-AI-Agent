@@ -1,4 +1,4 @@
-import { readCompatibleSession } from './mission-adapter.js';
+import { MISSION_EVENT_CONTRACT, readCompatibleSession } from './mission-adapter.js';
 import { SCHEMA_VERSION } from './versions.js';
 import {
   ORCHESTRATION_CONTRACT_ID,
@@ -9,6 +9,24 @@ import {
 import { createSessionOrchestrator } from './orchestrate.js';
 
 export const SESSION_ARTIFACT_ID = 'research-session-artifact/0.1-provisional';
+
+export const ORCHESTRATION_REPLAY_CONTRACT = Object.freeze({
+  kind: 'event_only',
+  measurement_fidelity: false,
+  contract_id: 'research-session-replay/0.1-provisional',
+  guarantees: Object.freeze([
+    'session state after the recorded lifecycle',
+    'task start/end membership and order',
+    'accepted event types, ids, sources, quality/missingness flags',
+    'session-relative and acquisition/processing timestamps on the timeline'
+  ]),
+  does_not_guarantee: Object.freeze([
+    'FeatureAccumulator samples or blink/closure summaries',
+    'reconstruction of facial features or EAR values',
+    'scientific measurement equivalence with the original session',
+    'mission-adapter measurement side effects for observations'
+  ])
+});
 
 export const W4_SESSION_ADAPTER_CONTRACT = Object.freeze({
   contract_id: 'w4-session-artifact/0.1-provisional',
@@ -25,7 +43,10 @@ export const W4_SESSION_ADAPTER_CONTRACT = Object.freeze({
     'mission-preview-1',
     'mission-exploratory-v1',
     'unknown schema_version',
-    'silent coercion into V1'
+    'silent coercion into V1',
+    'malformed orchestration or mission sidecars',
+    'unsupported orchestration, mission, or event contracts',
+    'unknown sidecar contract_version'
   ]),
   preserves: Object.freeze([
     'schema_version 1.0.0',
@@ -39,6 +60,7 @@ export const W4_SESSION_ADAPTER_CONTRACT = Object.freeze({
     'go-no-go-v1 trial semantics',
     'PVT outcomes or fatigue thresholds'
   ]),
+  replay: ORCHESTRATION_REPLAY_CONTRACT,
   w4_prerequisites: Object.freeze([
     'Caijia-signed protocol ids before scientific window labels',
     'dataset builder that reads this artifact without rewriting V1',
@@ -78,6 +100,7 @@ export function serializeOrchestration(input) {
     session_id: orchestration.session_id,
     mode: orchestration.mode,
     state: orchestration.state,
+    replay: input?.replay || null,
     orchestration
   });
 }
@@ -89,33 +112,76 @@ export function attachLocalOrchestration(session, orchestrator) {
   return session;
 }
 
+function failRead(kind, reason) {
+  return {
+    kind,
+    compatible: false,
+    coerced: false,
+    orchestration: null,
+    reason
+  };
+}
+
+export function readOrchestrationSidecar(orchestration) {
+  if (orchestration == null) return { ok: true, orchestration: null };
+  if (typeof orchestration !== 'object' || Array.isArray(orchestration)) {
+    return { ok: false, kind: 'malformed-orchestration', reason: 'orchestration sidecar is not an object' };
+  }
+  if (orchestration.contract_id !== ORCHESTRATION_CONTRACT_ID) {
+    return { ok: false, kind: 'unsupported-orchestration', reason: 'unknown orchestration contract' };
+  }
+  if (orchestration.contract_version != null && orchestration.contract_version !== '0.1.0') {
+    return {
+      ok: false,
+      kind: 'invalid-orchestration-version',
+      reason: `unsupported orchestration contract_version ${orchestration.contract_version}`
+    };
+  }
+  if (orchestration.events != null && !Array.isArray(orchestration.events)) {
+    return { ok: false, kind: 'malformed-orchestration', reason: 'events must be an array' };
+  }
+  for (const event of orchestration.events || []) {
+    if (!event || typeof event !== 'object' || event.contract_id !== RESEARCH_EVENT_CONTRACT_ID) {
+      return {
+        ok: false,
+        kind: 'unsupported-event-contract',
+        reason: 'event contract_id is not research-event/0.1-provisional'
+      };
+    }
+  }
+  return { ok: true, orchestration };
+}
+
+export function readMissionSidecar(mission) {
+  if (mission == null) return { ok: true, mission: null };
+  if (typeof mission !== 'object' || Array.isArray(mission)) {
+    return { ok: false, kind: 'malformed-mission', reason: 'mission sidecar is not an object' };
+  }
+  if (mission.contract_id != null && mission.contract_id !== MISSION_EVENT_CONTRACT.contract_id) {
+    return { ok: false, kind: 'unsupported-mission', reason: 'unknown mission contract' };
+  }
+  return { ok: true, mission };
+}
+
 export function readSessionArtifact(session) {
   const base = readCompatibleSession(session);
   if (!base.compatible) {
     return { ...base, orchestration: null };
   }
-  const orchestration = session.orchestration || null;
-  if (!orchestration) {
+  const orchestrationRead = readOrchestrationSidecar(session.orchestration || null);
+  if (!orchestrationRead.ok) return failRead(orchestrationRead.kind, orchestrationRead.reason);
+  const missionRead = readMissionSidecar(session.mission || null);
+  if (!missionRead.ok) return failRead(missionRead.kind, missionRead.reason);
+  if (!orchestrationRead.orchestration) {
     return { ...base, orchestration: null };
-  }
-  if (orchestration.contract_id !== ORCHESTRATION_CONTRACT_ID) {
-    return {
-      kind: 'unsupported-orchestration',
-      compatible: false,
-      coerced: false,
-      orchestration: null,
-      reason: 'unknown orchestration contract'
-    };
   }
   return {
     ...base,
-    orchestration,
+    orchestration: orchestrationRead.orchestration,
     local_only: true,
     upload_eligible: false
   };
 }
-
-const TERMINAL_TYPES = new Set(['session_completed', 'session_interrupted', 'session_failed']);
 
 export function replayOrchestration(artifact, { protocol = null } = {}) {
   const snap = artifact.orchestration || artifact;
@@ -149,17 +215,8 @@ export function replayOrchestration(artifact, { protocol = null } = {}) {
       orch.endTask(event.task_id, { reason: event.reason || 'completed', endedAt: elapsed });
       continue;
     }
-    if (event.type === 'observation') {
-      orch.recordObservation({
-        acquisitionTs: event.acquired_elapsed_ms,
-        processedTs: processed,
-        source: event.source,
-        quality: event.quality || 'valid'
-      });
-      continue;
-    }
-    if (event.type === 'dropout') {
-      orch.recordDropout({ at: elapsed, source: event.source });
+    if (event.type === 'observation' || event.type === 'dropout') {
+      orch.importTimelineEvent(event);
       continue;
     }
     if (event.type === 'session_completed') {
@@ -174,9 +231,7 @@ export function replayOrchestration(artifact, { protocol = null } = {}) {
       orch.fail({ reason: event.reason || 'failed', endedAt: elapsed });
       continue;
     }
-    if (TERMINAL_TYPES.has(event.type)) {
-      continue;
-    }
   }
+  orch.replay = ORCHESTRATION_REPLAY_CONTRACT;
   return orch;
 }

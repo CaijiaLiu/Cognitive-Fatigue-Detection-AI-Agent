@@ -44,7 +44,8 @@ Rules:
 - tasks run in protocol order;
 - late callbacks after a terminal state are rejected and do not mutate summaries;
 - interruption ends the open task and clears timers/listeners/tracking;
-- clocks are injected (`now`) for deterministic tests.
+- clocks are injected (`now`) for deterministic tests;
+- mutations are validate-before-commit: rejected timestamps, event-contract failures, and out-of-order events do not change session state, the current task, task start/end records, `next_task_index`, last acquisition time, `FeatureAccumulator`, the mission adapter, or the accepted timeline.
 
 ## Events
 
@@ -53,5 +54,17 @@ Each accepted event records session id, optional task id, type, session-relative
 ## Local export
 
 `attachLocalOrchestration(session, orchestrator)` writes `session.orchestration` and reuses the W3.0 `session.mission` sidecar. `schema_version` remains `1.0.0`. Both sidecars are `local_only` / `upload_eligible: false`. Cloud `sanitizeSession` is unchanged and still strips unknown fields.
+
+## Replay contract (event-only)
+
+`replayOrchestration` is **event-only**. It reconstructs session state, task membership, and the accepted timeline. It does **not** call `recordObservation` with default facial features and does **not** claim `FeatureAccumulator` or blink/closure fidelity.
+
+| Guarantees | Does not guarantee |
+|---|---|
+| Terminal state and task start/end order | Reconstructed EAR / facial features |
+| Event types, sources, quality/missingness flags | Blink, closed-time, or coverage summaries |
+| Session-relative and acquisition/processing timestamps | Scientific measurement equivalence |
+
+`measurement_fidelity` is always `false` in this phase. Full measurement replay would require stored input features and is deferred so we do not invent samples or change privacy/science contracts.
 
 See [W4 session artifact](w4-session-artifact.md).

@@ -11,7 +11,7 @@ W3.1 produces a local-only artifact so W4 can ingest versioned sessions without 
 - optional `session.mission` (`mission-event/0.1-provisional`)
 - deterministic serialized artifact from `serializeOrchestration`
 
-`readSessionArtifact` and `readCompatibleSession` reject `mission-preview-1` / `mission-exploratory-v1` and do not coerce them into V1.
+`readSessionArtifact` and `readCompatibleSession` reject `mission-preview-1` / `mission-exploratory-v1` and do not coerce them into V1. The W4 reader also fails closed on malformed sidecars, unknown sidecar `contract_version`, and unsupported orchestration / mission / event contracts. A broken sidecar is not silently dropped onto a “clean” V1 read.
 
 ## Required reader behavior
 
@@ -21,7 +21,7 @@ W3.1 produces a local-only artifact so W4 can ingest versioned sessions without 
 4. Keep acquisition time and processing time separate. Do not substitute processed time for task-boundary admission.
 5. Keep camera, simulated, and task-only provenance unmixed unless a later scientific decision says otherwise.
 6. Split future training/evaluation by `participant_id` / group. Do not leak session-level labels onto every window.
-7. Replay fixtures with `replayOrchestration` when testing deterministic serialization.
+7. Replay fixtures with `replayOrchestration` only for timeline/state checks. Replay is event-only (`measurement_fidelity: false`) and must not be used as proof of blink, EAR, or closure equivalence.
 
 ## Explicit non-goals
 
