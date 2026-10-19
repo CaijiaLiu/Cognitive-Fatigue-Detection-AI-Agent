@@ -121,7 +121,7 @@ Not returned: system/user prompts, raw provider text, camera frames, participant
 - Browsers send `Origin` on same-site `fetch`; the handler rejects missing or cross-origin requests.
 - Session authorization is enforced again inside the runtime (`intent` ⊆ `session_scope`).
 - Tool arguments are chosen by the runtime, not the client.
-- The default provider is `createMockProvider` seeded with `composeAnswer`. The gold object still passes `validateAgentAnswer` before it is returned.
+- The default provider is `createMockProvider` seeded with `composeAnswer`. The gold object still passes `validateAgentAnswer` before it is returned. `NEUROLENS_AGENT_PROVIDER=openai` selects the real adapter; the client cannot send provider, model, or API keys.
 - No API key is read. Tests replace `fetch` only inside existing runtime suites; this handler does not call the network.
 
 ## Error handling

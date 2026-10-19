@@ -59,6 +59,7 @@ npm run test:integration
 npm run test:reliability
 npm run test:runtime
 npm run test:agent-api
+npm run test:llm
 npm run test:flow
 npx tsc --noEmit
 npm run build
@@ -66,7 +67,7 @@ npm run build
 node tests/integration.mjs
 ```
 
-`npm run test:integration` is the offline W1.6 pipeline (V1 export → adapter → tools → prompt → validator). `npm run test:reliability` / `npm run eval:reliability` run W1.7 adversarial and metamorphic contract tests. `npm run test:runtime` runs the W2.1 mock-provider orchestrator. `npm run test:agent-api` runs the W2.2 HTTP handler and demo view-model tests. They need no LLM API key and no network. They are not `tests/integration.mjs` (local D1 / collection cloud). The synthetic Research Agent demo is `/research-agent`.
+`npm run test:integration` is the offline W1.6 pipeline (V1 export → adapter → tools → prompt → validator). `npm run test:reliability` / `npm run eval:reliability` run W1.7 adversarial and metamorphic contract tests. `npm run test:runtime` runs the W2.1 mock-provider orchestrator. `npm run test:agent-api` runs the W2.2 HTTP handler and demo view-model tests. `npm run test:llm` / `npm run eval:llm` run the W2.3 provider config and mock evaluation suite. They need no LLM API key and no network. Live OpenAI evaluation is `NEUROLENS_AGENT_ALLOW_LIVE=1 npm run eval:llm -- --live` and is never part of `npm test`. They are not `tests/integration.mjs` (local D1 / collection cloud). The synthetic Research Agent demo is `/research-agent`.
 
 Completed verification: five data-validation tests, type checking, a production build, local consent gating, authorization, deduplication, exports, withdrawal, replay protection, and a 30-second browser flow using simulated visual features. The original local MVP's 12 core/camera-interface tests also passed. The deployed page, model, and WASM assets are accessible; unauthenticated exports are rejected, the researcher dashboard redirects to platform sign-in, and upload-ticket configuration works. These checks do not establish real-person camera capture, production owner sign-in, or medical validity.
 

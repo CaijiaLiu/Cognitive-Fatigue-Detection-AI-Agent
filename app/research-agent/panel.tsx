@@ -122,6 +122,12 @@ export default function ResearchAgentPanel() {
           <p style={{ fontSize: 12 }}>Evidence: {view.artifact_refs.join(', ')}</p>
         )}
         {view.reason_code && <p style={{ fontSize: 12 }}>Reason: {view.reason_code}</p>}
+        {view.provider && typeof view.provider === 'object' && (
+          <p style={{ fontSize: 11, color: '#7a8981' }}>
+            Provider: {String(view.provider.provider_id ?? view.provider.kind ?? '')}
+            {view.provider.model ? ` / ${String(view.provider.model)}` : ''}
+          </p>
+        )}
         {Array.isArray(view.limitations) && view.limitations.length > 0 && (
           <ul style={{ fontSize: 11, color: '#728067', paddingLeft: 18 }}>
             {view.limitations.map((line: string) => <li key={line}>{line}</li>)}

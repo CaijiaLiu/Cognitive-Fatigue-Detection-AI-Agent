@@ -8,6 +8,15 @@ export {
   RUNTIME_VERSION,
 } from './constants.mjs';
 export { ProviderError, createMockProvider, providerIdentity } from './provider.mjs';
+export { createOpenAIProvider } from './openai.mjs';
+export {
+  AGENT_ENV,
+  assertNoSecretLeak,
+  createConfiguredProvider,
+  loadAgentProviderConfig,
+  loadEvalBudget,
+  publicProviderView,
+} from './config.mjs';
 export { buildAudit, sha256Text } from './audit.mjs';
 export { createResearchAgentRuntime } from './orchestrate.mjs';
 export {

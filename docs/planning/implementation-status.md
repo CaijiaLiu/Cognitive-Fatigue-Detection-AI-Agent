@@ -1,5 +1,40 @@
 # Implementation status
 
+## W2.3 Real LLM provider and controlled evaluation (2026-10-19)
+
+**Status:** Implemented and verified with deterministic mock/config tests. OpenAI adapter is opt-in. Live evaluation is **NOT RUN**. Not scientifically validated, not a public paid endpoint, not deployed.
+
+Implementation branch: `feature/w2-real-llm-provider`, based on `develop/neurolens-agent` after PR #9 fast-forward (`1c3a995`). Source: `analysis/src/neurolens/runtime/{config,openai}.mjs`, `analysis/src/neurolens/eval/{llm-eval,llm-report}.mjs`. Tests: `tests/agent-llm.test.mjs`. Design: [agent-llm-provider.md](../architecture/agent-llm-provider.md).
+
+The default provider remains `mock`. `NEUROLENS_AGENT_PROVIDER=openai` plus `OPENAI_API_KEY` selects `createOpenAIProvider`. The existing runtime still validates every completion. There is no silent fallback from openai to mock.
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| OpenAI `complete()` adapter | Implemented | Official Chat Completions HTTP API; timeout / empty / non-JSON mapped |
+| Server-side provider selection | Implemented | Env only; client `provider` / `api_key` rejected |
+| Controlled mock evaluation | Implemented | 22 synthetic cases A–F; `llm-eval-report/0.1` |
+| Live evaluation | NOT RUN | Requires `--live` and `NEUROLENS_AGENT_ALLOW_LIVE=1` |
+| Cost estimate | Optional | Only when both price env vars are set |
+| Public paid endpoint | Out of scope | Local/dev only until auth and rate limits exist |
+| Scientific metric review | Blocked | Pending Caijia review; unchanged |
+
+**Not changed:** collection consent/camera/D1, metric identifiers, units, protocol compatibility, or Caijia review items.
+
+**Checks actually run (2026-10-19, W2.3):**
+- `npm test` — 105 passed, 0 failed (10 agent-api + 12 agent-eval + 8 agent-llm + 7 agent-reliability + 14 agent-runtime + 23 agent-tools + 16 analysis-adapter + 6 analysis-integration + 4 collection + 5 research).
+- `npm run test:runtime` — 14 passed.
+- `npm run test:agent-api` — 10 passed.
+- `npm run test:llm` — 8 passed.
+- `npm run test:integration` — 6 passed.
+- `npm run test:reliability` — 7 passed.
+- `npm run test:flow` — PASS.
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run eval:llm` — mock suite 22/22 e2e; live **NOT RUN**.
+- `tests/integration.mjs` was not run.
+- No live OpenAI call was made and no production API key was read.
+
+**Next task:** keep scientific review blocked. A later hosting review is required before any public openai endpoint. Do not merge this PR to `main`. Do not treat the mock eval report as live LLM quality.
+
 ## W2.2 Research Agent HTTP API and interactive demo (2026-10-19)
 
 **Status:** Implemented and verified with in-process HTTP handler tests plus typecheck/build. Synthetic fixtures and mock provider only. Not a public LLM endpoint, not scientifically validated, not deployed.

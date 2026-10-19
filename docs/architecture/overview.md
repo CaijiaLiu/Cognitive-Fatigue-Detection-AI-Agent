@@ -38,7 +38,7 @@ flowchart TD
 | Persistence | IndexedDB; optional authenticated researcher access to D1 | Backward-compatible exports, validated schema evolution |
 | Analysis | Descriptive summaries and two browser plots | Reproducible Python statistics, grouped evaluation, model comparison |
 | Reports / extensions | Local results and private table | Scientific reports; video and interview adapters; long-term attention research |
-| Evidence-grounded agent tools | Deterministic W1 read-only interface, artifacts, validators, an offline V1 JSON export adapter, a mock-provider runtime, and a synthetic HTTP/UI demo; no hosted LLM | Constrained generation, provenance retrieval and evaluation against real analysis runs |
+| Evidence-grounded agent tools | Deterministic W1 read-only interface, artifacts, validators, an offline V1 JSON export adapter, a mock-default runtime, an opt-in OpenAI adapter, and a synthetic HTTP/UI demo | Constrained generation, provenance retrieval and evaluation against real analysis runs |
 
 ## Technology decisions
 

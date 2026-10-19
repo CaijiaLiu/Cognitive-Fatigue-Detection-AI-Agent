@@ -12,9 +12,10 @@ import {
   isOpaqueRef,
 } from '../agent/index.mjs';
 import { isPlainObject } from '../agent/validate.mjs';
-import { createMockProvider } from './provider.mjs';
+import { ProviderError, createMockProvider } from './provider.mjs';
 import { createResearchAgentRuntime } from './orchestrate.mjs';
 import { DEMO_DISCLAIMER, DEMO_QUESTIONS, DEMO_SESSIONS } from './demo-ui.mjs';
+import { createConfiguredProvider, loadAgentProviderConfig, publicProviderView } from './config.mjs';
 
 export const AGENT_API_VERSION = 'research-agent-http/0.1';
 export const MAX_AGENT_BODY_BYTES = 8192;
@@ -50,20 +51,28 @@ export function sameOrigin(request) {
   }
 }
 
-export function createDemoRuntime({ tools, provider, timeout_ms, now, clock } = {}) {
+export function createDemoRuntime({ tools, provider, timeout_ms, now, clock, env, config, fetchImpl } = {}) {
   const agentTools = tools ?? createAnalysisTools({ store: createFixtureStore() });
+  const resolved = config ?? loadAgentProviderConfig(env ?? process.env);
+  if (!provider && !resolved.ok) {
+    throw new ProviderError(resolved.reason_code, resolved.error);
+  }
   return {
     tools: agentTools,
+    config: resolved,
     ask(runtimeRequest) {
-      const mock = provider ?? createMockProvider({
-        provider_id: 'mock-demo',
-        model: 'mock-compose/0.1',
-        response: composeAnswer(runtimeRequest.intent, agentTools),
-      });
+      let selected = provider;
+      if (!selected) {
+        selected = createConfiguredProvider(resolved, {
+          timeout_ms,
+          fetchImpl,
+          response: composeAnswer(runtimeRequest.intent, agentTools),
+        });
+      }
       return createResearchAgentRuntime({
         tools: agentTools,
-        provider: mock,
-        timeout_ms,
+        provider: selected,
+        timeout_ms: timeout_ms ?? resolved.timeout_ms,
         now,
         clock,
       }).ask(runtimeRequest);
@@ -105,6 +114,9 @@ export function validateAgentHttpBody(body) {
   const extra = Object.keys(body).filter((key) => !['question', 'intent', 'session_scope', 'request_id'].includes(key));
   if (extra.length > 0) {
     return { ok: false, status: 400, error: `Unexpected fields: ${extra.join(', ')}.`, reason_code: REASON_CODES.REJECTED_REQUEST };
+  }
+  if (body.provider || body.model || body.api_key || body.openai_api_key) {
+    return { ok: false, status: 400, error: 'Client-selected providers and credentials are not accepted.', reason_code: REASON_CODES.REJECTED_REQUEST };
   }
   if (body.evidence || body.tool_results || body.artifacts) {
     return { ok: false, status: 400, error: 'Client-provided evidence is not accepted.', reason_code: REASON_CODES.REJECTED_REQUEST };
@@ -156,11 +168,13 @@ async function readJsonBody(request) {
   }
 }
 
-export function handleResearchAgentGet() {
+export function handleResearchAgentGet(options = {}) {
+  const config = options.config ?? loadAgentProviderConfig(options.env ?? process.env);
   return json(200, {
     ok: true,
     api_version: AGENT_API_VERSION,
     demo: DEMO_DISCLAIMER,
+    provider: publicProviderView(config),
     sessions: DEMO_SESSIONS,
     questions: DEMO_QUESTIONS,
     allowed_metrics: ALLOWED_METRICS,
@@ -180,7 +194,17 @@ export async function handleResearchAgentPost(request, options = {}) {
   if (!checked.ok) {
     return json(checked.status, errorBody(checked.error, { reason_code: checked.reason_code }));
   }
-  const runtime = options.runtime ?? createDemoRuntime(options);
+  let runtime;
+  try {
+    runtime = options.runtime ?? createDemoRuntime(options);
+  } catch (error) {
+    const message = error instanceof ProviderError
+      ? error.message
+      : 'The configured research-agent provider is unavailable.';
+    return json(503, errorBody(message, {
+      reason_code: error?.reason_code ?? REASON_CODES.PROVIDER_UNAVAILABLE,
+    }));
+  }
   const result = await runtime.ask(checked.value);
   const providerFailed = result.audit.failure_class === 'provider';
   const status = providerFailed ? 503 : 200;
@@ -188,6 +212,7 @@ export async function handleResearchAgentPost(request, options = {}) {
     ok: !providerFailed,
     api_version: AGENT_API_VERSION,
     demo: DEMO_DISCLAIMER,
+    provider: publicProviderView(runtime.config ?? loadAgentProviderConfig(options.env ?? process.env)),
     answer: result.answer,
     audit: publicAudit(result.audit),
   });

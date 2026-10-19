@@ -98,8 +98,9 @@ export function viewFromHttp({ loading = false, httpStatus = null, body = null, 
     return {
       kind: 'error',
       title: 'Provider unavailable',
-      detail: answer?.reason_code ?? body.error ?? 'The mock provider did not complete.',
-      reason_code: answer?.reason_code,
+      detail: 'The research agent could not complete this request. No unvalidated model output is shown.',
+      reason_code: answer?.reason_code ?? body.reason_code,
+      provider: body.provider ?? null,
       limitations: answer?.limitations ?? [DEMO_DISCLAIMER.text],
     };
   }
@@ -112,6 +113,7 @@ export function viewFromHttp({ loading = false, httpStatus = null, body = null, 
       claims: [],
       artifact_refs: body.audit?.artifact_refs ?? [],
       limitations: answer.limitations ?? [],
+      provider: body.provider ?? null,
     };
   }
   if (answer?.status === 'answered') {
@@ -122,6 +124,7 @@ export function viewFromHttp({ loading = false, httpStatus = null, body = null, 
       claims: answer.claims ?? [],
       artifact_refs: body.audit?.artifact_refs ?? [],
       limitations: answer.limitations ?? [],
+      provider: body.provider ?? null,
     };
   }
   return { kind: 'error', title: 'Unexpected response', detail: 'The API did not return a validated agent-answer/0.1 object.' };

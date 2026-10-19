@@ -3,6 +3,10 @@ export const AUDIT_VERSION = 'agent-runtime-audit/0.1';
 export const DEFAULT_TIMEOUT_MS = 2000;
 export const DEFAULT_PROVIDER_ID = 'mock';
 export const DEFAULT_MODEL = 'mock-scripted/0.1';
+export const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini';
+export const DEFAULT_OPENAI_TIMEOUT_MS = 15000;
+export const DEFAULT_MAX_OUTPUT_TOKENS = 400;
+export const OPENAI_CHAT_URL = 'https://api.openai.com/v1/chat/completions';
 export const RUNTIME_LIMIT = 'Runtime-validated output; not a fatigue diagnosis and not scientifically validated.';
 
 export const FAILURE_CLASS = Object.freeze({

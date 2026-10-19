@@ -61,7 +61,7 @@ provider.complete({ system, user, timeout_ms }) → Promise<{ text, latency_ms, 
 | `timeout` | Throws `ProviderError` / `provider_timeout` |
 | `unavailable` | Throws `ProviderError` / `provider_unavailable` |
 
-A later HTTP provider must implement the same `complete()` method, read credentials from the environment (never from Git), honor `timeout_ms`, and must not validate evidence itself.
+W2.3 adds `createOpenAIProvider`, selected only when `NEUROLENS_AGENT_PROVIDER=openai`. It implements the same `complete()` method, reads `OPENAI_API_KEY` from the environment (never from Git or the browser), honors `timeout_ms`, and does not validate evidence. See [agent-llm-provider.md](agent-llm-provider.md).
 
 ## Execution lifecycle
 
