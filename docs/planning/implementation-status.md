@@ -4,7 +4,7 @@
 
 **Status:** Deployment workflow prepared. Preview **not published**. Caijia local testing remains separately owned. Scientific review remains **Pending / Blocked**.
 
-Implementation branch: `feature/w2-sites-deployment-readiness`, based on `develop/neurolens-agent` after PR #14 fast-forward (`439f05b`). Runbook: [sites-preview-deployment.md](../operations/sites-preview-deployment.md). Architecture: [sites-deployment.md](../architecture/sites-deployment.md).
+Implementation branch: `feature/w2-sites-deployment-readiness` @ `d73a2a2` (Draft PR #15), based on `develop/neurolens-agent` after PR #14 fast-forward (`439f05b`). Runbook: [sites-preview-deployment.md](../operations/sites-preview-deployment.md). Architecture: [sites-deployment.md](../architecture/sites-deployment.md).
 
 | Capability | Status | Evidence / remaining work |
 |---|---|---|
