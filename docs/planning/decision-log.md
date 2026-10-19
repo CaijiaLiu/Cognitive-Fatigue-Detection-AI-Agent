@@ -4,6 +4,12 @@ This file is the durable record of **accepted project decisions**, not a specula
 
 ## Accepted decisions — 2026-10-19
 
+### DEC-008: Baseline model metrics exclude runtime and validator substitutes
+**Accepted.** For the real-LLM baseline, grounded/numeric/citation rates use provider-invoked answered rows compared to authorized fixture evidence. Validator-forced abstention is not correct model abstention. Unknown cost is NOT_MEASURED, not $0. Prompts and the validator are not tuned on the same baseline run.
+
+**Reason:** Counting empty abstentions or D-class validator rejects as model success inflates a live baseline.
+**Implementation implications:** Keep W2.4 report leak/expectation fields for mock 22/22 comparability. Live gold unexpected abstention is FAIL, not an automatic pass.
+
 ### DEC-007: Live eval is dry-run unless `--execute`
 **Accepted.** `eval:llm --live` prints a dry-run (provider/model, case IDs, caps, illustrative cost) and does not call the provider. Paid evaluation also requires `--execute`, `NEUROLENS_AGENT_ALLOW_LIVE=1`, `OPENAI_API_KEY`, request/token/timeout caps, concurrency 1, and a local `--out` path. An API key is not permission to spend.
 

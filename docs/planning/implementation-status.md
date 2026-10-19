@@ -1,5 +1,26 @@
 # Implementation status
 
+## W2.6A Real LLM baseline experiment (2026-10-19)
+
+**Status:** Baseline scoring integrity verified. Dry-run manifest recorded. Live paid baseline is **NOT RUN**. Not scientifically validated. Caijia scientific review remains **Pending / Blocked**.
+
+Implementation branch: `feature/w2-live-llm-baseline`, based on `develop/neurolens-agent` after PR #11 fast-forward (`eaf44d9`). Design: [agent-llm-baseline.md](../architecture/agent-llm-baseline.md). Manifest: [w2-live-baseline-manifest.json](w2-live-baseline-manifest.json).
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| PR #11 consolidation | Merged | Fast-forward into develop @ `eaf44d9` |
+| Model vs runtime denominators | Tightened | Runtime skips excluded; D ≠ model abstention; abstention ≠ numeric/citation success |
+| Evidence-based numeric/citation | Implemented | Compare answered claims to `composeAnswer` gold artifacts |
+| Dry-run manifest | Implemented | 12 cases, 6 expected invocations, no secrets |
+| Live baseline | NOT RUN | No key, no ALLOW_LIVE, no `--execute` spend authorization |
+| Scientific metric review | Blocked | Pending Caijia review; identifiers/units unchanged |
+
+**Not changed:** prompts, validator, production runtime contract, collection/camera/D1, or Caijia review assignments.
+
+**Checks actually run (2026-10-19, W2.6A):** recorded after regression.
+
+**Next task:** authorized `--live --execute` with a local `--out` and an explicit cost cap. Do not merge to `main`.
+
 ## W2.5 Real LLM evaluation and failure analysis (2026-10-19)
 
 **Status:** Implemented as an analysis layer over the existing W2.3/W2.4 eval engine. Live paid evaluation is **NOT RUN**. Not scientifically validated. Caijia scientific review remains **Pending / Blocked**.

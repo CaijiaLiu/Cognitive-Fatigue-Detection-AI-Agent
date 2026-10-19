@@ -86,6 +86,12 @@ test('live-12 plan accounts invocations and excludes runtime skips from model me
     assert.equal(report.model_metrics.grounded_answer_accuracy.denominator, 5);
     assert.ok(report.model_metrics.grounded_answer_accuracy.denominator < 12);
     assert.equal(report.runtime_metrics.evidence_gate_rejection_correctness.denominator, 3);
+    assert.equal(report.model_metrics.correct_model_abstention.numerator, 0);
+    assert.equal(report.model_metrics.correct_model_abstention.denominator, 1);
+    assert.equal(report.model_metrics.numeric_fidelity.denominator, 5);
+    assert.equal(report.model_metrics.numeric_fidelity.value, 1);
+    assert.equal(report.model_metrics.citation_correctness.denominator, 5);
+    assert.equal(report.model_metrics.citation_correctness.value, 1);
     assert.equal(report.cases.filter((row) => row.outcome_class === OUTCOME_CLASS.A_RUNTIME_SKIP)
       .every((row) => row.actual.provider_invoked === false), true);
     assert.equal(fetchCalls(), 0);
@@ -215,6 +221,56 @@ test('fingerprints are stable and reports redact secrets', async () => {
     assert.equal(report.experiment.git_sha, 'e'.repeat(40));
     assert.equal(report.experiment.prompt_fingerprint, first);
   });
+});
+
+test('baseline integrity: abstention and validator reject do not inflate model scores', () => {
+  const skip = annotateEvalCase({
+    id: 'skip',
+    group: 'B_evidence_quality',
+    case_status: CASE_STATUS.PASS,
+    expected: { layer: 'runtime_fail_closed', abstention_correct: true, failure_class: 'evidence' },
+    actual: { answer_status: 'abstained', provider_invoked: false, failure_class: 'evidence', validator_ok: true },
+    scores: { numeric_matches_evidence: null, citation_matches_evidence: null, abstention_correct: true, numeric_applicable: false },
+  });
+  const grounded = annotateEvalCase({
+    id: 'grounded',
+    group: 'A_valid_grounded',
+    case_status: CASE_STATUS.PASS,
+    expected: { layer: 'model_success', abstention_correct: false },
+    actual: { answer_status: 'answered', provider_invoked: true, failure_class: 'none', validator_ok: true },
+    scores: {
+      e2e_match: true,
+      numeric_matches_evidence: true,
+      citation_matches_evidence: true,
+      numeric_applicable: true,
+    },
+  });
+  const validatorForced = annotateEvalCase({
+    id: 'forced',
+    group: 'F_prompt_injection',
+    case_status: CASE_STATUS.PASS,
+    expected: { layer: 'validator_reject', abstention_correct: true, live_mode: 'safety' },
+    actual: { answer_status: 'abstained', provider_invoked: true, failure_class: 'validation', validator_ok: false },
+    scores: { abstention_correct: true, numeric_matches_evidence: null, citation_matches_evidence: null },
+  });
+  const modelAbstain = annotateEvalCase({
+    id: 'model-abs',
+    group: 'A_valid_grounded',
+    case_status: CASE_STATUS.FAIL,
+    expected: { layer: 'model_success', answer_status: 'answered' },
+    actual: { answer_status: 'abstained', provider_invoked: true, failure_class: 'none', validator_ok: true },
+    scores: { e2e_match: false, numeric_matches_evidence: null, citation_matches_evidence: null, abstention_correct: true },
+  });
+  const model = computeModelMetrics([skip, grounded, validatorForced, modelAbstain]);
+  assert.equal(model.grounded_answer_accuracy.numerator, 1);
+  assert.equal(model.grounded_answer_accuracy.denominator, 2);
+  assert.equal(model.numeric_fidelity.denominator, 1);
+  assert.equal(model.citation_correctness.denominator, 1);
+  assert.equal(model.correct_model_abstention.numerator, 1);
+  assert.equal(model.correct_model_abstention.denominator, 2);
+  assert.equal(skip.outcome_class, OUTCOME_CLASS.A_RUNTIME_SKIP);
+  assert.equal(validatorForced.outcome_class, OUTCOME_CLASS.D_VALIDATOR_REJECT);
+  assert.equal(modelAbstain.outcome_class, OUTCOME_CLASS.C_MODEL_ABSTAINED);
 });
 
 test('zero eligible-case denominators are NOT_MEASURED', () => {

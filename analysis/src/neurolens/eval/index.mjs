@@ -69,6 +69,7 @@ export {
   fingerprintFixtures,
   fingerprintPrompt,
   formatLlmEvalMarkdown,
+  readGitSha,
 } from './llm-analysis.mjs';
 export {
   PIPELINE_ID,

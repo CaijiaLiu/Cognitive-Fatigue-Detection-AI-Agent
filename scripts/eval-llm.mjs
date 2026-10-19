@@ -19,6 +19,7 @@ import {
   ASSUMED_INPUT_TOKENS,
   formatLlmEvalMarkdown,
   estimateUpperBoundUsd,
+  readGitSha,
 } from '../analysis/src/neurolens/eval/llm-analysis.mjs';
 import { loadAgentProviderConfig, loadEvalBudget } from '../analysis/src/neurolens/runtime/config.mjs';
 import { DEFAULT_MAX_OUTPUT_TOKENS, DEFAULT_OPENAI_TIMEOUT_MS } from '../analysis/src/neurolens/runtime/constants.mjs';
@@ -57,13 +58,16 @@ function selectedCases(plan) {
   return plan === 'live-12' ? listLivePlanCases() : listLlmEvalCases();
 }
 
-export function buildLiveDryRun({ env = {}, plan = 'live-12', out = null } = {}) {
+export function buildLiveDryRun({ env = {}, plan = 'live-12', out = null, git_sha } = {}) {
   const config = loadAgentProviderConfig({
     ...env,
     NEUROLENS_AGENT_PROVIDER: env.NEUROLENS_AGENT_PROVIDER ?? 'openai',
   });
   const budget = loadEvalBudget(env);
   const cases = selectedCases(plan);
+  const expectedInvocations = cases.filter((item) => (
+    item.expect?.provider_invoked === true || item.live_mode === 'safety' || item.scripted === 'gold'
+  )).length;
   const maxRequests = Math.min(budget.max_requests ?? cases.length, cases.length);
   const maxTokens = config.max_output_tokens ?? DEFAULT_MAX_OUTPUT_TOKENS;
   const upper = budget.ok && budget.pricing_configured
@@ -78,8 +82,11 @@ export function buildLiveDryRun({ env = {}, plan = 'live-12', out = null } = {})
   return {
     live_evaluation: 'DRY_RUN',
     execute: false,
+    experiment: 'w2.6a-live-baseline',
+    git_sha: readGitSha({ git_sha }),
     plan,
     case_ids: plan === 'live-12' ? [...LIVE_PLAN_CASE_IDS] : cases.map((item) => item.id),
+    expected_provider_invocations: expectedInvocations,
     provider_id: config.provider_id,
     model: config.model,
     allow_live: config.allow_live === true,
@@ -98,8 +105,10 @@ export function buildLiveDryRun({ env = {}, plan = 'live-12', out = null } = {})
 function formatDryRun(summary) {
   return [
     'NeuroLens LLM eval DRY-RUN (no provider calls)',
+    `experiment ${summary.experiment ?? 'n/a'}  git ${summary.git_sha ?? 'unknown'}`,
     `provider ${summary.provider_id}/${summary.model}`,
     `cases ${summary.case_ids.join(', ')}`,
+    `expected_provider_invocations ${summary.expected_provider_invocations ?? 'n/a'}`,
     `max_requests ${summary.max_requests}  max_output_tokens ${summary.max_output_tokens}  timeout_ms ${summary.timeout_ms}  concurrency ${summary.concurrency}`,
     `estimated_upper_bound_usd ${summary.estimated_upper_bound_usd ?? 'NOT_MEASURED'}`,
     summary.cost_assumption,

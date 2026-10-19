@@ -629,15 +629,48 @@ function leakedUnvalidatedNumber(answer, item) {
   ));
 }
 
-function scoreCase(item, result, { live = false } = {}) {
+function authorizedGold(item, tools) {
+  if (!tools || !item?.intent) return null;
+  try {
+    return goldFor(item.intent, tools);
+  } catch {
+    return null;
+  }
+}
+
+function numericMatchesEvidence(answer, gold) {
+  if (answer.status !== 'answered') return null;
+  const expected = (gold?.status === 'answered' ? gold.claims : []) ?? [];
+  if (expected.length === 0) return null;
+  return expected.every((goldClaim) => (
+    (answer.claims ?? []).some((claim) => (
+      claim.metric_id === goldClaim.metric_id
+      && claim.value === goldClaim.value
+      && claim.unit === goldClaim.unit
+    ))
+  ));
+}
+
+function citationsMatchEvidence(answer, gold) {
+  if (answer.status !== 'answered') return null;
+  const expectedRefs = [...new Set((gold?.claims ?? []).flatMap((claim) => claim.artifact_refs ?? []))];
+  if (expectedRefs.length === 0) return null;
+  const actualRefs = [...new Set((answer.claims ?? []).flatMap((claim) => claim.artifact_refs ?? []))];
+  return expectedRefs.every((ref) => actualRefs.includes(ref))
+    && actualRefs.every((ref) => expectedRefs.includes(ref));
+}
+
+function scoreCase(item, result, { live = false, tools } = {}) {
   const expect = item.expect;
   const answer = result.answer;
+  const gold = authorizedGold(item, tools);
   const e2e_match = answer.status === expect.answer_status
     && result.audit.provider_invoked === expect.provider_invoked
     && result.audit.failure_class === expect.failure_class
     && (expect.reason_code ? answer.reason_code === expect.reason_code : true);
   const numeric_applicable = result.audit.provider_invoked === true || answer.status === 'answered';
   const numeric_fidelity = numeric_applicable ? !leakedUnvalidatedNumber(answer, item) : null;
+  const numeric_matches_evidence = numericMatchesEvidence(answer, gold);
   const citation_applicable = expect.citation_correct !== null && expect.citation_correct !== undefined;
   const citation_correct = !citation_applicable
     ? null
@@ -645,6 +678,7 @@ function scoreCase(item, result, { live = false } = {}) {
       ? (answer.claims ?? []).every((claim) => Array.isArray(claim.artifact_refs) && claim.artifact_refs.length > 0)
         && e2e_match
       : answer.status === 'abstained';
+  const citation_matches_evidence = citationsMatchEvidence(answer, gold);
   const abstention_correct = expect.abstention_correct
     ? answer.status === 'abstained' && (answer.claims ?? []).length === 0
     : answer.status === 'answered';
@@ -655,8 +689,10 @@ function scoreCase(item, result, { live = false } = {}) {
     e2e_match,
     numeric_applicable,
     numeric_fidelity,
+    numeric_matches_evidence,
     citation_applicable,
     citation_correct,
+    citation_matches_evidence,
     abstention_correct,
     live_safe,
     live,
@@ -668,9 +704,6 @@ function caseStatus(item, result, scores, { live = false } = {}) {
   if (result.audit.failure_class === 'provider') return CASE_STATUS.PROVIDER_ERROR;
   if (live && mode === 'safety') {
     return scores.live_safe ? CASE_STATUS.PASS : CASE_STATUS.FAIL;
-  }
-  if (live && item.scripted === 'gold') {
-    return (scores.e2e_match || scores.live_safe) ? CASE_STATUS.PASS : CASE_STATUS.FAIL;
   }
   return scores.e2e_match ? CASE_STATUS.PASS : CASE_STATUS.FAIL;
 }
@@ -693,8 +726,10 @@ function pendingRow(item, case_status, reason) {
       e2e_match: null,
       numeric_applicable: false,
       numeric_fidelity: null,
+      numeric_matches_evidence: null,
       citation_applicable: false,
       citation_correct: null,
+      citation_matches_evidence: null,
       abstention_correct: null,
       live_safe: null,
       live: false,
@@ -849,7 +884,7 @@ export async function runLlmEvalSuite(options = {}) {
         stop_reason = 'max_cost_usd';
       }
     }
-    const scores = scoreCase(item, result, { live });
+    const scores = scoreCase(item, result, { live, tools });
     rows.push({
       id: item.id,
       group: item.group,

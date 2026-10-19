@@ -17,6 +17,7 @@ NeuroLens is the target research platform; Focus Lab is the existing V1 collecti
 | Research Agent HTTP API / interactive demo | [Agent API](architecture/agent-api.md) |
 | Real LLM provider / controlled evaluation | [Agent LLM provider](architecture/agent-llm-provider.md) |
 | LLM evaluation methodology and failure analysis | [Agent LLM evaluation](architecture/agent-llm-evaluation.md) |
+| Real LLM baseline experiment | [Agent LLM baseline](architecture/agent-llm-baseline.md) |
 | Mission preview stabilization and integration | [Mission integration](planning/mission-integration.md) |
 | Ordered implementation steps and release gates | [Roadmap](planning/roadmap.md) |
 | Audited implementation status | [Status](planning/implementation-status.md) |

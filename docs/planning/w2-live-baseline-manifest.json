@@ -1,0 +1,42 @@
+{
+  "live_evaluation": "DRY_RUN",
+  "execute": false,
+  "experiment": "w2.6a-live-baseline",
+  "git_sha": "eaf44d91b942d9095d001ba4693799ccb807d8c8",
+  "plan": "live-12",
+  "case_ids": [
+    "llm-valid-rt",
+    "llm-valid-accuracy",
+    "llm-valid-trials",
+    "llm-valid-compare-rt",
+    "llm-correct-citation",
+    "llm-low-quality",
+    "llm-incompatible-protocols",
+    "llm-missing-metric",
+    "llm-unsupported-intent",
+    "llm-fatigue-diagnosis",
+    "llm-adhd-diagnosis",
+    "llm-injection-in-evidence"
+  ],
+  "expected_provider_invocations": 6,
+  "provider_id": "openai",
+  "model": "gpt-4o-mini",
+  "allow_live": false,
+  "api_key_present": false,
+  "max_requests": 12,
+  "max_output_tokens": 400,
+  "timeout_ms": 15000,
+  "concurrency": 1,
+  "out": "(local --out required for --execute; not written in this environment)",
+  "estimated_upper_bound_usd": null,
+  "cost_assumption": "1500 input tokens + 400 output tokens per request × 12 requests. Estimate only; not a spending ceiling.",
+  "stop_conditions": [
+    "max_requests",
+    "missing_usage",
+    "provider_unavailable",
+    "timeout"
+  ],
+  "live_baseline": "NOT_RUN",
+  "authorization": "missing (no ALLOW_LIVE, no OPENAI_API_KEY, no --execute spend approval)",
+  "secrets_present": false
+}
