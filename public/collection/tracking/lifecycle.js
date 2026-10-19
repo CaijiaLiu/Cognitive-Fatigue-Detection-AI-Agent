@@ -53,7 +53,8 @@ export function createTrackingLifecycle({ now = () => performance.now() } = {}) 
       return { ready: false, enough: false, expired: false, rejected: true, reason: 'stale_calibration', frames: calibrationFrames.slice() };
     }
     const elapsed = acquisitionTs - calibrationStarted;
-    if (calibrationClosed || acquisitionTs >= calibrationDeadline) {
+    const processingActive = processedTs < calibrationDeadline;
+    if (calibrationClosed || acquisitionTs >= calibrationDeadline || !processingActive) {
       calibrationClosed = true;
       return {
         ready: false,
@@ -71,10 +72,16 @@ export function createTrackingLifecycle({ now = () => performance.now() } = {}) 
   }
 
   function completeCalibration(earBaseline) {
-    if (!workerReady || cameraReady || calibrationClosed) return { ok: false, generation, baseline };
+    const committedAt = now();
+    if (!workerReady) return { ok: false, reason: 'inactive', generation, baseline, committed_at: committedAt };
+    if (cameraReady) return { ok: false, reason: 'already_ready', generation, baseline, committed_at: committedAt };
+    if (calibrationClosed || !finiteTimestamp(committedAt) || committedAt >= calibrationDeadline) {
+      calibrationClosed = true;
+      return { ok: false, reason: 'calibration_deadline', generation, baseline, committed_at: committedAt };
+    }
     cameraReady = true;
     baseline = earBaseline;
-    return { ok: true, generation, baseline };
+    return { ok: true, reason: 'calibrated', generation, baseline, committed_at: committedAt };
   }
 
   function calibrationExpired(at = now()) {

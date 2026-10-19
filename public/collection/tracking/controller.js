@@ -161,11 +161,16 @@ export function createTrackingController({
               return;
             }
             if (progress.enough) {
-              lifecycle.completeCalibration(median(progress.frames));
-              clearTimer(calibrationWatchdog);
-              status(`已校准，EAR 基线 ${lifecycle.baseline.toFixed(3)}。请保持脸部在画面内。`);
-              $('camera-overlay').textContent = '本地追踪 · 已校准';
-              updateSetup();
+              const completed = lifecycle.completeCalibration(median(progress.frames));
+              if (completed.ok === true) {
+                clearTimer(calibrationWatchdog);
+                status(`已校准，EAR 基线 ${lifecycle.baseline.toFixed(3)}。请保持脸部在画面内。`);
+                $('camera-overlay').textContent = '本地追踪 · 已校准';
+                updateSetup();
+              } else if (completed.reason === 'calibration_deadline') {
+                cameraFailure('校准未获得足够有效眼部帧。调整光线、正对镜头后重试；也可使用仅任务模式。', generation);
+                return;
+              }
             }
           }
           if (getActive() && getActive().mode === 'camera') {

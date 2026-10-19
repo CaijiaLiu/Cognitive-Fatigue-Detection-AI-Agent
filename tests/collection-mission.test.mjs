@@ -188,6 +188,7 @@ function createHarness(options = {}) {
     setTaskWindow(value) { taskWindow = value; },
     setNow(value) { now = value; },
     get now() { return now; },
+    overlay: () => elements.get('camera-overlay').textContent,
     streams,
     flushTo,
     resolveAcquire() {
@@ -451,24 +452,18 @@ test('calibration deadline is exclusive and late enough frames cannot succeed', 
   const deadline = started + 15000;
   const lifecycle = harness.tracking.lifecycle;
   for (let i = 0; i < 20; i += 1) {
-    const progress = lifecycle.ingestCalibrationEar(0.3, deadline - 1 + i, deadline + 400);
-    assert.equal(progress.enough, false);
-    if (i === 0) {
-      assert.equal(progress.expired, false);
-      assert.equal(progress.enough, false);
-    }
+    lifecycle.ingestCalibrationEar(0.3, started + 3000 + i, started + 3010 + i);
   }
+  assert.equal(lifecycle.calibrationFrames.length, 20);
+  harness.setNow(deadline);
+  const completed = lifecycle.completeCalibration(0.3);
+  assert.equal(completed.ok, false);
+  assert.equal(completed.reason, 'calibration_deadline');
+  assert.equal(lifecycle.ready, false);
   const atDeadline = lifecycle.ingestCalibrationEar(0.3, deadline, deadline + 10);
   assert.equal(atDeadline.expired, true);
   assert.equal(atDeadline.enough, false);
   assert.equal(atDeadline.reason, 'calibration_deadline');
-  assert.equal(lifecycle.ready, false);
-  assert.ok(lifecycle.calibrationFrames.length < 20);
-  const late = lifecycle.ingestCalibrationEar(0.3, deadline + 500, deadline + 800);
-  assert.equal(late.expired, true);
-  assert.equal(late.enough, false);
-  assert.equal(lifecycle.completeCalibration(0.3).ok, false);
-  assert.equal(lifecycle.ready, false);
 });
 
 test('calibration succeeds only when the completing acquisition is before the deadline', async () => {
@@ -486,6 +481,63 @@ test('calibration succeeds only when the completing acquisition is before the de
   assert.ok(started + 3019 < deadline);
   assert.equal(lifecycle.completeCalibration(0.31).ok, true);
   assert.equal(lifecycle.ready, true);
+});
+
+test('controller: frame acquired before the deadline but processed after it does not calibrate', async () => {
+  const harness = createHarness();
+  await harness.readyCamera();
+  const started = harness.now;
+  const deadline = started + 15000;
+  harness.setNow(deadline + 25);
+  for (let i = 0; i < 20; i += 1) {
+    harness.FakeWorker.last.emit(calibrationResult(started + 3000 + i));
+  }
+  assert.equal(harness.tracking.ready, false);
+  assert.notEqual(harness.overlay(), '本地追踪 · 已校准');
+  assert.ok(harness.statuses.every((entry) => !/^已校准/.test(entry.text)));
+});
+
+test('controller: callback at the exact deadline does not calibrate', async () => {
+  const harness = createHarness();
+  await harness.readyCamera();
+  const deadline = harness.now + 15000;
+  harness.setNow(deadline);
+  for (let i = 0; i < 20; i += 1) {
+    harness.FakeWorker.last.emit(calibrationResult(deadline));
+  }
+  assert.equal(harness.tracking.ready, false);
+  assert.notEqual(harness.overlay(), '本地追踪 · 已校准');
+});
+
+test('controller: rejected completion does not mark the camera ready', async () => {
+  const harness = createHarness();
+  await harness.readyCamera();
+  const started = harness.now;
+  for (let i = 0; i < 20; i += 1) {
+    harness.tracking.lifecycle.ingestCalibrationEar(0.3, started + 3000 + i, started + 3010 + i);
+  }
+  harness.setNow(started + 15000);
+  const completed = harness.tracking.lifecycle.completeCalibration(0.31);
+  assert.equal(completed.ok, false);
+  assert.equal(completed.reason, 'calibration_deadline');
+  assert.equal(harness.tracking.ready, false);
+  harness.setActive({ mode: 'camera', events: [] });
+  harness.FakeWorker.last.emit(calibrationResult(started + 3019));
+  assert.equal(harness.tracking.ready, false);
+  assert.notEqual(harness.overlay(), '本地追踪 · 已校准');
+});
+
+test('controller: successful completion before the deadline marks ready', async () => {
+  const harness = createHarness();
+  await harness.readyCamera();
+  const started = harness.now;
+  harness.setNow(started + 4019);
+  for (let i = 0; i < 20; i += 1) {
+    harness.FakeWorker.last.emit(calibrationResult(started + 3000 + i));
+  }
+  assert.equal(harness.tracking.ready, true);
+  assert.equal(harness.overlay(), '本地追踪 · 已校准');
+  assert.match(harness.statuses.at(-1).text, /^已校准/);
 });
 
 test('controller expires calibration when twenty valid frames arrive only after the deadline', async () => {

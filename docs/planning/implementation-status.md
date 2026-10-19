@@ -17,7 +17,7 @@ CAIJIA SCIENTIFIC REVIEW: PENDING / BLOCKED
 |---|---|---|
 | Preview vs canonical audit | Done | Latest preview head is still `preview/mission-live-camera-v0.3` @ `663ed79`. No open Caijia PRs. |
 | Pre/post-task frame admission | Implemented | Acquisition timestamp, not processed time. `tracking/lifecycle.js` + `admitResult` |
-| Independent calibration timeout | Hardened | Watchdog on `ready`; `enough` cannot beat `expired`. Deadline is exclusive (`acquisitionTs >= deadline`). Late frames are not counted. EAR min/max and 20-frame/3s gates unchanged. |
+| Independent calibration timeout | Hardened | Success requires in-window **acquisition** and still-active **commit** (`completeCalibration` uses the injected clock). Deadline exclusive (`>=`). Watchdog/UI clear only when `ok === true`. EAR min/max and 20-frame/3s gates unchanged. |
 | Timestamp / order integrity | Hardened | `classifyResult` / `noteAdmitted` reject non-finite, future acquisition, and out-of-order frames before accumulator updates |
 | Camera async generation races | Hardened | Stale `acquire`, `video.play`, track `ended`, and `createImageBitmap` completions cannot stop a newer session |
 | Dropout ≠ open eyes | Already present; explicit marker added | `FeatureAccumulator.noteDropout` / `tracking_gap` |
@@ -34,7 +34,7 @@ CAIJIA SCIENTIFIC REVIEW: PENDING / BLOCKED
 3. Stale `ended` handlers and async `acquire` / `play` / bitmap completions could call `cameraFailure` on a newer generation or clear `frameBusy` for the live session.
 
 **Checks actually run (2026-10-19, W3.0 review fixes):**
-- `npm test` — 162 passed, 0 failed (19 mission-foundation cases).
+- `npm test` — 166 passed, 0 failed (23 mission-foundation cases).
 - `npm run test:flow` — PASS (controlled DOM/clock; not a real camera).
 - `npm run test:integration` — 6 passed.
 - `npm run test:reliability` — 7 passed.
