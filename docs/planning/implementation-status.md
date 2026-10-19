@@ -4,7 +4,7 @@
 
 **Status:** Implemented and verified in synthetic tests plus typecheck/build. Engineering integration only. Not scientifically validated, not an LLM runtime, not deployed, and not a reader of production D1 or camera streams.
 
-Implementation branch: `cursor/w1-export-adapter-4e29`, based on PR #2 (`cursor/w1-agent-tools-4e29` @ `5e8f791`). Source: `analysis/src/neurolens/adapter/`. Tests: `tests/analysis-adapter.test.mjs`. Design: [analysis-export-adapter.md](../architecture/analysis-export-adapter.md).
+Implementation PR: [#4](https://github.com/CaijiaLiu/Cognitive-Fatigue-Detection-AI-Agent/pull/4) (`cursor/w1-export-adapter-4e29` @ `6ba029a`), based on PR #2 (`cursor/w1-agent-tools-4e29` @ `5e8f791`). Source: `analysis/src/neurolens/adapter/`. Tests: `tests/analysis-adapter.test.mjs`. Design: [analysis-export-adapter.md](../architecture/analysis-export-adapter.md).
 
 PRs #1, #2 and #3 had no reviews when this slice was coded. Caijia has not confirmed the three metric definitions or comparison-coverage science. The adapter therefore copies only the existing PR #2 allowlist and records blocked mappings in the adapter document.
 
