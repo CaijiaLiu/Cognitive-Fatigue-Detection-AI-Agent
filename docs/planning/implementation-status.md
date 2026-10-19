@@ -4,7 +4,7 @@
 
 **Status:** Implemented and verified in synthetic tests. Not an LLM runtime, not scientifically validated, not deployed.
 
-Linxi W1 vertical slice follows the proposed contract in PR #1 and [DEC-003](decision-log.md). Source: `analysis/src/neurolens/agent/`. Tests: `tests/agent-tools.test.mjs`. Contract note: [agent-tools.md](../architecture/agent-tools.md).
+Linxi W1 vertical slice follows the proposed contract in PR #1 and [DEC-003](decision-log.md). Implementation PR: [#2](https://github.com/CaijiaLiu/Cognitive-Fatigue-Detection-AI-Agent/pull/2) (`cursor/w1-agent-tools-4e29`, `ff2d27b`). Source: `analysis/src/neurolens/agent/`. Tests: `tests/agent-tools.test.mjs`. Contract note: [agent-tools.md](../architecture/agent-tools.md).
 
 | Capability | Status | Evidence / remaining work |
 |---|---|---|
