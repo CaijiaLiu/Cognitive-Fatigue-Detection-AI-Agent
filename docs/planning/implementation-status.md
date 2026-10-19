@@ -4,7 +4,7 @@
 
 **Status:** Implemented as a mock-only, fail-closed demo boundary. Not a real-LLM endpoint, not scientifically validated, not publicly deployed. Caijia scientific review remains **Pending / Blocked**.
 
-Implementation branch: `feature/w2-authenticated-demo`, based on `develop/neurolens-agent` after PR #12 fast-forward (`22be750`). Design: [agent-demo-security.md](../architecture/agent-demo-security.md). Operations: [public-demo.md](../operations/public-demo.md). Tests: `tests/agent-demo-security.test.mjs`.
+Implementation branch: `feature/w2-authenticated-demo` @ `9d19155`, based on `develop/neurolens-agent` after PR #12 fast-forward (`22be750`). Design: [agent-demo-security.md](../architecture/agent-demo-security.md). Operations: [public-demo.md](../operations/public-demo.md). Tests: `tests/agent-demo-security.test.mjs`.
 
 | Capability | Status | Evidence / remaining work |
 |---|---|---|
