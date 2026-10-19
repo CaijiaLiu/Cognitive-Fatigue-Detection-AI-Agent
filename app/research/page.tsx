@@ -21,6 +21,6 @@ export default async function Research({searchParams}:{searchParams:Promise<{cur
  </table></div>
  <p><a href="/research">第一页</a> {rows.results.length===10&&<a href={'/research?cursor='+encodeURIComponent(rows.results.at(-1)!.id)}>下一页 →</a>}</p>
  <p>匿名 ID 仍可关联同一浏览器。自评不是医学标签；训练时须排除模拟视觉并按参与者划分数据。后台删除不影响已经导出的文件。</p>
- <a href="/collection/index.html">返回测试网页</a> · <a href={chatGPTSignOutPath('/research')} target="_top">退出登录</a>
+ <a href="/collection/index.html">返回测试网页</a> · <a href="/research-agent">合成研究演示</a> · <a href={chatGPTSignOutPath('/research')} target="_top">退出登录</a>
  </main>;
 }

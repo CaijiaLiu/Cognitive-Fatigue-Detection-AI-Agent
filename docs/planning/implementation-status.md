@@ -1,5 +1,43 @@
 # Implementation status
 
+## W2.2 Research Agent HTTP API and interactive demo (2026-10-19)
+
+**Status:** Implemented and verified with in-process HTTP handler tests plus typecheck/build. Synthetic fixtures and mock provider only. Not a public LLM endpoint, not scientifically validated, not deployed.
+
+Implementation branch: `cursor/w2-agent-api-4e29`, based on W2.1 `cursor/w2-runtime-4e29` @ `dce0a35` (PR #8). Source: `analysis/src/neurolens/runtime/{http,demo-ui}.mjs`, `app/api/research-agent/`, `app/research-agent/`. Tests: `tests/agent-api.test.mjs`. Design: [agent-api.md](../architecture/agent-api.md).
+
+The vinext route is a thin wrapper around `handleResearchAgentPost`. Session authorization is enforced server-side. Client-provided evidence, tool results, and filesystem paths are rejected. Only validated `agent-answer/0.1` objects are returned.
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| POST `/api/research-agent` | Implemented | W2.1 request fields; origin + 8 KB JSON + allowlist |
+| GET catalog | Implemented | Synthetic sessions, questions, allowed metrics |
+| Interactive demo UI | Implemented | `/research-agent` loading / success / abstention / error |
+| Server-side session allowlist | Implemented | Hidden and export refs return 403 even if the UI is bypassed |
+| No client evidence trust | Implemented | Extra `evidence` / `path` / `intent.type` rejected |
+| No prompt / raw-provider leakage | Implemented | Public audit only; drifted `999` discarded |
+| Mock provider only | Implemented | `createDemoRuntime` uses `createMockProvider` + `composeAnswer` |
+| Real LLM provider | Out of scope | Same `complete()` boundary as W2.1 |
+| Scientific metric review | Blocked | Pending Caijia review; unchanged |
+
+**Not changed:** collection consent/camera/D1, metric identifiers, units, protocol compatibility, or Caijia review items. The collection page gained navigation links only.
+
+**Checks actually run (2026-10-19, W2.2):**
+- `npm test` — 97 passed, 0 failed (10 agent-api + 12 agent-eval + 7 agent-reliability + 14 agent-runtime + 23 agent-tools + 16 analysis-adapter + 6 analysis-integration + 4 collection + 5 research).
+- `npm run test:agent-api` — 10 passed, 0 failed.
+- `npm run test:runtime` — 14 passed, 0 failed.
+- `npm run test:integration` — 6 passed, 0 failed.
+- `npm run test:reliability` — 7 passed, 0 failed.
+- `npm run test:flow` — PASS.
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run build` — vinext/Vite production build completed; routes include `/api/research-agent` and `/research-agent`.
+- Live local preview (`npm run dev`, `http://127.0.0.1:5173`): `GET /research-agent` 200 with synthetic demo form; `GET /api/research-agent` catalog; same-origin `POST` for fixture A returns validated `320` ms and `fixture:session-summary:a`; hidden session `403`; missing `Origin` `403`; low-quality fixture abstains `insufficient_data`.
+- Headless Chrome against the live page: submit session A → UI shows `Validated answer` / `320` ms / `fixture:session-summary:a`; submit low-quality → `The agent abstained` / `insufficient_data` and no leftover `320`. Both clicks issued `POST /api/research-agent`.
+- `tests/integration.mjs` was not run (collection/cloud unchanged).
+- No LLM API call was made and no API key was read.
+
+**Next task:** keep scientific review blocked. A later isolated HTTP provider may implement `complete()`; do not treat this demo as a hosted research service. Do not merge this PR to `main`.
+
 ## W2.1 Research Agent runtime and orchestration (2026-10-19)
 
 **Status:** Implemented and verified with a deterministic mock provider. Engineering runtime only. Not a hosted LLM, not scientifically validated, not deployed.

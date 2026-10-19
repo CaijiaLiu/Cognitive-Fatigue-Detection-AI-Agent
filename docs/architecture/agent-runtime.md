@@ -107,7 +107,7 @@ No API key and no network. `test:runtime` is mock-provider correctness plus orch
 
 ## Known limitations
 
-- There is no real LLM provider, retry policy, or hosted endpoint.
+- There is no real LLM provider or retry policy. W2.2 adds a synthetic same-origin HTTP demo (`POST /api/research-agent`); see [agent-api.md](agent-api.md).
 - Evidence-quality failures skip the model; that is fail-closed engineering, not a measure of model abstention quality.
 - Valid provider abstentions are accepted by the existing answer contract without re-checking the reason narrative.
 - Timeout is deterministic in the mock (immediate `ProviderError`); it does not sleep.

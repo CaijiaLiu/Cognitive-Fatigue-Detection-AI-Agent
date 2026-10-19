@@ -15,6 +15,7 @@
     "test:integration": "node --test tests/analysis-integration.test.mjs",
     "test:reliability": "node --test tests/agent-reliability.test.mjs",
     "test:runtime": "node --test tests/agent-runtime.test.mjs",
+    "test:agent-api": "node --test tests/agent-api.test.mjs",
     "eval:agent": "node scripts/eval-agent.mjs",
     "eval:reliability": "node scripts/eval-reliability.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",

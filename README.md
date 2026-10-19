@@ -58,6 +58,7 @@ npm test
 npm run test:integration
 npm run test:reliability
 npm run test:runtime
+npm run test:agent-api
 npm run test:flow
 npx tsc --noEmit
 npm run build
@@ -65,15 +66,16 @@ npm run build
 node tests/integration.mjs
 ```
 
-`npm run test:integration` is the offline W1.6 pipeline (V1 export → adapter → tools → prompt → validator). `npm run test:reliability` / `npm run eval:reliability` run W1.7 adversarial and metamorphic contract tests. `npm run test:runtime` runs the W2.1 mock-provider orchestrator. They need no LLM API key and no network. They are not `tests/integration.mjs` (local D1 / collection cloud).
+`npm run test:integration` is the offline W1.6 pipeline (V1 export → adapter → tools → prompt → validator). `npm run test:reliability` / `npm run eval:reliability` run W1.7 adversarial and metamorphic contract tests. `npm run test:runtime` runs the W2.1 mock-provider orchestrator. `npm run test:agent-api` runs the W2.2 HTTP handler and demo view-model tests. They need no LLM API key and no network. They are not `tests/integration.mjs` (local D1 / collection cloud). The synthetic Research Agent demo is `/research-agent`.
 
 Completed verification: five data-validation tests, type checking, a production build, local consent gating, authorization, deduplication, exports, withdrawal, replay protection, and a 30-second browser flow using simulated visual features. The original local MVP's 12 core/camera-interface tests also passed. The deployed page, model, and WASM assets are accessible; unauthenticated exports are rejected, the researcher dashboard redirects to platform sign-in, and upload-ticket configuration works. These checks do not establish real-person camera capture, production owner sign-in, or medical validity.
 
 ### Project Structure and Future ML Integration
 
 - `public/collection/`: browser-side collection and visualization.
-- `app/api/`: upload and protected endpoints.
+- `app/api/`: upload, protected researcher, and synthetic Research Agent endpoints.
 - `app/research/`: private researcher dashboard.
+- `app/research-agent/`: synthetic Research Agent demo (fixtures + mock provider).
 - `db/` and `drizzle/`: database schema and migrations.
 - `lib/research-data.mjs`: upload field allowlisting and data-source validation.
 

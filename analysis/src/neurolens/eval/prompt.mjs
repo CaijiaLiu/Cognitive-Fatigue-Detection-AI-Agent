@@ -1,6 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import {
   ALLOWED_METRICS,
   ALLOWED_TOOLS,
@@ -12,11 +9,10 @@ import {
   createFixtureStore,
 } from '../agent/index.mjs';
 import { PACKAGE_VERSION, PROMPT_VERSION, REQUIRED_PROMPT_SECTIONS } from './constants.mjs';
-
-const PROMPT_PATH = join(dirname(fileURLToPath(import.meta.url)), '../../../prompts/research-agent-prompt-0.1.md');
+import { SYSTEM_PROMPT_TEXT } from './system-prompt-text.mjs';
 
 export function loadSystemPrompt() {
-  return readFileSync(PROMPT_PATH, 'utf8').trim();
+  return SYSTEM_PROMPT_TEXT;
 }
 
 function stableJson(value) {

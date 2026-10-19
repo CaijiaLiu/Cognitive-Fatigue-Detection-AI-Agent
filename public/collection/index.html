@@ -13,7 +13,8 @@
     <a class="nav active" href="#collect"><span>◉</span> 会话采集</a>
     <a class="nav" href="#dashboard"><span>▥</span> 数据仪表盘</a>
     <a class="nav" href="#history"><span>◷</span> 本地会话</a>
-    <div class="side-bottom"><div class="privacy-icon">⌂</div><strong>你决定是否分享数据</strong><p>画面本地处理、不保存、不上传<br>仅在单独同意后分享数值结果</p><a href="/research">研究者登录</a><span class="version">V1.0 / RESEARCH MVP</span></div>
+    <a class="nav" href="/research-agent"><span>◎</span> 合成研究演示</a>
+    <div class="side-bottom"><div class="privacy-icon">⌂</div><strong>你决定是否分享数据</strong><p>画面本地处理、不保存、不上传<br>仅在单独同意后分享数值结果</p><a href="/research">研究者登录</a><br><a href="/research-agent">合成研究演示</a><span class="version">V1.0 / RESEARCH MVP</span></div>
   </aside>
   <main>
     <header class="topbar"><span>认知疲劳研究 / 数据采集</span><span class="local-pill"><i></i> LOCAL FIRST</span></header>
@@ -75,7 +76,7 @@
     </section>
     <section id="history"><div class="section-title"><h2>本地会话</h2><div><button id="export-all" class="text-button">导出全部 JSON</button><button id="delete-all" class="text-button danger">删除全部本地数据</button></div></div><div class="card history-card"><div id="history-list" class="history-list"><p class="small">暂无会话。记录仅保存在当前浏览器。</p></div></div></section>
     <section id="cloud-panel" class="card" aria-live="polite"><h3>上传与撤回</h3><p id="cloud-status">默认不上传。仅对测试结束后单独同意的本次会话进行上传。</p><div id="cloud-actions"></div><div id="cloud-receipts"></div></section>
-    <footer><span>focus lab · Cognitive Fatigue Detection / V1</span><a href="/research">私密研究者后台</a></footer>
+    <footer><span>focus lab · Cognitive Fatigue Detection / V1</span><span><a href="/research">私密研究者后台</a> · <a href="/research-agent">合成研究演示</a></span></footer>
     <div id="toast" role="status" class="toast" hidden></div>
   </main>
   <script type="module" src="app.js"></script>

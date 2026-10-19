@@ -58,6 +58,11 @@ test('system prompt forbids clinical conclusions and requires JSON only', () => 
   assert.match(prompt, /agent-answer\/0\.1/);
 });
 
+test('bundled system prompt matches the versioned markdown file', () => {
+  const fromFile = readFileSync(new URL('../analysis/prompts/research-agent-prompt-0.1.md', import.meta.url), 'utf8').trim();
+  assert.equal(loadSystemPrompt(), fromFile);
+});
+
 test('gold answers pass the harness for every case', () => {
   const originalFetch = globalThis.fetch;
   let fetchCalls = 0;
