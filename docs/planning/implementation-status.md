@@ -1,5 +1,25 @@
 # Implementation status
 
+## W1.3 session-export adapter design (2026-10-19)
+
+**Status:** Designed only. Not implemented, not validated on real exports, not deployed.
+
+Linxi W1.3 proposes a read-only offline path from versioned Focus Lab session JSON to PR #2 evidence artifacts. Design PR: [#3](https://github.com/CaijiaLiu/Cognitive-Fatigue-Detection-AI-Agent/pull/3) (`cursor/w1-adapter-design-4e29`). Source: [analysis-export-adapter.md](../architecture/analysis-export-adapter.md). Sibling implementation: [PR #2](https://github.com/CaijiaLiu/Cognitive-Fatigue-Detection-AI-Agent/pull/2) (not merged by this documentation change).
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| Inventory of V1 IndexedDB / JSON / CSV / cloud DTO fields | Designed | Documented from current main writers and `sanitizeSession` |
+| Field-to-`metric_id` mapping | Designed | First slice copies the three PR #2 metrics only |
+| Adapter architecture | Designed | Validate → normalize → artifact → existing tool store DI |
+| Comparison citation coverage | Designed | Current W1.2 rule is intersection; `coverage: 'all'` proposed |
+| Adapter implementation / tests | Planned | Next coding PR; no empty placeholders in this change |
+
+**Not changed:** collection, consent, cloud, mission preview, PR #2 runtime.
+
+**Checks:** documentation paths and relative links only. No adapter code, no `npm test` change, no website change.
+
+**Next task:** after Caijia review of the mapping and coverage rule, implement the adapter on a separate branch using synthetic V1 JSON fixtures.
+
 ## Current cross-branch status (2026-10-13 Toronto)
 
 Canonical main runtime: `3c3f0aa`. Reviewed preview runtime: `663ed79`, branch `preview/mission-live-camera-v0.3`. Documentation updates do not merge or deploy preview code.

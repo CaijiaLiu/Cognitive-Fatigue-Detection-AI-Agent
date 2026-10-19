@@ -34,6 +34,8 @@ An observation is not a label. Fatigue ratings and thought-probe responses are s
 
 Simulated vision is excluded from empirical ocular training/validation. Adjacent windows and repeated sessions from one participant stay within the same evaluation group. Fit imputation, scaling and feature selection on training folds only. Preserve missingness; do not turn failed tracking into zero movement.
 
+A proposed offline adapter from versioned V1 session JSON to evidence artifacts is specified in [analysis-export-adapter.md](analysis-export-adapter.md). It is not implemented. Mission-preview records and production D1 are out of scope for that first adapter.
+
 ## Mission-preview contract and target integration
 
 Reviewed source `663ed79` uses `mission-preview-1`, protocol `mission-exploratory-v1`, presentation `mission-en-v0.3-live-eyes`, separate IndexedDB identity and participant key. It contains tasks[], ratings {pre,between,post}, rating_events and presentation settings, with upload_consent=false. It is not a supported main cloud DTO.
