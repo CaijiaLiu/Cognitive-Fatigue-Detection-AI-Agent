@@ -15,7 +15,8 @@ W1 implements a deterministic tool interface, evidence artifacts with provenance
 | `../tests/analysis-adapter.test.mjs` | Export validation, privacy, coverage and tool retrieval |
 | `../tests/agent-eval.test.mjs` | Prompt package, gold/trap scoring and CLI tests |
 | `../tests/analysis-integration.test.mjs` | End-to-end export → tools → prompt → validator tests |
+| `../tests/agent-reliability.test.mjs` | Adversarial, prompt-boundary and metamorphic contract tests |
 
-Offline pipeline (no API key): `npm run test:integration`. Manual ChatGPT scoring: `npm run eval:agent -- export valid-metric-rt --out /tmp/nl-eval`. See [analysis-integration.md](../docs/architecture/analysis-integration.md) and [agent-eval.md](../docs/architecture/agent-eval.md).
+Offline pipeline (no API key): `npm run test:integration`. Reliability suite: `npm run test:reliability` or `npm run eval:reliability`. Manual ChatGPT scoring: `npm run eval:agent -- export valid-metric-rt --out /tmp/nl-eval`. See [analysis-integration.md](../docs/architecture/analysis-integration.md), [agent-reliability.md](../docs/architecture/agent-reliability.md) and [agent-eval.md](../docs/architecture/agent-eval.md).
 
 Run `npm test`. Simulated fixtures and copied export summaries cannot establish empirical performance.

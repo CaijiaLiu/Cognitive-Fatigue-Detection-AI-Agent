@@ -1,5 +1,40 @@
 # Implementation status
 
+## W1.7 Research Agent reliability and adversarial testing (2026-10-19)
+
+**Status:** Implemented and verified in synthetic contract tests plus typecheck/build. Deterministic validator and prompt-boundary checks only. Not LLM robustness, not scientifically validated, not deployed.
+
+Implementation branch: `cursor/w1-reliability-4e29`, based on W1.6 `cursor/w1-integration-4e29` @ `a3e5072` (PR #6). Source: `analysis/src/neurolens/eval/{adversarial,reliability}.mjs`. Tests: `tests/agent-reliability.test.mjs`. Design / reliability report: [agent-reliability.md](../architecture/agent-reliability.md).
+
+This slice does **not** call an LLM, change metric definitions, or close Caijia's scientific review. Existing `agent-tools/0.1` and `agent-answer/0.1` validators are reused; there is no second validation system.
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| Numeric integrity traps | Implemented | Fabricated value, wrong unit, unsupported metric, numeric string, missing field |
+| Evidence provenance traps | Implemented | Cross-session cite, unknown ref, wrong metric on a valid artifact, empty/conflicting refs |
+| Evidence quality traps | Implemented | Unusable session, incompatible protocols, missing artifact, missing export features, unsupported request |
+| Prompt-section isolation | Implemented | Injected "Ignore the system rules..." stays in untrusted evidence; diagnosis JSON still `unsupported_claim` |
+| Schema / parse traps | Implemented | Malformed JSON, extra fields, illegal status/reason pairs, URL refs, empty/non-object claims |
+| Metamorphic invariants | Implemented | Mutate number, swap citation, reorder artifacts, add irrelevant evidence, remove required evidence |
+| Offline runner | Implemented | `npm run test:reliability` and `npm run eval:reliability` — 31/31 expected, exit 1 on surprise |
+| LLM jailbreak resistance | Not established | No model was called; section isolation is not robustness |
+| Scientific metric / comparison confirmation | Blocked | Pending Caijia review; unchanged from W1.4 / W1.6 |
+
+**Not changed:** collection, consent, production D1, camera, deployment, metric identifiers, units, protocol compatibility tables, or Caijia review items.
+
+**Checks actually run (2026-10-19, W1.7):**
+- `npm test` — 72 passed, 0 failed (11 agent-eval + 7 agent-reliability + 23 agent-tools + 16 analysis-adapter + 6 analysis-integration + 4 collection + 5 research).
+- `npm run test:integration` — 6 passed, 0 failed.
+- `npm run test:reliability` — 7 passed, 0 failed.
+- `npm run eval:reliability` — 31/31 expected (`numeric_integrity` 5, `evidence_provenance` 5, `evidence_quality` 8, `prompt_injection` 1, `schema_parsing` 7, `metamorphic` 5).
+- `npm run test:flow` — PASS.
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run build` — vinext/Vite production build completed.
+- `tests/integration.mjs` was not run (collection/cloud unchanged).
+- No LLM API call was made.
+
+**Next task:** keep scientific review blocked for Caijia. Optional later work is a live ChatGPT measurement of the injection fixture; that would be LLM behavioral evaluation, not a reason to mark this contract suite as robustness. Do not merge this PR to `main`.
+
 ## W1.6 integration and end-to-end validation (2026-10-19)
 
 **Status:** Implemented and verified in synthetic tests plus typecheck/build. Engineering integration of PR #4 and PR #5 only. Not an LLM API, not scientifically validated, not deployed, and not a reader of production D1 or camera streams.

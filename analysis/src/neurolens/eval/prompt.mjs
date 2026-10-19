@@ -103,7 +103,7 @@ export function scientificLimitations(caseDef) {
   ];
 }
 
-function renderUserPrompt(sections) {
+export function renderUserPrompt(sections) {
   return [
     '## User question',
     sections.question,
@@ -122,6 +122,23 @@ function renderUserPrompt(sections) {
     '',
     'Reply with JSON only.',
   ].join('\n');
+}
+
+export function overlayValidatedEvidence(pkg, { artifacts, tool_envelopes } = {}) {
+  const nextArtifacts = artifacts ?? pkg.artifacts;
+  const sections = {
+    ...pkg.sections,
+    validated_evidence: {
+      tool_envelopes: tool_envelopes ?? pkg.sections.validated_evidence.tool_envelopes,
+      artifacts: nextArtifacts,
+    },
+  };
+  return {
+    ...pkg,
+    sections,
+    artifacts: nextArtifacts,
+    user_prompt: renderUserPrompt(sections),
+  };
 }
 
 export function buildPromptPackage(caseDef, { tools } = {}) {

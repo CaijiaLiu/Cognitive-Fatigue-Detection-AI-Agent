@@ -8,15 +8,38 @@ export {
 } from './constants.mjs';
 export { EVAL_CASES, getEvalCase, listEvalCases } from './cases.mjs';
 export {
+  ADVERSARIAL_CATEGORIES,
+  INJECTION_PAYLOAD,
+  RELIABILITY_LIMIT,
+  RELIABILITY_REPORT_VERSION,
+} from './constants.mjs';
+export {
   answerSchemaSection,
   buildPromptPackage,
   collectEvidence,
   loadSystemPrompt,
+  overlayValidatedEvidence,
   publicCaseMeta,
   renderPastePrompt,
+  renderUserPrompt,
   toolManifest,
 } from './prompt.mjs';
 export { evaluateAnswer, evaluateCase, parseModelResponse, selfCheckAll, selfCheckCase } from './harness.mjs';
+export {
+  ADVERSARIAL_CASES,
+  UNKNOWN_ARTIFACT_CASE,
+  answered,
+  abstained,
+  answeredClaim,
+  getAdversarialCase,
+  listAdversarialCases,
+} from './adversarial.mjs';
+export {
+  formatReliabilitySummary,
+  getReliabilityCase,
+  runMetamorphicCases,
+  runReliabilitySuite,
+} from './reliability.mjs';
 export {
   PIPELINE_ID,
   createExportPipelineTools,

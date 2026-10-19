@@ -86,6 +86,8 @@ Manual ChatGPT scoring is unchanged and is **not** required for W1.6:
 npm run eval:agent -- self-check
 ```
 
+W1.7 adversarial and metamorphic contract tests are documented in [agent-reliability.md](agent-reliability.md) and run with `npm run test:reliability`.
+
 Do not commit generated reports, ChatGPT pastes, or participant exports. Local eval output may use gitignored `analysis/eval-runs/`.
 
 ## Expected results

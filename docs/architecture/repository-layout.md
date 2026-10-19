@@ -63,10 +63,12 @@ The session controller composes explicit task/tracking controllers and owns sess
 | tests/analysis-adapter.test.mjs | Export accept/reject, privacy redaction, comparison coverage and tool retrieval tests |
 | tests/agent-eval.test.mjs | Prompt package, gold/trap scoring and CLI tests |
 | tests/analysis-integration.test.mjs | End-to-end export → tools → prompt → validator tests |
+| tests/agent-reliability.test.mjs | Adversarial, prompt-boundary and metamorphic contract tests |
 | docs/architecture/agent-tools.md | Implemented W1 contract and open review questions |
 | docs/architecture/analysis-export-adapter.md | Implemented offline adapter boundary and blocked scientific mappings |
 | docs/architecture/agent-eval.md | Manual ChatGPT evaluation workflow |
 | docs/architecture/analysis-integration.md | Integrated offline pipeline and reproducibility command |
+| docs/architecture/agent-reliability.md | Threat model, adversarial categories and remaining reliability limits |
 
 This is deterministic scaffolding over synthetic fixtures. It is not an LLM runtime, not a statistics pipeline, and not scientific validation. Window features, screen-gaze calibration, new task adapters and protocol phases still belong in the existing collection domain folders. Offline statistics/notebooks remain future work under analysis/tests/, analysis/notebooks/ and analysis/configs/ when Step 6 starts. Do not create empty placeholder directories or V1/V2 copies.
 
