@@ -57,3 +57,5 @@ W3.1 adds `research-protocol/0.1-provisional`, `research-session/0.1-provisional
 ## Session-evidence contract (implemented, not scientifically validated)
 
 W3.2 adds `analysis-session-evidence/0.1` and `session-evidence/0.1`. The adapter accepts V1 `schema_version` `1.0.0` plus optional W3.1 sidecars and emits `evidence-artifact/0.1` records with `data_origin` `session_orchestration`. Evidence items preserve camera / simulated / task-only provenance and missingness. They are not allowlisted Agent metrics. Generic slots do not become PVT or Go/No-Go measurements. See [session-evidence-adapter.md](session-evidence-adapter.md) and [DEC-014](../planning/decision-log.md).
+
+W3.3 adds `research-session-integration/0.1-provisional` as an offline composition contract only. It does not change V1 schema identity, cloud allowlists, or signed protocol ids. Failed sessions stay unusable for completed-session claims. See [week3-integration.md](week3-integration.md) and [DEC-015](../planning/decision-log.md).

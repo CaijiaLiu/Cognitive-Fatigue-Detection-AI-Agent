@@ -4,6 +4,12 @@ This file is the durable record of **accepted project decisions**, not a specula
 
 ## Accepted decisions — 2026-10-19
 
+### DEC-015: W3.3 closes Week 3 engineering on an offline path
+**Accepted.** W3.3 composes the existing orchestrator, local export, W3.2 evidence adapter, and Research Agent tools into one deterministic offline pipeline (`research-session-integration/0.1-provisional`). The live collection controller is not given ownership of `createSessionOrchestrator`. Failed and interrupted sessions stay non-completed. Sidecars stay local-only.
+
+**Reason:** Wiring the orchestrator into `session/controller.js` would either double-fire the mission adapter or take over V1 Go/No-Go science. Week 3 still needs a reproducible end-to-end engineering path and failure recovery without inventing camera measurements or clinical claims.
+**Implementation implications:** Document the browser gap. Do not expand `sanitizeSession`. Do not upload sidecars. Do not mark real-device validation or Caijia scientific review complete. Do not merge to `main` or start Week 4 from this decision alone.
+
 ### DEC-014: W3.2 session evidence is an adapter, not a second Agent runtime
 **Accepted.** W3.2 adds `analysis-session-evidence/0.1` and `session-evidence/0.1` on top of the existing W1–W2 Research Agent tools. Supported V1 sessions, with optional W3.1 orchestration/mission sidecars, are adapted into structured evidence items and injected through `createAnalysisTools({ store })`. Evidence items are not allowlisted Agent metrics. Generic slots stay unsigned. Missing and dropout values stay missing. The adapter is local/offline by default.
 

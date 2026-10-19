@@ -11,6 +11,8 @@ NeuroLens is the target research platform; Focus Lab is the existing V1 collecti
 | Evidence-grounded agent tool contract | [Agent tools](architecture/agent-tools.md) |
 | Offline V1 export → evidence adapter | [Export adapter](architecture/analysis-export-adapter.md) |
 | W3.2 session evidence → Research Agent | [Session evidence adapter](architecture/session-evidence-adapter.md) |
+| W3.3 offline E2E integration | [Week 3 integration](architecture/week3-integration.md) |
+| Week 3 engineering closeout | [Week 3 closeout](planning/week3-closeout.md) |
 | Manual LLM evaluation harness | [Agent eval](architecture/agent-eval.md) |
 | Offline export → agent integration | [Analysis integration](architecture/analysis-integration.md) |
 | Research Agent reliability / adversarial tests | [Agent reliability](architecture/agent-reliability.md) |
@@ -30,6 +32,7 @@ NeuroLens is the target research platform; Focus Lab is the existing V1 collecti
 | Ordered implementation steps and release gates | [Roadmap](planning/roadmap.md) |
 | Audited implementation status | [Status](planning/implementation-status.md) |
 | Week 2 engineering closeout (offline) | [Week 2 completion](planning/week2-completion.md) |
+| Week 3 engineering closeout (offline) | [Week 3 closeout](planning/week3-closeout.md) |
 | Research questions and validation | [Research plan](research/research-plan.md) |
 | Task and labeling design | [Protocols](research/protocols.md) |
 | Metric definitions and limits | [Features](research/features.md) |

@@ -71,4 +71,4 @@ Each accepted event records session id, optional task id, type, session-relative
 
 `measurement_fidelity` is always `false` in this phase. Full measurement replay would require stored input features and is deferred so we do not invent samples or change privacy/science contracts.
 
-See [W4 session artifact](w4-session-artifact.md). W3.2 consumes these local artifacts through the [session evidence adapter](session-evidence-adapter.md); it does not change this orchestrator or treat generic slots as biomedical labels.
+See [W4 session artifact](w4-session-artifact.md). W3.2 consumes these local artifacts through the [session evidence adapter](session-evidence-adapter.md); it does not change this orchestrator or treat generic slots as biomedical labels. W3.3 composes this orchestrator into the offline [research-session integration](week3-integration.md) path; `session/controller.js` is still not the live owner.

@@ -10,5 +10,6 @@ export * from './session/mission-adapter.js';
 export * from './session/protocol.js';
 export * from './session/orchestrate.js';
 export * from './session/orchestration-export.js';
+export * from './session/browser-orchestration.js';
 export * from './tracking/lifecycle.js';
 export * from './reporting/export.js';

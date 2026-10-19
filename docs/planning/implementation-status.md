@@ -1,5 +1,43 @@
 # Implementation status
 
+## W3.3 End-to-end integration and reliability (2026-10-19)
+
+**Status:** Linxi-owned Week 3 engineering closeout implemented as a deterministic **offline** pipeline. Not a live-camera validation. Not scientifically validated. Not deployed.
+
+Implementation branch: `feature/w3-protocol-orchestration`, continuing Draft PR #19. Design: [week3-integration.md](../architecture/week3-integration.md). Closeout: [week3-closeout.md](week3-closeout.md). Tests: `tests/week3-integration.test.mjs`. Decision: [DEC-015](decision-log.md).
+
+```text
+WEEK 3: ENGINEERING COMPLETE (OFFLINE)
+REAL-DEVICE VALIDATION: PENDING
+SCIENTIFIC REVIEW: PENDING
+DEPLOYMENT: PENDING
+BROWSER LIVE ORCHESTRATOR: NOT WIRED
+```
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| Offline E2E path | Implemented | Orchestrator → local export → W3.2 evidence → existing Agent tools |
+| Failure recovery | Implemented | Interrupt, fail, camera-unavailable, missing landmarks, dropout, late/stale, duplicates |
+| V1 Go/No-Go compatibility | Preserved | Existing trial semantics and allowlisted metrics unchanged |
+| Live browser orchestrator | Not wired | `controller.js` still uses mission adapter only; optional observer is default-off |
+| Privacy / upload | Unchanged | `sanitizeSession` still strips sidecars; no automatic upload |
+| Real device / Safari | NOT RUN | Synthetic clocks and fixtures only |
+| Scientific protocol | Pending | Caijia checklist in week3-closeout.md |
+
+**Not changed:** V1 `schema_version` `1.0.0`, Go/No-Go trial code, cloud allowlist, Sites, OpenAI, D1, `main`, Caijia scientific modules.
+
+**Checks actually run (2026-10-19, W3.3 closeout):**
+- `npm test` — 231 passed, 0 failed (16 week3-integration cases, including the 15 required reliability cases).
+- `npm run test:flow` — PASS (controlled DOM/clock; not a real camera).
+- `npm run test:integration` — 6 passed.
+- `npm run test:reliability` — 7 passed.
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run build` — vinext/Vite production build completed.
+- `tests/integration.mjs` was not run.
+- No live OpenAI call, no remote D1, no Sites publish, no real-camera session.
+
+**Next task:** Stop for final Week 3 engineering review. Do not merge. Do not start Week 4. Caijia reviews the combined Week 3 work before `develop/neurolens-agent`.
+
 ## W3.2 Biomedical evidence → Research Agent integration (2026-10-19)
 
 **Status:** Linxi-owned Stage C evidence adapter implemented on the existing W1–W2 Research Agent tools. Not scientifically validated. No second Agent runtime. Real-camera accuracy is **not** claimed. Scientific review remains **Pending / Blocked**.
@@ -10,7 +48,7 @@ Implementation branch: `feature/w3-protocol-orchestration`, continuing Draft PR 
 W3.2 SESSION EVIDENCE ADAPTER: IMPLEMENTED OFFLINE
 REAL CAMERA VALIDATION: NOT RUN
 CAIJIA SCIENTIFIC REVIEW: PENDING / BLOCKED
-W3.3 AGENT DEMO WIRING: NOT STARTED
+W3.3 OFFLINE INTEGRATION: SEE WEEK 3 CLOSEOUT
 ```
 
 | Capability | Status | Evidence / remaining work |
@@ -32,9 +70,17 @@ W3.3 AGENT DEMO WIRING: NOT STARTED
 2. Evidence IDs for timeline events use the accepted-event index, so repeated timestamps cannot collide.
 3. The evidence store rejects conflicting duplicate `session_ref`s and keeps identical copies once.
 
-**Checks actually run (2026-10-19, W3.2 integrity review):** recorded after the verification suite below.
+**Checks actually run (2026-10-19, W3.2 integrity review):**
+- `npm test` — 215 passed, 0 failed (26 session-evidence cases, including 10 integrity regressions).
+- `npm run test:flow` — PASS (controlled DOM/clock; not a real camera).
+- `npm run test:integration` — 6 passed.
+- `npm run test:reliability` — 7 passed.
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run build` — vinext/Vite production build completed.
+- `tests/integration.mjs` was not run.
+- No live OpenAI call, no remote D1, no Sites publish, no real-camera session.
 
-**Next task:** Stop after W3.2 integrity review. Do not merge. Do not start W3.3 until architecture review. Caijia reviews the combined Week 3 work before `develop/neurolens-agent`.
+**Follow-on:** W3.3 consumed this adapter through the offline research-session pipeline. W3.2 itself remains an engineering adapter, not scientific validation.
 
 ## W3.1 Versioned protocol and session orchestration (2026-10-19)
 

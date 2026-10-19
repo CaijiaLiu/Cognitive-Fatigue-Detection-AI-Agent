@@ -40,7 +40,7 @@
 | public/collection/tracking/ | Camera adapter, MediaPipe Worker, tracking controller, DOM-free lifecycle (generation, calibration watchdog, frame admission) |
 | public/collection/features/ | Landmark extraction, time-series accumulator, unavailable-vision summary |
 | public/collection/tasks/ | Go/No-Go adapter owns trials/timers; task summary is pure |
-| public/collection/session/ | Session coordinator, version constants, source labels, demo, provisional mission adapter, W3.1 protocol/orchestrator/export |
+| public/collection/session/ | Session coordinator, version constants, source labels, demo, provisional mission adapter, W3.1 protocol/orchestrator/export, optional browser observer (not wired) |
 | public/collection/reporting/ | SVG dashboard, display formatting, shared exports and download helpers |
 | public/collection/persistence/ | IndexedDB store and opt-in cloud lifecycle |
 | public/collection/shared/ | Pure numeric helpers |
@@ -56,6 +56,7 @@ The session controller composes explicit task/tracking controllers and owns sess
 |---|---|
 | analysis/src/neurolens/agent/ | Read-only W1 tool interface, evidence artifacts, structured validators and deterministic fixture catalog |
 | analysis/src/neurolens/adapter/ | Offline V1 JSON export and W3.2 session-evidence stores for the same tool interface |
+| analysis/src/neurolens/integration/ | W3.3 offline research-session pipeline composing orchestrator, export, evidence, and Agent tools |
 | analysis/src/neurolens/eval/ | API-independent prompt builder, evaluation harness and W1.6 offline pipeline |
 | analysis/src/neurolens/runtime/ | Mock/OpenAI providers, orchestrator, HTTP adapter, and demo view-model |
 | analysis/prompts/ | Versioned research-agent system prompt |
@@ -63,7 +64,10 @@ The session controller composes explicit task/tracking controllers and owns sess
 | tests/agent-tools.test.mjs | Numeric fidelity, missing evidence, protocol mismatch, unsupported-claim and request-rejection tests |
 | tests/analysis-adapter.test.mjs | Export accept/reject, privacy redaction, comparison coverage and tool retrieval tests |
 | tests/session-evidence.test.mjs | W3.2 adapter-to-agent evidence, missingness, abstention and regression tests |
+| tests/week3-integration.test.mjs | W3.3 offline E2E and reliability tests over production modules |
 | docs/architecture/session-evidence-adapter.md | W3.2 evidence contract, provenance rules and Caijia review checklist |
+| docs/architecture/week3-integration.md | W3.3 connected-path audit, browser gap, and failure recovery |
+| docs/planning/week3-closeout.md | Week 3 engineering closeout and Caijia scientific review checklist |
 | tests/agent-eval.test.mjs | Prompt package, gold/trap scoring and CLI tests |
 | tests/analysis-integration.test.mjs | End-to-end export → tools → prompt → validator tests |
 | tests/agent-reliability.test.mjs | Adversarial, prompt-boundary and metamorphic contract tests |

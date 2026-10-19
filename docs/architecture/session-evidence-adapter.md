@@ -131,15 +131,9 @@ The adapter is local/offline. It does not fetch, upload, or change `sanitizeSess
 - Generic slots remain engineering placeholders.
 - Successful synthetic tests are not real-camera or scientific validation.
 
-## W3.3 prerequisites
+## W3.3 follow-on
 
-Stop after this adapter until architecture review. W3.3 should not start until the following are explicit:
-
-1. Review of `analysis-session-evidence/0.1` and `session-evidence/0.1`.
-2. Decision on whether the HTTP Research Agent demo should accept this analysis version.
-3. Caijia review of copied V1 metric identifiers and any future ocular metric allowlist.
-4. Signed protocol ids before generic slots can become biomedical task labels.
-5. No cloud allowlist, Sites, D1, or paid-provider change from W3.2 alone.
+W3.3 composes this adapter into the offline [research-session integration](week3-integration.md) pipeline. The HTTP Research Agent demo still does not accept `analysis-session-evidence/0.1`. Cloud allowlist, Sites, D1, and paid-provider rules are unchanged. Caijia review remains the scientific gate.
 
 ## Caijia review checklist
 

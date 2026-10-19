@@ -353,8 +353,12 @@ export function validateSessionEvidenceInput(input) {
     const v1 = validateV1Session(session);
     if (!v1.ok) return { ...v1, status: v1.status || TOOL_STATUS.UNAVAILABLE };
   } else if (protocolId === SOURCE_PROTOCOL_GO_NO_GO_V1) {
-    const v1 = validateV1Session(session);
-    if (!v1.ok) return { ...v1, status: v1.status || TOOL_STATUS.UNAVAILABLE };
+    // Failed sessions are not V1 completed/interrupted exports. Keep structure,
+    // skip metric-export validation, and mark quality unusable below.
+    if (session.status !== 'failed') {
+      const v1 = validateV1Session(session);
+      if (!v1.ok) return { ...v1, status: v1.status || TOOL_STATUS.UNAVAILABLE };
+    }
   } else if (protocolId !== GENERIC_PROTOCOL_ID) {
     return rejected(REASON_CODES.INCOMPATIBLE_PROTOCOL, 'Only go-no-go-v1 or the provisional sequence protocol can be adapted.', TOOL_STATUS.INCOMPATIBLE);
   }
@@ -635,6 +639,12 @@ function limitationsFor({ session, protocolId, scientificReview, orchestration, 
   if (orchestration) {
     lines.push('W3.1 orchestration and mission sidecars remain local-only and are not upload-eligible.');
   }
+  if (session.status === 'interrupted') {
+    lines.push('Session status is interrupted; this is not a completed-session claim.');
+  }
+  if (session.status === 'failed') {
+    lines.push('Session status is failed; measurements were not fabricated to complete the record.');
+  }
   const sequence = taskSequenceFrom(session, orchestration, protocolId).map((task) => task.task_id).filter(Boolean);
   if (sequence.length > 0) {
     lines.push(`Task sequence: ${sequence.join(', ')}.`);
@@ -650,8 +660,10 @@ function qualityFor(session, metrics, items, scientificReview) {
   if (scientificReview === 'PENDING_SCIENTIFIC_REVIEW') reason_codes.push('pending_scientific_review');
   if (items.some((item) => item.evidence_type === 'missing_measurement')) reason_codes.push('missing_eye_measurement');
   if (items.some((item) => item.evidence_type === 'tracking_dropout')) reason_codes.push('tracking_dropout');
+  if (session.status === 'interrupted') reason_codes.push('session_interrupted');
+  if (session.status === 'failed') reason_codes.push('session_failed');
   return {
-    usable: metrics.length > 0,
+    usable: session.status !== 'failed' && metrics.length > 0,
     reason_codes,
   };
 }
