@@ -49,7 +49,8 @@ export function createTrackingController({
     return generation;
   }
 
-  function cameraFailure(message) {
+  function cameraFailure(message, failureGeneration = lifecycle.generation) {
+    if (failureGeneration !== lifecycle.generation) return;
     if (getActive()) {
       getActive().events.push({ type: 'camera_error', elapsed_ms: now() - getSessionStart(), message });
       finish('interrupted', '摄像头或追踪异常，会话已中断。');
@@ -115,7 +116,10 @@ export function createTrackingController({
         return;
       }
       stream = acquired;
-      stream.getVideoTracks().forEach((track) => track.addEventListener('ended', () => cameraFailure('摄像头连接已断开。可以重新启用，或切换到仅任务模式。'), { once: true }));
+      stream.getVideoTracks().forEach((track) => track.addEventListener('ended', () => {
+        if (generation !== lifecycle.generation) return;
+        cameraFailure('摄像头连接已断开。可以重新启用，或切换到仅任务模式。', generation);
+      }, { once: true }));
       $('video').srcObject = stream;
       await $('video').play();
       if (generation !== lifecycle.generation) return;
@@ -151,16 +155,17 @@ export function createTrackingController({
           frameBusy = false;
           const features = extractFeatures(message.result, message.frameWidth, message.frameHeight);
           if (!lifecycle.ready) {
-            const progress = lifecycle.ingestCalibrationEar(features.ear, message.timestamp);
+            const progress = lifecycle.ingestCalibrationEar(features.ear, message.timestamp, now());
+            if (progress.expired) {
+              cameraFailure('校准未获得足够有效眼部帧。调整光线、正对镜头后重试；也可使用仅任务模式。', generation);
+              return;
+            }
             if (progress.enough) {
               lifecycle.completeCalibration(median(progress.frames));
               clearTimer(calibrationWatchdog);
               status(`已校准，EAR 基线 ${lifecycle.baseline.toFixed(3)}。请保持脸部在画面内。`);
               $('camera-overlay').textContent = '本地追踪 · 已校准';
               updateSetup();
-            } else if (progress.expired) {
-              cameraFailure('校准未获得足够有效眼部帧。调整光线、正对镜头后重试；也可使用仅任务模式。');
-              return;
             }
           }
           if (getActive() && getActive().mode === 'camera') {
@@ -186,13 +191,15 @@ export function createTrackingController({
       const bitmap = await createImageBitmap($('video'));
       if (generation !== lifecycle.generation || !worker) {
         bitmap.close();
-        frameBusy = false;
+        if (generation === lifecycle.generation) frameBusy = false;
         return;
       }
       worker.postMessage({ type: 'frame', bitmap, timestamp }, [bitmap]);
     } catch (error) {
-      frameBusy = false;
-      if (generation === lifecycle.generation) cameraFailure(`摄像头帧读取失败：${error.message}`);
+      if (generation === lifecycle.generation) {
+        frameBusy = false;
+        cameraFailure(`摄像头帧读取失败：${error.message}`, generation);
+      }
     }
   }
 

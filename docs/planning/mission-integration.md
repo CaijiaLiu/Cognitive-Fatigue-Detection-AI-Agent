@@ -14,8 +14,8 @@ It does not add facial blendshapes, screen-gaze calibration, thought probes, con
 
 - Discard frames whose **acquisition** timestamp is before task start or after task end, even if processed later (`pre_task` / `post_task`).
 - Store `acquired_elapsed_ms` and `processed_elapsed_ms` separately; V1 `elapsed_ms` remains acquisition-based session time.
-- Independent 15 s calibration watchdog starts on Worker `ready` and fires with zero inference callbacks. Cleared on calibrated-ready, failure, stop, and generation change.
-- Stale callbacks after stop/restart are rejected (`stale_generation`).
+- Independent 15 s calibration watchdog starts on Worker `ready` and fires with zero inference callbacks. Cleared on calibrated-ready, failure, stop, and generation change. Deadline is exclusive on acquisition time (`>=`); late “enough” frames cannot calibrate.
+- Stale callbacks after stop/restart are rejected (`stale_generation`). Stale `acquire`, `video.play`, track `ended`, and bitmap completions cannot terminate a newer camera generation. Non-finite, future, and out-of-order acquisitions are rejected before accumulator updates.
 - Missingness/dropout stay `tracking_gap` / `no_face`, not open eyes. `noteDropout` records an explicit gap sample.
 - Tests: `tests/collection-mission.test.mjs`. Synthetic only; not real-device proof.
 

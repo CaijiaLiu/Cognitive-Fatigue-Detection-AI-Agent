@@ -8,8 +8,8 @@ This adapter sits between tracking lifecycle events and the existing V1 session 
 
 | Owner | Responsibility |
 |---|---|
-| `public/collection/tracking/lifecycle.js` | Generation, independent calibration deadline, acquisition vs processing timestamps, pre/post task admission |
-| `public/collection/tracking/controller.js` | Camera/Worker resources; calls lifecycle on every result |
+| `public/collection/tracking/lifecycle.js` | Generation, exclusive calibration deadline on acquisition time, invalid/future/out-of-order rejection, pre/post task admission |
+| `public/collection/tracking/controller.js` | Camera/Worker resources; generation-scoped async acquire/play/ended/bitmap; `expired` before `enough` |
 | `public/collection/session/mission-adapter.js` | Task start/end windows, session/task-relative clocks, local-only metadata |
 | `public/collection/features/accumulator.js` | Shared feature engine; dropout is `tracking_gap`, not open eyes |
 | Caijia | PVT/Go-No-Go definitions, ratings protocol, measurement QA |
