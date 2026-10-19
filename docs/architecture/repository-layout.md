@@ -52,6 +52,6 @@ The session controller composes explicit task/tracking controllers and owns sess
 
 ## Future extraction (not implemented)
 
-Window features, screen-gaze calibration, new task adapters and protocol phases belong in the existing domain folders. Offline analysis goes under analysis/src/neurolens/, analysis/tests/, analysis/notebooks/ and analysis/configs/ when Step 6 starts. Do not create empty placeholder directories or V1/V2 copies.
+Window features, screen-gaze calibration, new task adapters and protocol phases belong in the existing domain folders. Offline analysis goes under analysis/src/neurolens/, analysis/tests/, analysis/notebooks/ and analysis/configs/ when Step 6 starts. The proposed read-only session-export adapter (not implemented) would live under `analysis/src/neurolens/adapter/` and is specified in [analysis-export-adapter.md](analysis-export-adapter.md). Do not create empty placeholder directories or V1/V2 copies.
 
 Participant exports and generated models/reports stay outside tracked source by default. Public demonstration artifacts require synthetic or intentionally approved de-identified data and clear provenance.
