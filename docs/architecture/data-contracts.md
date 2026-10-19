@@ -49,3 +49,7 @@ Do not silently convert the three preview ratings to V1 pre/post or upload old p
 ## Mission event contract (provisional, local-only)
 
 W3.0 adds `mission-event/0.1-provisional` on local V1 records as `session.mission`. Scientific review: **PENDING_SCIENTIFIC_REVIEW**. It records task start/end offsets and frame-admission events. It does not change `schema_version` `1.0.0`, cloud allowlists, or metric identifiers. Preview `mission-preview-1` remains incompatible and is not rewritten. See [mission-adapter.md](mission-adapter.md).
+
+## Research-session orchestration contract (provisional, local-only)
+
+W3.1 adds `research-protocol/0.1-provisional`, `research-session/0.1-provisional`, and `research-event/0.1-provisional`. The existing V1 Go/No-Go protocol stays `go-no-go-v1` / `v1-existing`. Generic multi-slot sequences use unsigned ids (`PENDING_SCIENTIFIC_REVIEW`) and remain local-only (`upload_eligible: false`). `schema_version` stays `1.0.0`. Cloud `sanitizeSession` is unchanged and still drops `mission` and `orchestration`. See [session-orchestration.md](session-orchestration.md) and [w4-session-artifact.md](w4-session-artifact.md).

@@ -1,5 +1,43 @@
 # Implementation status
 
+## W3.1 Versioned protocol and session orchestration (2026-10-19)
+
+**Status:** Linxi-owned Stage C engineering orchestrator implemented on canonical collection modules. Not a scientific protocol. Real-camera accuracy is **not** claimed. Scientific review remains **Pending / Blocked**.
+
+Implementation branch: `feature/w3-protocol-orchestration`, based on `develop/neurolens-agent` @ `3b7528f` (PR #18). Design: [session-orchestration.md](../architecture/session-orchestration.md), [w4-session-artifact.md](../architecture/w4-session-artifact.md). Tests: `tests/session-orchestration.test.mjs`. Decision: [DEC-013](decision-log.md).
+
+```text
+W3.1 PROTOCOL ORCHESTRATION: IMPLEMENTED OFFLINE
+REAL CAMERA VALIDATION: NOT RUN
+CAIJIA SCIENTIFIC PROTOCOL: PENDING / BLOCKED
+W4 DATASET INGEST: NOT IMPLEMENTED
+```
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| Versioned protocol contract | Implemented, provisional | `research-protocol/0.1-provisional`; V1 Go/No-Go unchanged; generic `slot-a`/`slot-b` only |
+| Deterministic state machine | Implemented | created→ready→running→{completed,interrupted,failed}; no pause |
+| Event timeline / provenance | Implemented | `research-event/0.1-provisional`; acquisition vs processing; camera/simulated/task-only |
+| Local export / replay | Implemented | `research-session-artifact/0.1-provisional`; `schema_version` stays `1.0.0` |
+| Preview compatibility | Guard remains | `mission-preview-1` is not coerced |
+| Cloud / consent | Unchanged | `sanitizeSession` still requires upload consent and strips `mission`/`orchestration` |
+| PVT / ratings / thresholds | Not implemented | Caijia-owned; unsigned contracts stay `PENDING_SCIENTIFIC_REVIEW` |
+| Real device / Safari | NOT RUN | Synthetic tests only |
+
+**Not changed:** Research Agent W1–W2 contracts, metric identifiers/units, production D1, Sites, OpenAI, `main`, preview snapshot files, Caijia scientific modules, `lib/research/validation.mjs` allowlist.
+
+**Checks actually run (2026-10-19, W3.1):**
+- `npm test` — 181 passed, 0 failed (15 orchestration cases).
+- `npm run test:flow` — PASS (controlled DOM/clock; not a real camera).
+- `npm run test:integration` — 6 passed.
+- `npm run test:reliability` — 7 passed.
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run build` — vinext/Vite production build completed.
+- `tests/integration.mjs` was not run.
+- No live OpenAI call, no remote D1, no Sites publish, no real-camera session.
+
+**Next task:** Stop after W3.1 for review. Do not merge to `main`. Do not implement Caijia-owned biomedical protocols.
+
 ## W3.0 Mission integration foundation (2026-10-19)
 
 **Status:** Linxi-owned Stage A/B engineering prerequisites implemented on canonical collection modules. Preview snapshot is **not** merged. Real-camera accuracy is **not** claimed. Scientific review remains **Pending / Blocked**.
@@ -43,7 +81,7 @@ CAIJIA SCIENTIFIC REVIEW: PENDING / BLOCKED
 - `tests/integration.mjs` was not run.
 - No live OpenAI call, no remote D1, no Sites publish, no real-camera session.
 
-**Next task:** W3.1 only after review of this Draft PR. Do not merge to `main`. Do not start protocol orchestration until Caijia’s event dictionary is available or a new provisional contract is accepted.
+**Next task:** W3.1 provisional orchestrator is implemented on `feature/w3-protocol-orchestration` (DEC-013). Do not merge to `main`.
 
 ## Week 2 closeout (2026-10-19)
 

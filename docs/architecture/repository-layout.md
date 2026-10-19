@@ -40,7 +40,7 @@
 | public/collection/tracking/ | Camera adapter, MediaPipe Worker, tracking controller, DOM-free lifecycle (generation, calibration watchdog, frame admission) |
 | public/collection/features/ | Landmark extraction, time-series accumulator, unavailable-vision summary |
 | public/collection/tasks/ | Go/No-Go adapter owns trials/timers; task summary is pure |
-| public/collection/session/ | Session coordinator, version constants, source labels, demo, provisional mission adapter |
+| public/collection/session/ | Session coordinator, version constants, source labels, demo, provisional mission adapter, W3.1 protocol/orchestrator/export |
 | public/collection/reporting/ | SVG dashboard, display formatting, shared exports and download helpers |
 | public/collection/persistence/ | IndexedDB store and opt-in cloud lifecycle |
 | public/collection/shared/ | Pure numeric helpers |
