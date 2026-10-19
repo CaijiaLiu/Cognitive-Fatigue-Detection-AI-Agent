@@ -16,7 +16,7 @@
     "test:reliability": "node --test tests/agent-reliability.test.mjs",
     "test:runtime": "node --test tests/agent-runtime.test.mjs",
     "test:agent-api": "node --test tests/agent-api.test.mjs",
-    "test:llm": "node --test tests/agent-llm.test.mjs",
+    "test:llm": "node --test tests/agent-llm.test.mjs tests/agent-llm-analysis.test.mjs",
     "eval:llm": "node scripts/eval-llm.mjs",
     "eval:agent": "node scripts/eval-agent.mjs",
     "eval:reliability": "node scripts/eval-reliability.mjs",

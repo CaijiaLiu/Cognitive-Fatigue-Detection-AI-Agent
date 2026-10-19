@@ -1,5 +1,41 @@
 # Implementation status
 
+## W2.5 Real LLM evaluation and failure analysis (2026-10-19)
+
+**Status:** Implemented as an analysis layer over the existing W2.3/W2.4 eval engine. Live paid evaluation is **NOT RUN**. Not scientifically validated. Caijia scientific review remains **Pending / Blocked**.
+
+Implementation branch: `feature/w2-llm-evaluation`, based on `develop/neurolens-agent` after PR #10 fast-forward (`24d5585`). Source: `analysis/src/neurolens/eval/llm-analysis.mjs`, `scripts/eval-llm.mjs`. Tests: `tests/agent-llm-analysis.test.mjs`. Design: [agent-llm-evaluation.md](../architecture/agent-llm-evaluation.md).
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| 12-case live plan | Implemented | `listLivePlanCases()`; mock run 12/12 attempted |
+| Model vs runtime metrics | Implemented | Provider-invoked rows only in model rates; runtime skips excluded |
+| Experiment fingerprints | Implemented | Prompt, fixture, and case SHA-256 prefixes; git SHA |
+| Failure taxonomy | Implemented | Outcome classes A–F and 14 categories |
+| JSON + Markdown reports | Implemented | `--out report.json` also writes `.md` |
+| Dry-run live gate | Implemented | `--live` is dry-run; `--execute` required to spend |
+| Live evaluation | NOT RUN | No credentials / `--execute` authorization in this environment |
+| Scientific metric review | Blocked | Pending Caijia review; identifiers/units unchanged |
+
+**Not changed:** production runtime contract, validator, evidence store, collection/camera/D1, or Caijia review assignments.
+
+**Checks actually run (2026-10-19, W2.5):**
+- `npm test` — 119 passed, 0 failed (previous 109 plus 10 analysis tests).
+- `npm run test:runtime` — 14 passed.
+- `npm run test:agent-api` — 10 passed.
+- `npm run test:llm` — 22 passed.
+- `npm run test:integration` — 6 passed.
+- `npm run test:reliability` — 7 passed.
+- `npm run test:flow` — PASS.
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run eval:llm -- --plan live-12` — mock 12/12; outcomes A=6 B=5 D=1; live **NOT RUN**.
+- `npm run eval:llm -- --plan live-12 --live` — dry-run only; no provider calls.
+- `npm run build` — vinext/Vite production build completed.
+- `tests/integration.mjs` was not run.
+- No live OpenAI call was made and no production API key was read.
+
+**Next task:** keep scientific review blocked. Run the 12-case live plan only with explicit `--execute` and a local `--out`. Do not merge to `main`.
+
 ## W2.4 Independent review, security hardening, and live-LLM readiness (2026-10-19)
 
 **Status:** Engineering review of W2.3 PR #10 completed. Confirmed P0/P1 defects in scope are fixed. Live evaluation is **NOT RUN**. Not scientifically validated, not a public paid endpoint, not deployed. Caijia scientific review remains **Pending / Blocked**.

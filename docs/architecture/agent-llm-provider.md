@@ -76,7 +76,7 @@ npm run eval:llm -- --live --out /tmp/nl-llm-live.json
 
 `npm test` and `npm run build` never call OpenAI.
 
-`--live` requires `NEUROLENS_AGENT_ALLOW_LIVE=1` and `OPENAI_API_KEY`. Otherwise the report status is `not_run` and `live_evaluation` is **NOT RUN**. Do not invent live scores.
+`--live` without `--execute` is a dry-run and does not call the provider. `--live --execute` requires `NEUROLENS_AGENT_ALLOW_LIVE=1`, `OPENAI_API_KEY`, request/token/timeout caps, and a local `--out` path. Otherwise the report status is `not_run` and `live_evaluation` is **NOT RUN**. Do not invent live scores. See [agent-llm-evaluation.md](agent-llm-evaluation.md).
 
 Twenty-two synthetic cases in six groups:
 

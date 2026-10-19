@@ -15,6 +15,11 @@ import { createResearchAgentRuntime } from '../runtime/orchestrate.mjs';
 import { createMockProvider } from '../runtime/provider.mjs';
 import { createConfiguredProvider, loadAgentProviderConfig, loadEvalBudget } from '../runtime/config.mjs';
 import { CASE_STATUS, buildLlmEvalReport, estimateCostUsd } from './llm-report.mjs';
+import {
+  LIVE_PLAN_CASE_IDS,
+  LIVE_PLAN_ID,
+  enrichLlmEvalReport,
+} from './llm-analysis.mjs';
 
 export const LLM_EVAL_GROUPS = Object.freeze({
   A_GROUNDED: 'A_valid_grounded',
@@ -591,6 +596,19 @@ export function listLlmEvalCases() {
   ]);
 }
 
+export { LIVE_PLAN_CASE_IDS, LIVE_PLAN_ID };
+
+export function listLivePlanCases() {
+  const byId = new Map(listLlmEvalCases().map((item) => [item.id, item]));
+  return Object.freeze(LIVE_PLAN_CASE_IDS.map((id) => {
+    const item = byId.get(id);
+    if (!item) {
+      throw new Error(`Live plan is missing evaluation case ${id}.`);
+    }
+    return item;
+  }));
+}
+
 function classifyError(result) {
   if (result.audit.failure_class === 'provider') return 'provider_error';
   if (result.audit.failure_class === 'validation') return 'validator_rejection';
@@ -698,13 +716,23 @@ export async function runLlmEvalSuite(options = {}) {
   const live = options.live === true;
   const now = options.now ?? new Date().toISOString();
   const budget = options.budget ?? loadEvalBudget(env);
-  const allCases = options.cases ?? listLlmEvalCases();
+  const allCases = options.cases
+    ?? ((options.plan === LIVE_PLAN_ID || options.plan === 'live-12')
+      ? listLivePlanCases()
+      : listLlmEvalCases());
   const run_id = options.run_id ?? `llm-eval:${now}`;
   const defaultProvider = live ? 'openai' : 'mock-llm-eval';
   const defaultModel = env.NEUROLENS_AGENT_MODEL ?? (live ? 'gpt-4o-mini' : 'mock-eval/0.1');
 
+  const finalize = (report, extras = {}) => enrichLlmEvalReport(report, {
+    caseDefs: extras.caseDefs ?? allCases,
+    git_sha: options.git_sha,
+    config: extras.config ?? {},
+    budget: extras.budget ?? budget,
+  });
+
   if (!budget.ok) {
-    return buildLlmEvalReport({
+    return finalize(buildLlmEvalReport({
       run_id,
       status: 'not_run',
       live,
@@ -715,14 +743,14 @@ export async function runLlmEvalSuite(options = {}) {
       provider_id: defaultProvider,
       model: defaultModel,
       budget,
-    });
+    }));
   }
 
   const cases = allCases.slice(0, budget.max_cases ?? 32);
 
   if (live) {
     if (env.NEUROLENS_AGENT_ALLOW_LIVE !== '1' && env.NEUROLENS_AGENT_ALLOW_LIVE !== 'true') {
-      return buildLlmEvalReport({
+      return finalize(buildLlmEvalReport({
         run_id,
         status: 'not_run',
         live: true,
@@ -733,11 +761,11 @@ export async function runLlmEvalSuite(options = {}) {
         provider_id: 'openai',
         model: env.NEUROLENS_AGENT_MODEL ?? 'gpt-4o-mini',
         budget,
-      });
+      }));
     }
     const gated = loadAgentProviderConfig({ ...env, NEUROLENS_AGENT_PROVIDER: env.NEUROLENS_AGENT_PROVIDER ?? 'openai' });
     if (!gated.ok) {
-      return buildLlmEvalReport({
+      return finalize(buildLlmEvalReport({
         run_id,
         status: 'not_run',
         live: true,
@@ -748,7 +776,7 @@ export async function runLlmEvalSuite(options = {}) {
         provider_id: gated.provider_id,
         model: gated.model,
         budget,
-      });
+      }));
     }
   }
 
@@ -835,6 +863,9 @@ export async function runLlmEvalSuite(options = {}) {
         failure_class: result.audit.failure_class,
         provider_invoked: result.audit.provider_invoked,
         validator_ok: result.audit.validation?.ok ?? false,
+        failure_reason: result.audit.failure_reason ?? null,
+        artifact_refs: result.audit.artifact_refs ?? [],
+        limitations: result.answer.limitations ?? [],
         latency_ms: result.audit.duration_ms,
         usage: usage ?? null,
       },
@@ -847,7 +878,7 @@ export async function runLlmEvalSuite(options = {}) {
     });
   }
 
-  return buildLlmEvalReport({
+  return finalize(buildLlmEvalReport({
     run_id,
     status: stop_reason ? 'stopped' : 'completed',
     live,
@@ -861,7 +892,7 @@ export async function runLlmEvalSuite(options = {}) {
     providerInvocations,
     providerErrors,
     estimated_cost_usd: budget.pricing_configured ? estimated_cost_usd : null,
-  });
+  }), { config, caseDefs: cases });
 }
 
 export function formatLlmEvalSummary(report) {
@@ -874,6 +905,13 @@ export function formatLlmEvalSummary(report) {
     return `${lines.join('\n')}\n`;
   }
   lines.push(`Live evaluation: ${report.live_evaluation}`);
+  if (report.experiment?.git_sha) {
+    lines.push(`experiment ${report.experiment.experiment_id}  git ${report.experiment.git_sha}`);
+  }
+  if (report.outcome_counts) {
+    const o = report.outcome_counts;
+    lines.push(`outcomes A_skip ${o.A_RUNTIME_SKIP} B_grounded ${o.B_MODEL_GROUNDED} C_abstain ${o.C_MODEL_ABSTAINED} D_validator ${o.D_VALIDATOR_REJECT} E_provider ${o.E_PROVIDER_ERROR} F_infra ${o.F_EVAL_INFRA}`);
+  }
   if (report.counts.status) {
     const status = report.counts.status;
     lines.push(`case_status PASS ${status.PASS} FAIL ${status.FAIL} SKIPPED ${status.SKIPPED} PROVIDER_ERROR ${status.PROVIDER_ERROR} NOT_RUN ${status.NOT_RUN}`);

@@ -4,6 +4,12 @@ This file is the durable record of **accepted project decisions**, not a specula
 
 ## Accepted decisions — 2026-10-19
 
+### DEC-007: Live eval is dry-run unless `--execute`
+**Accepted.** `eval:llm --live` prints a dry-run (provider/model, case IDs, caps, illustrative cost) and does not call the provider. Paid evaluation also requires `--execute`, `NEUROLENS_AGENT_ALLOW_LIVE=1`, `OPENAI_API_KEY`, request/token/timeout caps, concurrency 1, and a local `--out` path. An API key is not permission to spend.
+
+**Reason:** W2.4 still allowed `--live` to call OpenAI once `ALLOW_LIVE` was set. W2.5 needs a reproducible readiness gate that can be inspected offline.
+**Implementation implications:** Do not invent live results. Configuration fingerprints are reproducible; model outputs are not.
+
 ### DEC-005: Real LLM provider remains explicit opt-in
 **Accepted.** `NEUROLENS_AGENT_PROVIDER=openai` plus `OPENAI_API_KEY` is not enough to spend money. HTTP demo construction and `eval:llm --live` both require `NEUROLENS_AGENT_ALLOW_LIVE=1`. Default remains mock. `sameOrigin` is not authentication and does not authorize a public paid endpoint.
 

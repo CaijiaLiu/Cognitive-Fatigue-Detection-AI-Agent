@@ -43,11 +43,33 @@ export {
 export { LLM_EVAL_REPORT_VERSION, LLM_EVAL_LIMIT, CASE_STATUS, computeLlmEvalMetrics, estimateCostUsd } from './llm-report.mjs';
 export {
   LLM_EVAL_GROUPS,
+  LIVE_PLAN_CASE_IDS,
+  LIVE_PLAN_ID,
   createInjectionStore,
   formatLlmEvalSummary,
+  listLivePlanCases,
   listLlmEvalCases,
   runLlmEvalSuite,
 } from './llm-eval.mjs';
+export {
+  FAILURE_CATEGORY,
+  FAILURE_STAGE,
+  LLM_ANALYSIS_VERSION,
+  OUTCOME_CLASS,
+  annotateEvalCase,
+  assertReportHasNoSecrets,
+  classifyOutcome,
+  computeModelMetrics,
+  computeOperationalMetrics,
+  computeRuntimeMetrics,
+  describeFailure,
+  enrichLlmEvalReport,
+  estimateUpperBoundUsd,
+  fingerprintCases,
+  fingerprintFixtures,
+  fingerprintPrompt,
+  formatLlmEvalMarkdown,
+} from './llm-analysis.mjs';
 export {
   PIPELINE_ID,
   createExportPipelineTools,
