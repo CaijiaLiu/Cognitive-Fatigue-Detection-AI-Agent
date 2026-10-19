@@ -4,7 +4,7 @@
 
 **Status:** Designed only. Not implemented, not validated on real exports, not deployed.
 
-Linxi W1.3 proposes a read-only offline path from versioned Focus Lab session JSON to PR #2 evidence artifacts. Source: [analysis-export-adapter.md](../architecture/analysis-export-adapter.md). Sibling implementation: [PR #2](https://github.com/CaijiaLiu/Cognitive-Fatigue-Detection-AI-Agent/pull/2) (not merged by this documentation change).
+Linxi W1.3 proposes a read-only offline path from versioned Focus Lab session JSON to PR #2 evidence artifacts. Design PR: [#3](https://github.com/CaijiaLiu/Cognitive-Fatigue-Detection-AI-Agent/pull/3) (`cursor/w1-adapter-design-4e29`). Source: [analysis-export-adapter.md](../architecture/analysis-export-adapter.md). Sibling implementation: [PR #2](https://github.com/CaijiaLiu/Cognitive-Fatigue-Detection-AI-Agent/pull/2) (not merged by this documentation change).
 
 | Capability | Status | Evidence / remaining work |
 |---|---|---|
