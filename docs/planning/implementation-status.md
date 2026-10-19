@@ -4,7 +4,7 @@
 
 **Status:** Hosting audited. Isolated preview configured in-repo. Remote preview **not deployed**. Caijia scientific review remains **Pending / Blocked**.
 
-Implementation branch: `feature/w2-cloudflare-preview`, based on `develop/neurolens-agent` after PR #13 fast-forward (`f18e46e`). Design: [cloudflare-preview.md](../architecture/cloudflare-preview.md). Gate: [w2-preview-readiness.md](w2-preview-readiness.md). Tests: `tests/agent-preview-deploy.test.mjs`.
+Implementation branch: `feature/w2-cloudflare-preview` @ `77cb63d`, based on `develop/neurolens-agent` after PR #13 fast-forward (`f18e46e`). Design: [cloudflare-preview.md](../architecture/cloudflare-preview.md). Gate: [w2-preview-readiness.md](w2-preview-readiness.md). Tests: `tests/agent-preview-deploy.test.mjs`.
 
 | Capability | Status | Evidence / remaining work |
 |---|---|---|
