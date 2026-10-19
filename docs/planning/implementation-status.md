@@ -4,7 +4,7 @@
 
 **Status:** Implemented and verified with in-process HTTP handler tests plus typecheck/build. Synthetic fixtures and mock provider only. Not a public LLM endpoint, not scientifically validated, not deployed.
 
-Implementation branch: `cursor/w2-agent-api-4e29`, based on W2.1 `cursor/w2-runtime-4e29` @ `dce0a35` (PR #8). Source: `analysis/src/neurolens/runtime/{http,demo-ui}.mjs`, `app/api/research-agent/`, `app/research-agent/`. Tests: `tests/agent-api.test.mjs`. Design: [agent-api.md](../architecture/agent-api.md).
+Implementation branch: `cursor/w2-agent-api-4e29` @ `a19ec8e`, based on W2.1 `cursor/w2-runtime-4e29` @ `dce0a35` (PR #8). Source: `analysis/src/neurolens/runtime/{http,demo-ui}.mjs`, `app/api/research-agent/`, `app/research-agent/`. Tests: `tests/agent-api.test.mjs`. Design: [agent-api.md](../architecture/agent-api.md).
 
 The vinext route is a thin wrapper around `handleResearchAgentPost`. Session authorization is enforced server-side. Client-provided evidence, tool results, and filesystem paths are rejected. Only validated `agent-answer/0.1` objects are returned.
 
