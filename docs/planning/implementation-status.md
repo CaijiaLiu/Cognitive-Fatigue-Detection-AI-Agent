@@ -1,5 +1,41 @@
 # Implementation status
 
+## W2.4 Independent review, security hardening, and live-LLM readiness (2026-10-19)
+
+**Status:** Engineering review of W2.3 PR #10 completed. Confirmed P0/P1 defects in scope are fixed. Live evaluation is **NOT RUN**. Not scientifically validated, not a public paid endpoint, not deployed. Caijia scientific review remains **Pending / Blocked**.
+
+Implementation branch: `feature/w2-real-llm-provider` (W2.4 commits on top of W2.3 `c0e5603`). Review: [agent-llm-review.md](../architecture/agent-llm-review.md). Provider contract: [agent-llm-provider.md](../architecture/agent-llm-provider.md). Tests: `tests/agent-llm.test.mjs`.
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| Independent review of PR #10 | Implemented | Findings classified P0–P3 with file/line, impact, and fix |
+| OpenAI Chat Completions contract | Implemented | `max_completion_tokens`, `response_format=json_object`; truncated/filtered/empty/schema failures mapped |
+| Real-provider opt-in | Implemented | HTTP and eval require `NEUROLENS_AGENT_ALLOW_LIVE=1` |
+| Offline provider-contract tests | Implemented | Valid JSON, invalid JSON, 401/429/500, network, timeout, empty, truncated, unexpected schema |
+| Eval layer separation | Implemented | `PASS\|FAIL\|SKIPPED\|PROVIDER_ERROR\|NOT_RUN`; runtime-skip vs validator abstention; n/a omitted |
+| Cost controls | Documented + tested | Estimate-only stop; missing usage ≠ $0; request cap ≠ monetary budget |
+| Live evaluation | NOT RUN | 12-case plan recorded; no credentials in this environment |
+| Public paid endpoint | Out of scope | `sameOrigin` is not authentication |
+| Scientific metric review | Blocked | Pending Caijia review; identifiers/units unchanged |
+
+**Not changed:** collection consent/camera/D1, metric identifiers, units, protocol compatibility, or Caijia review assignments. No second validator, provider abstraction, or evidence store.
+
+**Checks actually run (2026-10-19, W2.4):**
+- `npm test` — 109 passed, 0 failed (10 agent-api + 12 agent-eval + 12 agent-llm + 7 agent-reliability + 14 agent-runtime + 23 agent-tools + 16 analysis-adapter + 6 analysis-integration + 4 collection + 5 research).
+- `npm run test:runtime` — 14 passed.
+- `npm run test:agent-api` — 10 passed.
+- `npm run test:llm` — 12 passed.
+- `npm run test:integration` — 6 passed.
+- `npm run test:reliability` — 7 passed.
+- `npm run test:flow` — PASS.
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run eval:llm` — mock suite 22/22 e2e; live **NOT RUN**.
+- `npm run build` — vinext/Vite production build completed; routes include `/api/research-agent` and `/research-agent`.
+- `tests/integration.mjs` was not run.
+- No live OpenAI call was made and no production API key was read.
+
+**Next task:** keep scientific review blocked. Hosted openai requires authentication and rate limits. Do not merge this PR to `main`. Do not treat the mock eval report as live LLM quality.
+
 ## W2.3 Real LLM provider and controlled evaluation (2026-10-19)
 
 **Status:** Implemented and verified with deterministic mock/config tests. OpenAI adapter is opt-in. Live evaluation is **NOT RUN**. Not scientifically validated, not a public paid endpoint, not deployed.

@@ -30,13 +30,31 @@ function safeStatusMessage(status) {
 function readUsage(payload) {
   const usage = payload?.usage;
   if (!usage || typeof usage !== 'object') return undefined;
-  const input_tokens = Number(usage.prompt_tokens);
-  const output_tokens = Number(usage.completion_tokens);
+  const input_tokens = Number(usage.prompt_tokens ?? usage.input_tokens);
+  const output_tokens = Number(usage.completion_tokens ?? usage.output_tokens);
   if (!Number.isFinite(input_tokens) && !Number.isFinite(output_tokens)) return undefined;
   return {
     input_tokens: Number.isFinite(input_tokens) ? input_tokens : 0,
     output_tokens: Number.isFinite(output_tokens) ? output_tokens : 0,
   };
+}
+
+function completionText(payload) {
+  const choice = payload?.choices?.[0];
+  if (!choice || typeof choice !== 'object') {
+    throw new ProviderError(REASON_CODES.PROVIDER_UNAVAILABLE, 'OpenAI returned an unexpected response schema.');
+  }
+  if (choice.finish_reason === 'length') {
+    throw new ProviderError(REASON_CODES.PROVIDER_UNAVAILABLE, 'OpenAI truncated the completion at the token limit.');
+  }
+  if (choice.finish_reason === 'content_filter') {
+    throw new ProviderError(REASON_CODES.PROVIDER_UNAVAILABLE, 'OpenAI blocked the completion.');
+  }
+  const text = choice.message?.content;
+  if (typeof text !== 'string' || text.trim().length === 0) {
+    throw new ProviderError(REASON_CODES.PROVIDER_UNAVAILABLE, 'OpenAI returned an empty response.');
+  }
+  return { text, finish_reason: choice.finish_reason };
 }
 
 export function createOpenAIProvider({
@@ -68,6 +86,7 @@ export function createOpenAIProvider({
       const limit = request.timeout_ms ?? timeout_ms;
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), limit);
+      if (typeof timer.unref === 'function') timer.unref();
       let response;
       try {
         response = await fetchImpl(endpoint, {
@@ -79,7 +98,8 @@ export function createOpenAIProvider({
           body: JSON.stringify({
             model,
             temperature: 0,
-            max_tokens: max_output_tokens,
+            max_completion_tokens: max_output_tokens,
+            response_format: { type: 'json_object' },
             messages: [
               { role: 'system', content: request.system },
               { role: 'user', content: request.user },
@@ -105,16 +125,13 @@ export function createOpenAIProvider({
       if (!response.ok) {
         throw new ProviderError(REASON_CODES.PROVIDER_UNAVAILABLE, safeStatusMessage(response.status));
       }
-      const text = payload?.choices?.[0]?.message?.content;
-      if (typeof text !== 'string' || text.trim().length === 0) {
-        throw new ProviderError(REASON_CODES.PROVIDER_UNAVAILABLE, 'OpenAI returned an empty response.');
-      }
+      const { text, finish_reason } = completionText(payload);
       return Object.freeze({
         ...identity,
         text,
         latency_ms: Math.max(0, Date.now() - started),
         usage: readUsage(payload),
-        finish_reason: payload?.choices?.[0]?.finish_reason,
+        finish_reason,
       });
     },
     completeCount() {

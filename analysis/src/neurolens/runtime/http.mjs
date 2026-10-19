@@ -57,6 +57,12 @@ export function createDemoRuntime({ tools, provider, timeout_ms, now, clock, env
   if (!provider && !resolved.ok) {
     throw new ProviderError(resolved.reason_code, resolved.error);
   }
+  if (!provider && resolved.kind === 'openai' && resolved.allow_live !== true) {
+    throw new ProviderError(
+      REASON_CODES.PROVIDER_UNAVAILABLE,
+      'Real provider is configured but NEUROLENS_AGENT_ALLOW_LIVE is not set. Paid calls stay opt-in.',
+    );
+  }
   return {
     tools: agentTools,
     config: resolved,
@@ -205,7 +211,17 @@ export async function handleResearchAgentPost(request, options = {}) {
       reason_code: error?.reason_code ?? REASON_CODES.PROVIDER_UNAVAILABLE,
     }));
   }
-  const result = await runtime.ask(checked.value);
+  let result;
+  try {
+    result = await runtime.ask(checked.value);
+  } catch (error) {
+    const message = error instanceof ProviderError
+      ? error.message
+      : 'The configured research-agent provider is unavailable.';
+    return json(503, errorBody(message, {
+      reason_code: error?.reason_code ?? REASON_CODES.PROVIDER_UNAVAILABLE,
+    }));
+  }
   const providerFailed = result.audit.failure_class === 'provider';
   const status = providerFailed ? 503 : 200;
   return json(status, {

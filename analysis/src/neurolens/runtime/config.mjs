@@ -119,7 +119,7 @@ export function publicProviderView(config) {
     provider_id: config.provider_id ?? DEFAULT_PROVIDER_ID,
     model: config.model ?? DEFAULT_MODEL,
     configured: config.ok === true,
-    live: false,
+    live: config.kind === 'openai' && config.ok === true && config.allow_live === true,
   };
 }
 
@@ -170,6 +170,12 @@ export function createConfiguredProvider(config, extras = {}) {
       mode: extras.mode,
       latency_ms: extras.latency_ms,
     });
+  }
+  if (!config.allow_live && extras.allow_live !== true) {
+    throw new ProviderError(
+      REASON_CODES.PROVIDER_UNAVAILABLE,
+      'Real provider is configured but NEUROLENS_AGENT_ALLOW_LIVE is not set. Paid calls stay opt-in.',
+    );
   }
   return createOpenAIProvider({
     apiKey: config.api_key,

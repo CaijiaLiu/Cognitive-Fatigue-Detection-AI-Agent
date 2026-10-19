@@ -1,6 +1,20 @@
 # NeuroLens decision log (shared across human and AI contributors)
 
-This file is the durable record of **accepted project decisions**, not a speculative backlog. Last updated 2026-10-14. Read alongside [Research North Star](research-north-star.md), [Roadmap](roadmap.md), [Implementation Status](implementation-status.md), and [AGENTS.md](../../AGENTS.md).
+This file is the durable record of **accepted project decisions**, not a speculative backlog. Last updated 2026-10-19. Read alongside [Research North Star](research-north-star.md), [Roadmap](roadmap.md), [Implementation Status](implementation-status.md), and [AGENTS.md](../../AGENTS.md).
+
+## Accepted decisions — 2026-10-19
+
+### DEC-005: Real LLM provider remains explicit opt-in
+**Accepted.** `NEUROLENS_AGENT_PROVIDER=openai` plus `OPENAI_API_KEY` is not enough to spend money. HTTP demo construction and `eval:llm --live` both require `NEUROLENS_AGENT_ALLOW_LIVE=1`. Default remains mock. `sameOrigin` is not authentication and does not authorize a public paid endpoint.
+
+**Reason:** A local or preview process with only a provider key would otherwise bill on every same-origin POST.
+**Implementation implications:** Fail closed before `createOpenAIProvider`. Do not add a full auth system in W2.4. Do not treat estimated `MAX_COST_USD` as a guaranteed spend ceiling; a request cap is not a monetary budget.
+
+### DEC-006: LLM eval layers stay separated
+**Accepted.** Evaluation reports must distinguish model behavior, validator rejection, runtime fail-closed skips, and provider errors. Case status is `PASS|FAIL|SKIPPED|PROVIDER_ERROR|NOT_RUN`. n/a numeric/citation rows and unrun/skipped rows are omitted from denominators, not counted as successes. Live mode must not expect planted mock failures such as `999`.
+
+**Reason:** Mock 22/22 e2e does not measure live LLM quality. Mixing layers inflates abstention and numeric scores.
+**Implementation implications:** Keep existing scientific metric identifiers unchanged. Caijia review remains blocked.
 
 ## Accepted decisions — 2026-10-14
 

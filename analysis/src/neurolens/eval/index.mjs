@@ -40,7 +40,7 @@ export {
   runMetamorphicCases,
   runReliabilitySuite,
 } from './reliability.mjs';
-export { LLM_EVAL_REPORT_VERSION, LLM_EVAL_LIMIT, computeLlmEvalMetrics, estimateCostUsd } from './llm-report.mjs';
+export { LLM_EVAL_REPORT_VERSION, LLM_EVAL_LIMIT, CASE_STATUS, computeLlmEvalMetrics, estimateCostUsd } from './llm-report.mjs';
 export {
   LLM_EVAL_GROUPS,
   createInjectionStore,

@@ -37,7 +37,7 @@ Server-side only. The browser cannot choose a provider or model.
 | `NEUROLENS_AGENT_MODEL` | `gpt-4o-mini` when openai | Model name |
 | `NEUROLENS_AGENT_TIMEOUT_MS` | 2000 mock / 15000 openai | Per-request timeout |
 | `NEUROLENS_AGENT_MAX_OUTPUT_TOKENS` | 400 | Completion cap |
-| `NEUROLENS_AGENT_ALLOW_LIVE` | unset | Required (`1`) for `--live` evaluation |
+| `NEUROLENS_AGENT_ALLOW_LIVE` | unset | Required (`1`) before any OpenAI `complete()` — HTTP demo and `--live` eval |
 | `NEUROLENS_AGENT_MAX_CASES` | 32 | Eval case cap |
 | `NEUROLENS_AGENT_MAX_REQUESTS` | 32 | Eval provider-call cap |
 | `NEUROLENS_AGENT_PRICE_INPUT_PER_1K` / `OUTPUT` | unset | Optional USD prices for cost estimates |
@@ -45,25 +45,26 @@ Server-side only. The browser cannot choose a provider or model.
 
 Missing openai credentials produce `provider_unavailable` with a configuration error. There is no silent fallback from openai to mock.
 
-Local demo with a real model:
+Local demo with a real model (all three required; paid calls stay opt-in):
 
 ```sh
 export NEUROLENS_AGENT_PROVIDER=openai
 export OPENAI_API_KEY=...
+export NEUROLENS_AGENT_ALLOW_LIVE=1
 npm run dev
 # open http://127.0.0.1:5173/research-agent
 ```
 
-Do not deploy this as a public paid endpoint until authentication, rate limits, and hosting review exist.
+`sameOrigin` is not authentication. Do not deploy this as a public paid endpoint until authentication, rate limits, and hosting review exist.
 
 ## Security boundaries
 
 - API keys live in process env on the server. They are not accepted from the client and are not written to audit records or eval reports.
 - Same W2.2 origin, 8 KB body, opaque refs, and session allowlist.
 - The model never chooses tool arguments, filesystem paths, or extra sessions.
-- Unvalidated model JSON is discarded. Empty or non-JSON provider envelopes become `provider_unavailable`.
+- Unvalidated model JSON is discarded. Empty, truncated (`finish_reason=length`), filtered, or non-JSON provider envelopes become `provider_unavailable`.
 - Timeouts use `AbortController`. There is no automatic retry.
-- GET/POST may show `{ kind, provider_id, model, configured }` only.
+- GET/POST may show `{ kind, provider_id, model, configured, live }` only. `live` is true only when openai is configured and `NEUROLENS_AGENT_ALLOW_LIVE` is set.
 
 ## Controlled evaluation
 
@@ -101,18 +102,23 @@ A validator rejection is not proof that the model behaved correctly.
 
 ## Metrics
 
-Report version `llm-eval-report/0.1`. Denominators exclude skipped and `not_run` rows.
+Report version `llm-eval-report/0.1` with a backward-compatible `case_status` extension: `PASS`, `FAIL`, `SKIPPED`, `PROVIDER_ERROR`, `NOT_RUN`.
 
-| Metric | Denominator |
-|---|---|
-| Valid grounded-answer rate | Group A plus the correct-citation case |
-| Correct abstention rate | Cases that expect an empty-claim abstention |
-| Numeric fidelity rate | Attempted cases (fabricated `999` must not appear in the returned answer) |
-| Citation accuracy rate | Cases with a citation expectation |
-| End-to-end validated success rate | Attempted cases matching the fixture expectation |
-| Provider error rate | Cases that invoked the provider |
+Denominators use only attempted rows (`PASS` / `FAIL` / `PROVIDER_ERROR`). `SKIPPED` and `NOT_RUN` never count as successes.
 
-Cost is estimated only when both price variables are set. Reports store usage counts, not prompts or raw completions.
+| Metric | Numerator | Denominator |
+|---|---|---|
+| Valid grounded-answer rate | Group A rows that are answered and match the fixture | Group A attempted rows only. `llm-correct-citation` is a citation row, not a second grounded success. |
+| Correct runtime-skip rate | Expected runtime fail-closed rows that abstain with no provider call | Rows whose expected layer is `runtime_fail_closed`. This is not model abstention quality. |
+| Correct validator-abstention rate | Expected validator-reject rows that return an empty-claim abstention | Rows whose expected layer is `validator_reject` and that expect abstention. |
+| Numeric fidelity rate | Applicable rows with no leaked unvalidated number | Rows where the provider was invoked or the answer is `answered`. n/a rows are omitted. |
+| Citation accuracy rate | Applicable rows whose citation score is true | Rows with a non-null citation expectation. |
+| End-to-end validated success rate | `PASS` rows | Attempted rows. Provider errors are failures in this rate. |
+| Provider error rate | `PROVIDER_ERROR` rows | Rows that invoked the provider. Zero invocations → n/a. |
+
+Mock scripted rows measure runtime/validator fail-closed behavior, not live LLM quality. Live mode skips `live_mode=skip` scripted-adversarial rows and scores `live_mode=safety` as “validated answer or empty abstention,” never as a requirement to emit planted `999`.
+
+`NEUROLENS_AGENT_MAX_COST_USD` is an estimate-only stop after a completed call. It is not a guaranteed spending ceiling. A request cap is not a monetary budget. Missing token usage is treated as unknown cost, not zero; the harness then stops with `missing_usage` when a dollar cap was requested. Cost is estimated only when both price variables and usage are present. Reports store usage counts, not prompts or raw completions.
 
 ## Audit
 
