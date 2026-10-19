@@ -4,7 +4,7 @@
 
 **Status:** Implemented as an analysis layer over the existing W2.3/W2.4 eval engine. Live paid evaluation is **NOT RUN**. Not scientifically validated. Caijia scientific review remains **Pending / Blocked**.
 
-Implementation branch: `feature/w2-llm-evaluation`, based on `develop/neurolens-agent` after PR #10 fast-forward (`24d5585`). Source: `analysis/src/neurolens/eval/llm-analysis.mjs`, `scripts/eval-llm.mjs`. Tests: `tests/agent-llm-analysis.test.mjs`. Design: [agent-llm-evaluation.md](../architecture/agent-llm-evaluation.md).
+Implementation branch: `feature/w2-llm-evaluation` @ `5bb05e6` (Draft PR #11), based on `develop/neurolens-agent` after PR #10 fast-forward (`24d5585`). Source: `analysis/src/neurolens/eval/llm-analysis.mjs`, `scripts/eval-llm.mjs`. Tests: `tests/agent-llm-analysis.test.mjs`. Design: [agent-llm-evaluation.md](../architecture/agent-llm-evaluation.md).
 
 | Capability | Status | Evidence / remaining work |
 |---|---|---|
