@@ -1,5 +1,46 @@
 # Implementation status
 
+## W2.8 Cloudflare preview configuration and E2E readiness (2026-10-19)
+
+**Status:** Hosting audited. Isolated preview configured in-repo. Remote preview **not deployed**. Caijia scientific review remains **Pending / Blocked**.
+
+Implementation branch: `feature/w2-cloudflare-preview`, based on `develop/neurolens-agent` after PR #13 fast-forward (`f18e46e`). Design: [cloudflare-preview.md](../architecture/cloudflare-preview.md). Gate: [w2-preview-readiness.md](w2-preview-readiness.md). Tests: `tests/agent-preview-deploy.test.mjs`.
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| PR #13 consolidation | Merged | Fast-forward into develop @ `f18e46e`. Main unchanged @ `c163f29`. |
+| Hosting audit | Implemented | vinext Worker, generated `dist/server/wrangler.json`, D1 binding `DB` |
+| Isolated preview config | Implemented | `NEUROLENS_DEMO_DEPLOYMENT=preview` + `NEUROLENS_DEMO_D1_ISOLATED=1`; mock-only fail-closed |
+| Separate preview D1 | BLOCKED | Not created; production `DB` must not be reused |
+| D1 limiter | Tightened | Scoped `demo:` cleanup + UPSERT `RETURNING`; in-process serialized tests only |
+| Cookie path | Verified | `Path=/api/research-agent` covers API + `/session`; not collection |
+| HTTP verification script | Implemented | `npm run verify:preview-http` offline 15/15; remote `--base` refused |
+| Browser E2E | Plan only | No Playwright added; manual checklist in preview-verification.md |
+| Public/cloud deploy | NOT DEPLOYED | No D1 created, no secrets changed, no Worker published |
+| Scientific metric review | Blocked | Pending Caijia review; identifiers/units unchanged |
+
+**Not changed:** prompts, validator, fixture metrics, collection/camera, researcher ChatGPT auth, production D1 data, or Caijia review assignments.
+
+**Checks actually run (2026-10-19, W2.8):**
+- `npm test` — 141 passed, 0 failed.
+- `npm run test:runtime` — 14 passed.
+- `npm run test:agent-api` — 10 passed.
+- `npm run test:llm` — 23 passed.
+- `npm run test:demo-security` — 15 passed.
+- `npm run test:preview` — 6 passed.
+- `npm run verify:preview-http` — 15/15 PASS (offline).
+- `npm run test:integration` — 6 passed.
+- `npm run test:reliability` — 7 passed.
+- `npm run test:flow` — PASS.
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run build` — vinext/Vite production build completed.
+- `tests/integration.mjs` was not run.
+- No live OpenAI call was made and no production API key was read.
+- **CLOUDFLARE PREVIEW: NOT DEPLOYED**
+- **REMOTE E2E: NOT RUN**
+
+**Next task:** wait for explicit approval to create an isolated preview D1 and publish a non-production Site. Do not merge to `main`. Keep Caijia review blocked.
+
 ## W2.7 Authenticated demo and deployment hardening (2026-10-19)
 
 **Status:** Implemented as a mock-only, fail-closed demo boundary. Not a real-LLM endpoint, not scientifically validated, not publicly deployed. Caijia scientific review remains **Pending / Blocked**.

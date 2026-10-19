@@ -19,6 +19,7 @@ NeuroLens is the target research platform; Focus Lab is the existing V1 collecti
 | LLM evaluation methodology and failure analysis | [Agent LLM evaluation](architecture/agent-llm-evaluation.md) |
 | Real LLM baseline experiment | [Agent LLM baseline](architecture/agent-llm-baseline.md) |
 | Authenticated mock demo / rate limits | [Agent demo security](architecture/agent-demo-security.md) |
+| Cloudflare preview architecture | [Cloudflare preview](architecture/cloudflare-preview.md) |
 | Mission preview stabilization and integration | [Mission integration](planning/mission-integration.md) |
 | Ordered implementation steps and release gates | [Roadmap](planning/roadmap.md) |
 | Audited implementation status | [Status](planning/implementation-status.md) |
@@ -27,6 +28,7 @@ NeuroLens is the target research platform; Focus Lab is the existing V1 collecti
 | Metric definitions and limits | [Features](research/features.md) |
 | Existing hosting, consent and upload behavior | [Data collection and hosting](operations/data-collection-and-hosting.md) |
 | Public mock-demo procedure | [Public demo](operations/public-demo.md) |
+| Preview HTTP/browser verification | [Preview verification](operations/preview-verification.md) |
 | Framework starter reference | [Starter](operations/STARTER.md) |
 | Original NeuroLens proposal, historical reference | [Original framework](reference/NeuroLens_Project_Framework.md) |
 

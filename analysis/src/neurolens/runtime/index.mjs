@@ -30,6 +30,12 @@ export {
   validateAgentHttpBody,
 } from './http.mjs';
 export {
+  DEMO_D1_CLEANUP_SQL,
+  DEMO_D1_INCREMENT_SQL,
+  DEMO_RATE_PREFIX,
+  DEMO_SESSION_PREFIX,
+} from './demo-d1-sql.mjs';
+export {
   handleDemoSessionDelete,
   handleDemoSessionGet,
   handleDemoSessionPost,
@@ -39,12 +45,15 @@ export {
   AUTH_REQUIRED_ERROR,
   CONFIG_ERROR,
   DEMO_COOKIE_NAME,
+  DEMO_COOKIE_PATH,
   DEMO_ENV,
   RATE_LIMITED_ERROR,
   consumeRateLimit,
   createMemoryRateLimitStore,
   createMemorySessionStore,
+  createSerializedRateLimitStore,
   createTestSecurity,
+  demoCookieCoversPath,
   enforceDemoAccess,
   loadDemoSecurityConfig,
   parseCookies,

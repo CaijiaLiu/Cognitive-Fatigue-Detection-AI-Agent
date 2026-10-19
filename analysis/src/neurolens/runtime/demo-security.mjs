@@ -5,7 +5,9 @@
 import { loadAgentProviderConfig } from './config.mjs';
 
 export const DEMO_COOKIE_NAME = 'nl_demo';
-export const DEMO_DEPLOYMENTS = Object.freeze(['local', 'public']);
+export const DEMO_COOKIE_PATH = '/api/research-agent';
+export const DEMO_DEPLOYMENTS = Object.freeze(['local', 'public', 'preview']);
+export const GATED_DEPLOYMENTS = Object.freeze(['public', 'preview']);
 export const AUTH_REQUIRED_ERROR = 'Authentication required.';
 export const AUTH_FAILED_ERROR = 'Authentication failed.';
 export const NOT_AUTHORIZED_ERROR = 'Request is not authorized.';
@@ -26,6 +28,7 @@ const ENV = Object.freeze({
   PASSWORD: 'NEUROLENS_DEMO_PASSWORD',
   SESSION_SECRET: 'NEUROLENS_DEMO_SESSION_SECRET',
   RATE_SECRET: 'NEUROLENS_DEMO_RATE_SECRET',
+  D1_ISOLATED: 'NEUROLENS_DEMO_D1_ISOLATED',
   RATE_WINDOW: 'NEUROLENS_DEMO_RATE_WINDOW_MS',
   RATE_LIMIT: 'NEUROLENS_DEMO_RATE_LIMIT',
   LOGIN_LIMIT: 'NEUROLENS_DEMO_LOGIN_RATE_LIMIT',
@@ -63,17 +66,21 @@ export function loadDemoSecurityConfig(env = {}, extras = {}) {
     if (parsed?.error) errors.push(parsed.error);
   }
   if (!DEMO_DEPLOYMENTS.includes(deployment)) {
-    errors.push('NEUROLENS_DEMO_DEPLOYMENT must be local or public.');
+    errors.push('NEUROLENS_DEMO_DEPLOYMENT must be local, public, or preview.');
   }
 
-  const auth_required = deployment === 'public' || password.length > 0;
-  if (deployment === 'public') {
-    if (password.length < 16) errors.push('Public demo requires NEUROLENS_DEMO_PASSWORD of at least 16 characters.');
-    if (password && WEAK_PASSWORDS.has(password)) errors.push('Public demo password is not acceptable.');
-    if (sessionSecret.length < 32) errors.push('Public demo requires NEUROLENS_DEMO_SESSION_SECRET of at least 32 characters.');
-    if (rateSecret.length < 16) errors.push('Public demo requires NEUROLENS_DEMO_RATE_SECRET or RATE_HASH_KEY.');
+  const gated = GATED_DEPLOYMENTS.includes(deployment);
+  const auth_required = gated || password.length > 0;
+  if (gated) {
+    if (password.length < 16) errors.push('Gated demo requires NEUROLENS_DEMO_PASSWORD of at least 16 characters.');
+    if (password && WEAK_PASSWORDS.has(password)) errors.push('Gated demo password is not acceptable.');
+    if (sessionSecret.length < 32) errors.push('Gated demo requires NEUROLENS_DEMO_SESSION_SECRET of at least 32 characters.');
+    if (rateSecret.length < 16) errors.push('Gated demo requires NEUROLENS_DEMO_RATE_SECRET or RATE_HASH_KEY.');
     if (provider.kind !== 'mock' || provider.allow_live === true) {
-      errors.push('Public demo must use the mock provider and must not set NEUROLENS_AGENT_ALLOW_LIVE.');
+      errors.push('Gated demo must use the mock provider and must not set NEUROLENS_AGENT_ALLOW_LIVE.');
+    }
+    if (deployment === 'preview' && env[ENV.D1_ISOLATED] !== '1' && env[ENV.D1_ISOLATED] !== 'true') {
+      errors.push('Preview requires NEUROLENS_DEMO_D1_ISOLATED=1 and a non-production D1 binding.');
     }
   }
   if (auth_required && deployment === 'local' && sessionSecret.length === 0) {
@@ -86,7 +93,7 @@ export function loadDemoSecurityConfig(env = {}, extras = {}) {
     ok,
     deployment,
     auth_required,
-    rate_limit_enabled: deployment === 'public' || extras.rate_limit_enabled === true || Boolean(env[ENV.RATE_LIMIT]),
+    rate_limit_enabled: gated || extras.rate_limit_enabled === true || Boolean(env[ENV.RATE_LIMIT]),
     password: ok ? password : '',
     session_secret: sessionSecret || (deployment === 'local' ? 'local-dev-session-secret-not-for-production' : ''),
     rate_secret: rateSecret || (deployment === 'local' ? 'local-dev-rate-secret-not-for-production' : ''),
@@ -95,7 +102,8 @@ export function loadDemoSecurityConfig(env = {}, extras = {}) {
     login_cap: login_cap?.error ? 10 : login_cap,
     ttl_ms: (ttl_s?.error ? 28_800 : ttl_s) * 1000,
     trust_cf_ip: env[ENV.TRUST_CF_IP] === '1' || env[ENV.TRUST_CF_IP] === 'true',
-    cookie_secure: deployment === 'public' || extras.cookie_secure === true,
+    cookie_secure: gated || extras.cookie_secure === true,
+    d1_isolated: env[ENV.D1_ISOLATED] === '1' || env[ENV.D1_ISOLATED] === 'true',
     provider_kind: provider.kind ?? 'mock',
     allow_live: provider.allow_live === true,
     errors,
@@ -192,6 +200,33 @@ export async function secretsEqual(left, right) {
   return diff === 0 && String(left ?? '').length === String(right ?? '').length;
 }
 
+export function demoCookieCoversPath(pathname) {
+  if (pathname === DEMO_COOKIE_PATH) return true;
+  return typeof pathname === 'string' && pathname.startsWith(`${DEMO_COOKIE_PATH}/`);
+}
+
+export function createSerializedRateLimitStore() {
+  const rows = new Map();
+  let chain = Promise.resolve();
+  return Object.freeze({
+    kind: 'serialized',
+    async increment(key, { now, window_ms }) {
+      const run = async () => {
+        let bucket = rows.get(key);
+        if (!bucket || now >= bucket.reset_at) {
+          bucket = { count: 0, reset_at: now + window_ms };
+        }
+        bucket.count += 1;
+        rows.set(key, bucket);
+        return { count: bucket.count, reset_at: bucket.reset_at };
+      };
+      const next = chain.then(run, run);
+      chain = next.then(() => undefined, () => undefined);
+      return next;
+    },
+  });
+}
+
 export function parseCookies(header) {
   const out = {};
   if (!header) return out;
@@ -213,7 +248,7 @@ export function parseCookies(header) {
 export function serializeDemoCookie(value, { maxAge, secure, clear = false } = {}) {
   const parts = [
     `${DEMO_COOKIE_NAME}=${clear ? '' : encodeURIComponent(value)}`,
-    'Path=/api/research-agent',
+    `Path=${DEMO_COOKIE_PATH}`,
     'HttpOnly',
     'SameSite=Lax',
   ];
@@ -381,7 +416,7 @@ export async function enforceDemoAccess(request, options, { endpoint, requireAut
     finish('config_error', { error_category: 'misconfigured' });
     return { ok: false, status: 503, error: CONFIG_ERROR, request_id, headers, config };
   }
-  if (config.deployment === 'public' && options.sharedStore !== true && options.allowMemoryLimiter !== true) {
+  if (GATED_DEPLOYMENTS.includes(config.deployment) && options.sharedStore !== true && options.allowMemoryLimiter !== true) {
     finish('config_error', { error_category: 'shared_store_missing' });
     return { ok: false, status: 503, error: CONFIG_ERROR, request_id, headers, config };
   }

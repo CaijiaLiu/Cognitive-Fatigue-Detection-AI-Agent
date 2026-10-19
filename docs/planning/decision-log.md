@@ -4,6 +4,12 @@ This file is the durable record of **accepted project decisions**, not a specula
 
 ## Accepted decisions — 2026-10-19
 
+### DEC-010: Isolated preview D1 is required before any Cloudflare preview
+**Accepted.** A mock preview must use `NEUROLENS_DEMO_DEPLOYMENT=preview`, a non-production D1, and `NEUROLENS_DEMO_D1_ISOLATED=1`. The existing production `DB` holds collection sessions and must not be reused. Cloud resources, remote migrations, secret changes, and Worker publishes require explicit human approval. Offline tests do not verify a remote Worker.
+
+**Reason:** The vinext Worker binds one `DB`. Sharing it would expose `research_sessions` to the same process as the demo limiter.
+**Implementation implications:** Do not run `wrangler deploy` or create D1 from an agent. Keep cookie `Path=/api/research-agent`. Scope demo SQL to `demo:` keys.
+
 ### DEC-009: Public demo uses a shared-secret cookie and D1 rate limits
 **Accepted.** The Research Agent public demo is mock-only and requires a server-side shared-secret session cookie. Sites ChatGPT headers remain the researcher-dashboard gate and are not the demo login. Rate limits use the existing D1 `upload_limits` table. Public configuration fails closed if secrets, a shared store, or a non-mock provider are missing. Real OpenAI stays a later, separately approved deployment.
 

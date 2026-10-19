@@ -62,6 +62,8 @@ npm run test:runtime
 npm run test:agent-api
 npm run test:llm
 npm run test:demo-security
+npm run test:preview
+npm run verify:preview-http
 npm run test:flow
 npx tsc --noEmit
 npm run build

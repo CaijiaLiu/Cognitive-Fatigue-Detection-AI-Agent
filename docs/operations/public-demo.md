@@ -21,7 +21,7 @@ NEUROLENS_AGENT_PROVIDER=mock
 
 Do **not** set `NEUROLENS_AGENT_ALLOW_LIVE` or `NEUROLENS_AGENT_PROVIDER=openai` on a public demo. The process fails closed with HTTP 503 if those are present or if required secrets/D1 are missing.
 
-D1 must already exist (`DB`). Demo sessions and rate-limit buckets reuse `upload_limits` with `demo:sess:` and `demo:rl:` key prefixes. No schema migration is required.
+D1 must already exist (`DB`). Demo sessions and rate-limit buckets reuse `upload_limits` with `demo:sess:` and `demo:rl:` key prefixes. No schema migration is required. A **preview** Worker must not bind the production collection D1; see [cloudflare-preview.md](../architecture/cloudflare-preview.md).
 
 ## Local development
 

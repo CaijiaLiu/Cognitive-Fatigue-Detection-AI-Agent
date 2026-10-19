@@ -69,6 +69,7 @@ The session controller composes explicit task/tracking controllers and owns sess
 | tests/agent-api.test.mjs | HTTP handler, allowlist, leakage and demo view-model tests |
 | tests/agent-llm.test.mjs | Provider config, OpenAI adapter, eval-report and no-network tests |
 | tests/agent-demo-security.test.mjs | Offline auth, session, CSRF, rate-limit and fail-closed public-config tests |
+| tests/agent-preview-deploy.test.mjs | Preview config, cookie path, D1 SQL, serialized limiter, log correlation |
 | app/api/research-agent/ | Thin vinext route that calls the analysis HTTP adapter |
 | app/api/research-agent/session/ | Demo login/logout/session status |
 | app/research-agent/ | Synthetic Research Agent demo panel |
@@ -83,6 +84,9 @@ The session controller composes explicit task/tracking controllers and owns sess
 | docs/architecture/agent-llm-provider.md | OpenAI adapter, env config, live-eval controls |
 | docs/architecture/agent-demo-security.md | Demo cookie auth, D1 rate limits, fail-closed public config |
 | docs/operations/public-demo.md | Hosting variables and public-demo checklist |
+| docs/architecture/cloudflare-preview.md | vinext/Workers audit and isolated preview rules |
+| docs/operations/preview-verification.md | HTTP and browser verification plans |
+| docs/planning/w2-preview-readiness.md | Deploy gate; not authorization to publish |
 
 This is deterministic scaffolding over synthetic fixtures. It is not an LLM runtime, not a statistics pipeline, and not scientific validation. Window features, screen-gaze calibration, new task adapters and protocol phases still belong in the existing collection domain folders. Offline statistics/notebooks remain future work under analysis/tests/, analysis/notebooks/ and analysis/configs/ when Step 6 starts. Do not create empty placeholder directories or V1/V2 copies.
 
