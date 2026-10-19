@@ -4,7 +4,7 @@
 
 **Status:** Implemented and verified in synthetic contract tests plus typecheck/build. Deterministic validator and prompt-boundary checks only. Not LLM robustness, not scientifically validated, not deployed.
 
-Implementation branch: `cursor/w1-reliability-4e29`, based on W1.6 `cursor/w1-integration-4e29` @ `a3e5072` (PR #6). Source: `analysis/src/neurolens/eval/{adversarial,reliability}.mjs`. Tests: `tests/agent-reliability.test.mjs`. Design / reliability report: [agent-reliability.md](../architecture/agent-reliability.md).
+Implementation branch: `cursor/w1-reliability-4e29` @ `4047a7a`, based on W1.6 `cursor/w1-integration-4e29` @ `a3e5072` (PR #6). Source: `analysis/src/neurolens/eval/{adversarial,reliability}.mjs`. Tests: `tests/agent-reliability.test.mjs`. Design / reliability report: [agent-reliability.md](../architecture/agent-reliability.md).
 
 This slice does **not** call an LLM, change metric definitions, or close Caijia's scientific review. Existing `agent-tools/0.1` and `agent-answer/0.1` validators are reused; there is no second validation system.
 
