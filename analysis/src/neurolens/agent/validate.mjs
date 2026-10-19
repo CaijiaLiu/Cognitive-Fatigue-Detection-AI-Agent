@@ -524,12 +524,25 @@ export function validateAgentAnswer(input, artifacts = [], options = {}) {
     }
     const expectedSessionRefs = Array.isArray(options.expectedSessionRefs) ? options.expectedSessionRefs : [];
     if (expectedSessionRefs.length > 0) {
-      const bound = claim.artifact_refs.every((ref) => {
-        const sources = artifactsByRef.get(ref)?.source_session_refs ?? [];
-        return expectedSessionRefs.some((sessionRef) => sources.includes(sessionRef));
-      });
-      if (!bound) {
-        return fail(REASON_CODES.SESSION_MISMATCH, 'A cited artifact does not belong to the requested session.');
+      const coverage = options.coverage === 'all' ? 'all' : 'any';
+      if (coverage === 'all') {
+        const cited = new Set();
+        for (const ref of claim.artifact_refs) {
+          for (const sessionRef of artifactsByRef.get(ref)?.source_session_refs ?? []) {
+            cited.add(sessionRef);
+          }
+        }
+        if (expectedSessionRefs.some((sessionRef) => !cited.has(sessionRef))) {
+          return fail(REASON_CODES.SESSION_MISMATCH, 'Cited evidence does not cover every requested session.');
+        }
+      } else {
+        const bound = claim.artifact_refs.every((ref) => {
+          const sources = artifactsByRef.get(ref)?.source_session_refs ?? [];
+          return expectedSessionRefs.some((sessionRef) => sources.includes(sessionRef));
+        });
+        if (!bound) {
+          return fail(REASON_CODES.SESSION_MISMATCH, 'A cited artifact does not belong to the requested session.');
+        }
       }
     }
     const grounded = findMetricInArtifacts(claim.metric_id, claim.artifact_refs, artifactsByRef, {

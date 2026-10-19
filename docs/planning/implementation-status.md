@@ -1,5 +1,35 @@
 # Implementation status
 
+## W1.5 API-independent LLM prompt and evaluation harness (2026-10-19)
+
+**Status:** Implemented and verified in synthetic tests. Manual ChatGPT workflow only. Not an LLM API, not scientifically validated, not deployed.
+
+Implementation branch: `cursor/w1-eval-harness-4e29`, based on PR #2 (`cursor/w1-agent-tools-4e29` @ `5e8f791`). Source: `analysis/src/neurolens/eval/`. Tests: `tests/agent-eval.test.mjs`. Design: [agent-eval.md](../architecture/agent-eval.md).
+
+This slice is **not stacked on W1.4**. It uses the PR #2 fixture catalog and answer validator. LLM output is never trusted without `validateAgentAnswer`.
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| Versioned system prompt | Implemented | `analysis/prompts/research-agent-prompt-0.1.md` |
+| Deterministic prompt builder | Implemented | Question, tool manifest, validated evidence, schema, limitations |
+| Synthetic eval cases | Implemented | Seven cases covering the W1.5 matrix |
+| Manual CLI | Implemented | `scripts/eval-agent.mjs` list/export/validate/self-check |
+| Programmatic scoring | Implemented | `agent-eval-report/0.1` over `validateAgentAnswer` |
+| Live ChatGPT measurement | Not started | Researcher must paste prompts by hand |
+| LLM API / provider runtime | Out of scope | No keys or network |
+
+**Not changed:** collection, consent, production D1, camera, deployment, W1.4 adapter.
+
+**Checks actually run (2026-10-19, W1.5):**
+- `npm test` — 43 passed, 0 failed (11 agent-eval + 23 agent-tools + 4 collection + 5 research).
+- `npm run test:flow` — PASS.
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run build` — vinext/Vite production build completed.
+- `tests/integration.mjs` was not run (collection/cloud unchanged).
+- No ChatGPT session was submitted from this environment.
+
+**Next task:** optional human ChatGPT dry-run of one exported case; keep PR #2/#4 unmerged from this work.
+
 ## W1 evidence-grounded agent tools (2026-10-19)
 
 **Status:** Implemented, hardened, and verified in synthetic tests plus typecheck/build. Not an LLM runtime, not scientifically validated, not deployed.

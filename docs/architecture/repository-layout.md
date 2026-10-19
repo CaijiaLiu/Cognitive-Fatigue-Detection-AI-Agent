@@ -55,8 +55,12 @@ The session controller composes explicit task/tracking controllers and owns sess
 | Path | Contents |
 |---|---|
 | analysis/src/neurolens/agent/ | Read-only W1 tool interface, evidence artifacts, structured validators and deterministic fixture catalog |
+| analysis/src/neurolens/eval/ | API-independent prompt builder and evaluation harness |
+| analysis/prompts/ | Versioned research-agent system prompt |
 | tests/agent-tools.test.mjs | Numeric fidelity, missing evidence, protocol mismatch, unsupported-claim and request-rejection tests |
+| tests/agent-eval.test.mjs | Prompt package, gold/trap scoring and CLI tests |
 | docs/architecture/agent-tools.md | Implemented W1 contract and open review questions |
+| docs/architecture/agent-eval.md | Manual ChatGPT evaluation workflow |
 
 This is deterministic scaffolding over synthetic fixtures. It is not an LLM runtime, not a statistics pipeline, and not scientific validation. Window features, screen-gaze calibration, new task adapters and protocol phases still belong in the existing collection domain folders. Offline statistics/notebooks remain future work under analysis/tests/, analysis/notebooks/ and analysis/configs/ when Step 6 starts. Do not create empty placeholder directories or V1/V2 copies.
 

@@ -32,7 +32,7 @@ W1 `data_origin` is always `synthetic_fixture`. Artifact refs are opaque tokens 
 
 `status` is `answered | abstained`. Answered claims must repeat the cited artifact's `metric_id`, `value` and `unit`. Abstained answers have empty `claims` and a `reason_code`.
 
-A deterministic `composeAnswer(intent, tools)` composer is the W1 reference implementation. It is not an LLM.
+A deterministic `composeAnswer(intent, tools)` composer is the W1 reference implementation. It is not an LLM. The manual prompt/eval harness in [agent-eval.md](agent-eval.md) uses that composer as a hidden gold baseline and never treats ChatGPT output as trusted without `validateAgentAnswer`.
 
 ## Proposed metrics (pending Caijia review)
 

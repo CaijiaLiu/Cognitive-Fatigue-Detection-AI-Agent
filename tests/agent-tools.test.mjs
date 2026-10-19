@@ -351,6 +351,29 @@ test('returned comparison artifact_refs are retrievable and agree with get_evide
   assert.equal(validateResponseAgreesWithArtifact(compared, agent.inspectArtifact(compared.artifact_ref)).ok, true);
 });
 
+test('coverage all requires every requested session to appear in cited artifacts', () => {
+  const artifactA = structuredClone(FIXTURE_ARTIFACTS['fixture:session-summary:a']);
+  const answer = {
+    answer_version: ANSWER_VERSION,
+    status: 'answered',
+    claims: [{
+      text: 'The fixture reaction_time_median_ms is 320 ms.',
+      metric_id: 'reaction_time_median_ms',
+      value: 320,
+      unit: 'ms',
+      artifact_refs: ['fixture:session-summary:a'],
+    }],
+    limitations: ['Synthetic fixture; not a fatigue diagnosis and not empirical evidence.'],
+  };
+  assert.equal(validateAgentAnswer(answer, [artifactA], {
+    expectedSessionRefs: ['fixture:session:a', 'fixture:session:b'],
+  }).ok, true);
+  assert.equal(validateAgentAnswer(answer, [artifactA], {
+    expectedSessionRefs: ['fixture:session:a', 'fixture:session:b'],
+    coverage: 'all',
+  }).reason_code, REASON_CODES.SESSION_MISMATCH);
+});
+
 test('answers cannot cite an artifact from another session', () => {
   const artifactA = structuredClone(FIXTURE_ARTIFACTS['fixture:session-summary:a']);
   const artifactB = structuredClone(FIXTURE_ARTIFACTS['fixture:session-summary:b']);

@@ -9,6 +9,7 @@ NeuroLens is the target research platform; Focus Lab is the existing V1 collecti
 | Schema, provenance and compatibility | [Data contracts](architecture/data-contracts.md) |
 | Existing and planned file locations | [Repository layout](architecture/repository-layout.md) |
 | Evidence-grounded agent tool contract | [Agent tools](architecture/agent-tools.md) |
+| Manual LLM evaluation harness | [Agent eval](architecture/agent-eval.md) |
 | Mission preview stabilization and integration | [Mission integration](planning/mission-integration.md) |
 | Ordered implementation steps and release gates | [Roadmap](planning/roadmap.md) |
 | Audited implementation status | [Status](planning/implementation-status.md) |
