@@ -2,7 +2,7 @@
   "live_evaluation": "DRY_RUN",
   "execute": false,
   "experiment": "w2.6a-live-baseline",
-  "git_sha": "eaf44d91b942d9095d001ba4693799ccb807d8c8",
+  "git_sha": "a7ccb9a0",
   "plan": "live-12",
   "case_ids": [
     "llm-valid-rt",

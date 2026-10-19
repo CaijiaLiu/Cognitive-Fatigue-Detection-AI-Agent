@@ -4,7 +4,7 @@
 
 **Status:** Baseline scoring integrity verified. Dry-run manifest recorded. Live paid baseline is **NOT RUN**. Not scientifically validated. Caijia scientific review remains **Pending / Blocked**.
 
-Implementation branch: `feature/w2-live-llm-baseline`, based on `develop/neurolens-agent` after PR #11 fast-forward (`eaf44d9`). Design: [agent-llm-baseline.md](../architecture/agent-llm-baseline.md). Manifest: [w2-live-baseline-manifest.json](w2-live-baseline-manifest.json).
+Implementation branch: `feature/w2-live-llm-baseline` @ `a7ccb9a` (Draft PR #12), based on `develop/neurolens-agent` after PR #11 fast-forward (`eaf44d9`). Design: [agent-llm-baseline.md](../architecture/agent-llm-baseline.md). Manifest: [w2-live-baseline-manifest.json](w2-live-baseline-manifest.json).
 
 | Capability | Status | Evidence / remaining work |
 |---|---|---|
@@ -17,7 +17,19 @@ Implementation branch: `feature/w2-live-llm-baseline`, based on `develop/neurole
 
 **Not changed:** prompts, validator, production runtime contract, collection/camera/D1, or Caijia review assignments.
 
-**Checks actually run (2026-10-19, W2.6A):** recorded after regression.
+**Checks actually run (2026-10-19, W2.6A):**
+- `npm test` — 120 passed, 0 failed.
+- `npm run test:runtime` — 14 passed.
+- `npm run test:agent-api` — 10 passed.
+- `npm run test:llm` — 23 passed.
+- `npm run test:integration` — 6 passed.
+- `npm run test:reliability` — 7 passed.
+- `npm run test:flow` — PASS.
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run eval:llm -- --plan live-12 --live` — dry-run only; live **NOT RUN**.
+- `npm run build` — vinext/Vite production build completed.
+- `tests/integration.mjs` was not run.
+- No live OpenAI call was made and no production API key was read.
 
 **Next task:** authorized `--live --execute` with a local `--out` and an explicit cost cap. Do not merge to `main`.
 
