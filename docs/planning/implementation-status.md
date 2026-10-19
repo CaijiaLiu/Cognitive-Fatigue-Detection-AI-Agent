@@ -4,7 +4,7 @@
 
 **Status:** Linxi-owned Stage A/B engineering prerequisites implemented on canonical collection modules. Preview snapshot is **not** merged. Real-camera accuracy is **not** claimed. Scientific review remains **Pending / Blocked**.
 
-Implementation branch: `feature/w3-mission-foundation` (Draft PR targeting `develop/neurolens-agent`). Based on develop @ `690c05d`. Design: [mission-adapter.md](../architecture/mission-adapter.md). Tests: `tests/collection-mission.test.mjs`.
+Implementation branch: `feature/w3-mission-foundation` @ `09b0d35` (Draft PR #18), based on `develop/neurolens-agent` @ `690c05d`. Design: [mission-adapter.md](../architecture/mission-adapter.md). Tests: `tests/collection-mission.test.mjs`.
 
 ```text
 W3.0 MISSION FOUNDATION: IMPLEMENTED OFFLINE
