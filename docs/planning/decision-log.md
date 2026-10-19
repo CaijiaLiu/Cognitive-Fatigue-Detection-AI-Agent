@@ -4,11 +4,17 @@ This file is the durable record of **accepted project decisions**, not a specula
 
 ## Accepted decisions — 2026-10-19
 
+### DEC-014: W3.2 session evidence is an adapter, not a second Agent runtime
+**Accepted.** W3.2 adds `analysis-session-evidence/0.1` and `session-evidence/0.1` on top of the existing W1–W2 Research Agent tools. Supported V1 sessions, with optional W3.1 orchestration/mission sidecars, are adapted into structured evidence items and injected through `createAnalysisTools({ store })`. Evidence items are not allowlisted Agent metrics. Generic slots stay unsigned. Missing and dropout values stay missing. The adapter is local/offline by default.
+
+**Reason:** Week 3 needs a fail-closed biomedical-data-to-AI path without inventing fatigue scores or changing Caijia-owned algorithms. A second Agent runtime would fork citation, prompt-injection, and numeric-fidelity contracts.
+**Implementation implications:** Reuse the three existing read-only tools. Do not coerce preview records. Do not interpret generic slots as PVT or validated Go/No-Go. Do not change `sanitizeSession`, upload sidecars, or allowlisted metric identifiers. Do not mark W3.2 scientifically validated. Do not start W3.3 from this decision alone.
+
 ### DEC-013: W3.1 uses a provisional engineering protocol, not Caijia science
 **Accepted.** W3.1 implements `research-protocol/0.1-provisional`, `research-session/0.1-provisional`, and `research-event/0.1-provisional` on top of the W3.0 mission adapter. Existing V1 Go/No-Go remains `go-no-go-v1` / `schema_version` `1.0.0`. Generic slots are engineering placeholders. Pause/resume is not added. Cloud `sanitizeSession` is unchanged. Provisional sidecars stay local-only.
 
 **Reason:** Week 3 needs a deterministic orchestrator before Caijia’s signed protocol and event dictionary exist. Inventing PVT outcomes, fatigue thresholds, or three-rating semantics would silently redefine Person A’s science.
-**Implementation implications:** Keep unsigned ids as `PENDING_SCIENTIFIC_REVIEW`. Do not merge preview schema `mission-preview-1`. Do not start W3.2 task-science adapters from this decision alone. W4 may read the local artifact but must not treat generic slots as biomedical labels.
+**Implementation implications:** Keep unsigned ids as `PENDING_SCIENTIFIC_REVIEW`. Do not merge preview schema `mission-preview-1`. W3.2 may consume these sidecars only as local engineering metadata. W4 may read the local artifact but must not treat generic slots as biomedical labels.
 
 ### DEC-012: Mission foundation uses a provisional local event contract
 **Accepted.** W3.0 lifecycle fixes and the mission adapter live in canonical `public/collection` modules. The event contract is `mission-event/0.1-provisional` and is **PENDING_SCIENTIFIC_REVIEW**. It does not change V1 `schema_version` `1.0.0`, upload consent, cloud allowlists, PVT/Go-No-Go science, or metric identifiers. Preview snapshot code is not merged as a second tracking engine.

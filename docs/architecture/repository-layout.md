@@ -55,13 +55,15 @@ The session controller composes explicit task/tracking controllers and owns sess
 | Path | Contents |
 |---|---|
 | analysis/src/neurolens/agent/ | Read-only W1 tool interface, evidence artifacts, structured validators and deterministic fixture catalog |
-| analysis/src/neurolens/adapter/ | Offline V1 JSON export → evidence-artifact store for the same tool interface |
+| analysis/src/neurolens/adapter/ | Offline V1 JSON export and W3.2 session-evidence stores for the same tool interface |
 | analysis/src/neurolens/eval/ | API-independent prompt builder, evaluation harness and W1.6 offline pipeline |
 | analysis/src/neurolens/runtime/ | Mock/OpenAI providers, orchestrator, HTTP adapter, and demo view-model |
 | analysis/prompts/ | Versioned research-agent system prompt |
 | analysis/fixtures/exports/ | Synthetic V1-format export fixtures only; not real participant records |
 | tests/agent-tools.test.mjs | Numeric fidelity, missing evidence, protocol mismatch, unsupported-claim and request-rejection tests |
 | tests/analysis-adapter.test.mjs | Export accept/reject, privacy redaction, comparison coverage and tool retrieval tests |
+| tests/session-evidence.test.mjs | W3.2 adapter-to-agent evidence, missingness, abstention and regression tests |
+| docs/architecture/session-evidence-adapter.md | W3.2 evidence contract, provenance rules and Caijia review checklist |
 | tests/agent-eval.test.mjs | Prompt package, gold/trap scoring and CLI tests |
 | tests/analysis-integration.test.mjs | End-to-end export → tools → prompt → validator tests |
 | tests/agent-reliability.test.mjs | Adversarial, prompt-boundary and metamorphic contract tests |

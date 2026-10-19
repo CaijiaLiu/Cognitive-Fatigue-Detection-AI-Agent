@@ -30,6 +30,7 @@ W3.1 produces a local-only artifact so W4 can ingest versioned sessions without 
 - Do not invent PVT outcomes, fatigue thresholds, or three-rating semantics.
 - Do not treat generic `slot-a` / `slot-b` as signed biomedical tasks.
 - Do not claim real-device or scientific validation from W3.1 tests.
+- W3.2 may read this local artifact for Agent evidence items; it still must not upload sidecars or treat generic slots as biomedical labels.
 
 ## W4 prerequisites still owned elsewhere
 

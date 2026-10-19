@@ -421,6 +421,14 @@ export function validateEvidenceArtifact(input) {
     'collection_schema_version',
     'source_protocol',
     'source_export_sha256',
+    'evidence_items',
+    'task_sequence',
+    'evidence_contract_version',
+    'scientific_review',
+    'source_provenance',
+    'missing_measurements',
+    'orchestration_present',
+    'local_only',
   ]);
   if (extraPayload.length > 0) {
     return fail(REASON_CODES.MALFORMED_OUTPUT, `Artifact payload has unexpected fields: ${extraPayload.join(', ')}.`);

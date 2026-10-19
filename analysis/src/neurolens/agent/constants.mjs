@@ -8,17 +8,21 @@ export const ANSWER_VERSION = 'agent-answer/0.1';
 export const ARTIFACT_SCHEMA_VERSION = 'evidence-artifact/0.1';
 export const ANALYSIS_VERSION = 'analysis-fixture/0.1';
 export const EXPORT_ANALYSIS_VERSION = 'analysis-export/0.1';
+export const SESSION_EVIDENCE_ANALYSIS_VERSION = 'analysis-session-evidence/0.1';
 export const SUPPORTED_ANALYSIS_VERSIONS = Object.freeze([
   ANALYSIS_VERSION,
   EXPORT_ANALYSIS_VERSION,
+  SESSION_EVIDENCE_ANALYSIS_VERSION,
 ]);
 export const PRODUCER_ID = 'neurolens.analysis.mock_tools';
 export const EXPORT_PRODUCER_ID = 'neurolens.analysis.export_adapter';
+export const SESSION_EVIDENCE_PRODUCER_ID = 'neurolens.analysis.session_evidence_adapter';
 export const PRODUCER_VERSION = '0.1.0';
 
 export const COMPUTATION = Object.freeze({
   FIXTURE_LOOKUP: 'deterministic_fixture_lookup',
   EXPORT_NORMALIZATION: 'deterministic_export_normalization',
+  SESSION_EVIDENCE_ADAPTATION: 'deterministic_session_evidence_adaptation',
 });
 export const ALLOWED_COMPUTATIONS = Object.freeze(Object.values(COMPUTATION));
 
@@ -45,6 +49,7 @@ export const ANSWER_STATUS = Object.freeze({
 export const DATA_ORIGIN = Object.freeze({
   SYNTHETIC_FIXTURE: 'synthetic_fixture',
   SESSION_EXPORT: 'session_export',
+  SESSION_ORCHESTRATION: 'session_orchestration',
 });
 
 export const PARTICIPANT_SCOPE = Object.freeze({
@@ -79,6 +84,8 @@ export const REASON_CODES = Object.freeze({
 
 export const SYNTHETIC_LIMIT = 'Synthetic fixture; not a fatigue diagnosis and not empirical evidence.';
 export const EXPORT_LIMIT = 'Session-export copy; not a fatigue diagnosis and not scientifically validated.';
+export const SESSION_EVIDENCE_LIMIT = 'Session-evidence copy; not a fatigue diagnosis and not scientifically validated.';
+export const SESSION_EVIDENCE_CONTRACT_VERSION = 'session-evidence/0.1';
 
 /**
  * Proposed metric identifiers mapped from existing collection summaries.
@@ -105,6 +112,7 @@ export const PROTOCOL_VERSIONS = Object.freeze({
   FIXTURE_V01: 'fixture-protocol/0.1',
   FIXTURE_V02: 'fixture-protocol/0.2',
   GO_NO_GO_V1: 'go-no-go/1.0',
+  RESEARCH_SEQUENCE_V01: 'research-session-sequence/0.1',
 });
 
 export const SOURCE_PROTOCOL_GO_NO_GO_V1 = 'go-no-go-v1';
@@ -115,6 +123,7 @@ export const PROTOCOL_COMPATIBILITY = Object.freeze({
   [PROTOCOL_VERSIONS.FIXTURE_V01]: Object.freeze([PROTOCOL_VERSIONS.FIXTURE_V01]),
   [PROTOCOL_VERSIONS.FIXTURE_V02]: Object.freeze([PROTOCOL_VERSIONS.FIXTURE_V02]),
   [PROTOCOL_VERSIONS.GO_NO_GO_V1]: Object.freeze([PROTOCOL_VERSIONS.GO_NO_GO_V1]),
+  [PROTOCOL_VERSIONS.RESEARCH_SEQUENCE_V01]: Object.freeze([PROTOCOL_VERSIONS.RESEARCH_SEQUENCE_V01]),
 });
 
 export const UNSUPPORTED_CLAIM_TYPES = Object.freeze({

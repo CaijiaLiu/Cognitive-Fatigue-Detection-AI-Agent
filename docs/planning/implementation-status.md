@@ -1,5 +1,43 @@
 # Implementation status
 
+## W3.2 Biomedical evidence → Research Agent integration (2026-10-19)
+
+**Status:** Linxi-owned Stage C evidence adapter implemented on the existing W1–W2 Research Agent tools. Not scientifically validated. No second Agent runtime. Real-camera accuracy is **not** claimed. Scientific review remains **Pending / Blocked**.
+
+Implementation branch: `feature/w3-protocol-orchestration`, continuing Draft PR #19. Design: [session-evidence-adapter.md](../architecture/session-evidence-adapter.md). Tests: `tests/session-evidence.test.mjs`. Decision: [DEC-014](decision-log.md).
+
+```text
+W3.2 SESSION EVIDENCE ADAPTER: IMPLEMENTED OFFLINE
+REAL CAMERA VALIDATION: NOT RUN
+CAIJIA SCIENTIFIC REVIEW: PENDING / BLOCKED
+W3.3 AGENT DEMO WIRING: NOT STARTED
+```
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| V1 session without sidecar | Implemented | Existing Go/No-Go metrics copied; evidence items added |
+| V1 session with W3.1 sidecar | Implemented | Session/protocol/event/mission versions checked; local-only |
+| Generic multi-task session | Implemented | `slot-a` / `slot-b` stay unsigned; no invented PVT/GNG metrics |
+| Structured evidence items | Implemented | `session-evidence/0.1` with provenance, missingness, original refs |
+| Existing Agent tools | Extended in place | Same three read-only tools + `analysis-session-evidence/0.1` store |
+| Fatigue / diagnostic claims | Abstain | Existing `UNSUPPORTED_CLAIM` path unchanged |
+| Cloud / consent | Unchanged | `sanitizeSession` still strips `mission` / `orchestration` |
+| Scientific validation | Not claimed | Synthetic adapter-to-agent tests only |
+
+**Not changed:** V1 `schema_version` `1.0.0`, Go/No-Go trial semantics, allowlisted metric identifiers, cloud allowlist, Sites, OpenAI, `main`, Caijia scientific modules.
+
+**Checks actually run (2026-10-19, W3.2):**
+- `npm test` — 205 passed, 0 failed (16 session-evidence cases).
+- `npm run test:flow` — PASS (controlled DOM/clock; not a real camera).
+- `npm run test:integration` — 6 passed.
+- `npm run test:reliability` — 7 passed.
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run build` — vinext/Vite production build completed.
+- `tests/integration.mjs` was not run.
+- No live OpenAI call, no remote D1, no Sites publish, no real-camera session.
+
+**Next task:** Stop after W3.2. Do not merge. Do not start W3.3 until architecture review. Caijia reviews the combined Week 3 work before `develop/neurolens-agent`.
+
 ## W3.1 Versioned protocol and session orchestration (2026-10-19)
 
 **Status:** Linxi-owned Stage C engineering orchestrator implemented on canonical collection modules. Not a scientific protocol. Real-camera accuracy is **not** claimed. Scientific review remains **Pending / Blocked**.
@@ -33,14 +71,7 @@ W4 DATASET INGEST: NOT IMPLEMENTED
 3. `importTimelineEvent` copies stored timeline fields, validates session/contract/task boundaries, and does not rewrite acquisition timestamps. Replay imports every lifecycle and `resources_cleared` event, then requires exact `acceptedTimeline` equality before `replay.ok === true`.
 
 **Checks actually run (2026-10-19, W3.1 exact-timeline replay):**
-- `npm test` — recorded after the verification suite.
-- `npm run test:flow` — PASS (controlled DOM/clock; not a real camera).
-- `npm run test:integration` — 6 passed.
-- `npm run test:reliability` — 7 passed.
-- `npx --no-install tsc --noEmit` — exited 0.
-- `npm run build` — vinext/Vite production build completed.
-- `tests/integration.mjs` was not run.
-- No live OpenAI call, no remote D1, no Sites publish, no real-camera session.
+- `npm test` — 189 passed, 0 failed (23 orchestration cases).
 - `npm run test:flow` — PASS (controlled DOM/clock; not a real camera).
 - `npm run test:integration` — 6 passed.
 - `npm run test:reliability` — 7 passed.
@@ -49,7 +80,7 @@ W4 DATASET INGEST: NOT IMPLEMENTED
 - `tests/integration.mjs` was not run.
 - No live OpenAI call, no remote D1, no Sites publish, no real-camera session.
 
-**Next task:** Stop after W3.1 review fixes. Do not merge to `main`. Do not start W3.2.
+**Follow-on:** W3.2 consumed these sidecars through the evidence adapter. W3.1 itself remains an engineering orchestrator, not a scientific protocol.
 
 ## W3.0 Mission integration foundation (2026-10-19)
 

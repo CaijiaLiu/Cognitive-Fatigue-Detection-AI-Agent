@@ -73,7 +73,7 @@ Protocol compatibility is exact-version match unless listed in `PROTOCOL_COMPATI
 
 `validateAgentAnswer(..., { expectedSessionRefs, coverage })` defaults to intersection (`coverage: 'any'`). Comparison answers pass `coverage: 'all'` so cited artifacts together must include every requested session.
 
-Offline V1 JSON → artifact mapping is documented in [analysis-export-adapter.md](analysis-export-adapter.md). Metric identifiers remain proposed names pending Caijia review.
+Offline V1 JSON → artifact mapping is documented in [analysis-export-adapter.md](analysis-export-adapter.md). W3.2 adds an additive analysis version `analysis-session-evidence/0.1` and evidence-item payload fields; see [session-evidence-adapter.md](session-evidence-adapter.md). Metric identifiers remain proposed names pending Caijia review.
 
 ## Open contract choices
 
