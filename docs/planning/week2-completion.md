@@ -79,6 +79,8 @@ Selected implementation SHAs still useful for audit:
 
 **Develop HEAD after PR #15, before this closeout:** `6a0bab13eea4cd0f150485752698196fec810639`.
 
+**This closeout:** Draft PR #16 on `cursor/w2-week2-completion-4e29` @ `1c8d176303a90d0b7e57f435bbb130cea984f5b9` (plus the follow-up that records this PR number). Fast-forward into `develop/neurolens-agent` only.
+
 **`main` (unchanged):** `c163f29a986c2295e53c7b36379010682d3617aa`.
 
 ## PR #15 review (W2.9A)

@@ -18,6 +18,7 @@ CAIJIA SCIENTIFIC REVIEW: PENDING / BLOCKED
 |---|---|
 | Merged develop PRs | #9 `1c3a995` · #10 `24d5585` · #11 `eaf44d9` · #12 `22be750` · #13 `f18e46e` · #14 `439f05b` · #15 `6a0bab1` |
 | Develop after PR #15 | `6a0bab13eea4cd0f150485752698196fec810639` |
+| This closeout | Draft PR #16 on `cursor/w2-week2-completion-4e29` |
 | `main` | `c163f29a986c2295e53c7b36379010682d3617aa` (not modified) |
 | Closeout checks | `npm test` 143/143; demo-security 15; preview 6; verify-preview-http 15/15 offline; deploy:preflight `ok=true` `deploy_allowed=false`; `tsc --noEmit` 0; `npm run build` complete; mock `eval:llm` 22/22; `--live` dry-run only |
 | Scientific contracts | Unchanged. No prompt/validator/metric-identifier edits in this closeout. |
