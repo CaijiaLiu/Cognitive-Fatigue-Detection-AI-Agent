@@ -1,5 +1,28 @@
 # Implementation status
 
+## Week 2 closeout (2026-10-19)
+
+**Status:** Linxi Week 2 engineering is complete offline on `develop/neurolens-agent`. Live LLM, Cloudflare/Sites preview, remote E2E, and Caijia scientific review are **not** complete. `main` is unchanged.
+
+Canonical report: [week2-completion.md](week2-completion.md).
+
+```text
+WEEK 2: ENGINEERING COMPLETE (OFFLINE)
+LIVE LLM: NOT RUN
+CLOUDFLARE PREVIEW: NOT DEPLOYED
+REMOTE E2E: NOT RUN
+CAIJIA SCIENTIFIC REVIEW: PENDING / BLOCKED
+```
+
+| Item | Evidence |
+|---|---|
+| Merged develop PRs | #9 `1c3a995` · #10 `24d5585` · #11 `eaf44d9` · #12 `22be750` · #13 `f18e46e` · #14 `439f05b` · #15 `6a0bab1` |
+| Develop after PR #15 | `6a0bab13eea4cd0f150485752698196fec810639` |
+| `main` | `c163f29a986c2295e53c7b36379010682d3617aa` (not modified) |
+| Closeout checks | `npm test` 143/143; demo-security 15; preview 6; verify-preview-http 15/15 offline; deploy:preflight `ok=true` `deploy_allowed=false`; `tsc --noEmit` 0; `npm run build` complete; mock `eval:llm` 22/22; `--live` dry-run only |
+| Scientific contracts | Unchanged. No prompt/validator/metric-identifier edits in this closeout. |
+| Next | Caijia local testing. Do not start Week 3 in this slice. Do not merge to `main`. |
+
 ## W2.9A Sites preview deployment preparation (2026-10-19)
 
 **Status:** Deployment workflow prepared. Preview **not published**. Caijia local testing remains separately owned. Scientific review remains **Pending / Blocked**.
