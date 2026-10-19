@@ -1,13 +1,14 @@
 import {
+  ALLOWED_METRIC_IDS,
   ANALYSIS_VERSION,
   ARTIFACT_KIND,
   PARTICIPANT_SCOPE,
   PROTOCOL_VERSIONS,
+  SYNTHETIC_LIMIT,
 } from './constants.mjs';
-import { createEvidenceArtifact } from './artifacts.mjs';
+import { comparisonArtifactRef, createEvidenceArtifact } from './artifacts.mjs';
 
 const CREATED_AT = '2026-10-19T00:00:00.000Z';
-const SYNTHETIC_LIMIT = 'Synthetic fixture; not a fatigue diagnosis and not empirical evidence.';
 const NO_INFERENCE = 'Numbers are copied from the fixture catalog; no model inference was performed.';
 
 const SESSION_A = Object.freeze({
@@ -90,39 +91,57 @@ function summaryArtifact(session, artifactRef) {
 
 const ARTIFACT_SUMMARY_A = summaryArtifact(SESSION_A, 'fixture:session-summary:a');
 const ARTIFACT_SUMMARY_B = summaryArtifact(SESSION_B, 'fixture:session-summary:b');
-const ARTIFACT_COMPARE_RT = createEvidenceArtifact({
-  artifact_ref: 'fixture:session-compare:a-b:reaction_time_median_ms',
-  artifact_kind: ARTIFACT_KIND.SESSION_COMPARISON,
-  protocol_version: PROTOCOL_VERSIONS.FIXTURE_V01,
-  created_at: CREATED_AT,
-  participant_scope: PARTICIPANT_SCOPE.TWO_PSEUDONYMOUS,
-  source_session_refs: [SESSION_A.session_ref, SESSION_B.session_ref],
-  quality: { usable: true, reason_codes: [] },
-  metrics: [
-    { metric_id: 'reaction_time_median_ms', value: 320, unit: 'ms', n: 12, session_ref: SESSION_A.session_ref },
-    { metric_id: 'reaction_time_median_ms', value: 348, unit: 'ms', n: 12, session_ref: SESSION_B.session_ref },
-  ],
-  limitations: [SYNTHETIC_LIMIT, NO_INFERENCE, 'Comparison is descriptive only; no causal or diagnostic claim.'],
-  extra_payload: {
-    metric_id: 'reaction_time_median_ms',
-    analysis_version: ANALYSIS_VERSION,
-  },
-});
+const ARTIFACT_SUMMARY_OTHER = summaryArtifact(SESSION_OTHER_PROTOCOL, 'fixture:session-summary:other-protocol');
 
-export const FIXTURE_ARTIFACTS = Object.freeze({
-  [ARTIFACT_SUMMARY_A.artifact_ref]: ARTIFACT_SUMMARY_A,
-  [ARTIFACT_SUMMARY_B.artifact_ref]: ARTIFACT_SUMMARY_B,
-  [ARTIFACT_COMPARE_RT.artifact_ref]: ARTIFACT_COMPARE_RT,
-});
+function comparisonArtifact(left, right, metricId) {
+  const leftMetric = left.metrics.find((metric) => metric.metric_id === metricId);
+  const rightMetric = right.metrics.find((metric) => metric.metric_id === metricId);
+  return createEvidenceArtifact({
+    artifact_ref: comparisonArtifactRef([left.session_ref, right.session_ref], metricId),
+    artifact_kind: ARTIFACT_KIND.SESSION_COMPARISON,
+    protocol_version: left.protocol_version,
+    created_at: CREATED_AT,
+    participant_scope: PARTICIPANT_SCOPE.TWO_PSEUDONYMOUS,
+    source_session_refs: [left.session_ref, right.session_ref],
+    quality: { usable: true, reason_codes: [] },
+    metrics: [
+      { metric_id: leftMetric.metric_id, value: leftMetric.value, unit: leftMetric.unit, n: leftMetric.n, session_ref: left.session_ref },
+      { metric_id: rightMetric.metric_id, value: rightMetric.value, unit: rightMetric.unit, n: rightMetric.n, session_ref: right.session_ref },
+    ],
+    limitations: [SYNTHETIC_LIMIT, NO_INFERENCE, 'Comparison is descriptive only; no causal or diagnostic claim.'],
+    extra_payload: {
+      metric_id: metricId,
+      analysis_version: ANALYSIS_VERSION,
+    },
+  });
+}
+
+const COMPARABLE_PAIRS = [[SESSION_A, SESSION_B]];
+const COMPARISON_ARTIFACTS = COMPARABLE_PAIRS.flatMap(([left, right]) => (
+  ALLOWED_METRIC_IDS.map((metricId) => comparisonArtifact(left, right, metricId))
+));
+
+export const FIXTURE_ARTIFACTS = Object.freeze(Object.fromEntries([
+  ARTIFACT_SUMMARY_A,
+  ARTIFACT_SUMMARY_B,
+  ARTIFACT_SUMMARY_OTHER,
+  ...COMPARISON_ARTIFACTS,
+].map((artifact) => [artifact.artifact_ref, artifact])));
 
 export const SESSION_SUMMARY_REFS = Object.freeze({
   [SESSION_A.session_ref]: ARTIFACT_SUMMARY_A.artifact_ref,
   [SESSION_B.session_ref]: ARTIFACT_SUMMARY_B.artifact_ref,
+  [SESSION_OTHER_PROTOCOL.session_ref]: ARTIFACT_SUMMARY_OTHER.artifact_ref,
 });
 
-export const COMPARISON_REFS = Object.freeze({
-  [`${SESSION_A.session_ref}|${SESSION_B.session_ref}|reaction_time_median_ms`]: ARTIFACT_COMPARE_RT.artifact_ref,
-});
+export const COMPARISON_REFS = Object.freeze(Object.fromEntries(
+  COMPARABLE_PAIRS.flatMap(([left, right]) => (
+    ALLOWED_METRIC_IDS.map((metricId) => [
+      `${left.session_ref}|${right.session_ref}|${metricId}`,
+      comparisonArtifactRef([left.session_ref, right.session_ref], metricId),
+    ])
+  )),
+));
 
 export function createFixtureStore() {
   const sessions = structuredClone(FIXTURE_SESSIONS);

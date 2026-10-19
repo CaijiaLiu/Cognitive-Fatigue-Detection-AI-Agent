@@ -4,12 +4,12 @@ import {
   ANSWER_STATUS,
   ANSWER_VERSION,
   REASON_CODES,
+  SYNTHETIC_LIMIT,
   TOOL_NAMES,
   TOOL_STATUS,
   UNSUPPORTED_CLAIM_TYPES,
 } from './constants.mjs';
 import { getMetricFromArtifact } from './artifacts.mjs';
-import { buildComparisonArtifact } from './tools.mjs';
 import {
   containsUnsupportedClaimLanguage,
   isPlainObject,
@@ -17,29 +17,27 @@ import {
   validateToolRequest,
 } from './validate.mjs';
 
-const SYNTHETIC_LIMIT = 'Synthetic fixture; not a fatigue diagnosis and not empirical evidence.';
 const UNSUPPORTED_INTENTS = new Set(Object.values(UNSUPPORTED_CLAIM_TYPES));
 
 function clone(value) {
   return structuredClone(value);
 }
 
-function finalizeAnswer(answer, artifacts) {
-  const checked = validateAgentAnswer(answer, artifacts);
+function finalizeAnswer(answer, artifacts, options = {}) {
+  const checked = validateAgentAnswer(answer, artifacts, options);
   if (!checked.ok) {
     throw new Error(`Internal agent answer failed validation: ${checked.message}`);
   }
   return clone(answer);
 }
 
-function abstain(reason_code, limitations, extras = {}) {
+function abstain(reason_code, limitations) {
   return finalizeAnswer({
     answer_version: ANSWER_VERSION,
     status: ANSWER_STATUS.ABSTAINED,
     claims: [],
     reason_code,
     limitations: [SYNTHETIC_LIMIT, ...limitations],
-    ...extras,
   }, []);
 }
 
@@ -47,28 +45,9 @@ function metricSentence(metricId, value, unit, subject = 'The fixture') {
   return `${subject} ${metricId} is ${value} ${unit}.`;
 }
 
-function citeArtifact(tools, request, response) {
-  if (response.status !== TOOL_STATUS.OK) return null;
-  const stored = tools.inspectArtifact?.(response.artifact_ref);
-  if (stored) return stored;
-  if (request.tool === TOOL_NAMES.COMPARE_SESSIONS && request.session_refs) {
-    const sessions = request.session_refs.map((sessionRef) => ({
-      session_ref: sessionRef,
-      protocol_version: response.protocol_version,
-      metrics: response.metrics
-        .filter((metric) => metric.session_ref === sessionRef)
-        .map((metric) => ({
-          metric_id: metric.metric_id,
-          value: metric.value,
-          unit: metric.unit,
-          n: metric.n,
-        })),
-    }));
-    if (sessions.every((session) => session.metrics.length > 0)) {
-      return buildComparisonArtifact(sessions, request.metric_id);
-    }
-  }
-  return null;
+function citeArtifact(tools, response) {
+  if (response.status !== TOOL_STATUS.OK || !response.artifact_ref) return null;
+  return tools.inspectArtifact?.(response.artifact_ref) ?? null;
 }
 
 function unsupportedFromIntent(intent) {
@@ -113,7 +92,7 @@ export function composeAnswer(intent, tools) {
     if (response.status !== TOOL_STATUS.OK) {
       return abstain(response.reason_code, response.limitations.slice(1));
     }
-    const artifact = citeArtifact(tools, request, response);
+    const artifact = citeArtifact(tools, response);
     const metric = artifact ? getMetricFromArtifact(artifact, intent.metric_id) : null;
     if (!metric) {
       return abstain(REASON_CODES.MISSING_EVIDENCE, [
@@ -131,7 +110,7 @@ export function composeAnswer(intent, tools) {
         artifact_refs: [artifact.artifact_ref],
       }],
       limitations: artifact.limitations,
-    }, [artifact]);
+    }, [artifact], { expectedSessionRefs: [intent.session_ref] });
   }
 
   if (intent.kind === 'compare_metric') {
@@ -149,7 +128,7 @@ export function composeAnswer(intent, tools) {
     if (response.status !== TOOL_STATUS.OK) {
       return abstain(response.reason_code, response.limitations.slice(1));
     }
-    const artifact = citeArtifact(tools, request, response);
+    const artifact = citeArtifact(tools, response);
     if (!artifact) {
       return abstain(REASON_CODES.MISSING_EVIDENCE, ['Comparison succeeded but no citeable artifact was returned.']);
     }
@@ -174,7 +153,7 @@ export function composeAnswer(intent, tools) {
       status: ANSWER_STATUS.ANSWERED,
       claims,
       limitations: artifact.limitations,
-    }, [artifact]);
+    }, [artifact], { expectedSessionRefs: [...intent.session_refs] });
   }
 
   if (intent.kind === 'lookup_artifact') {
@@ -187,7 +166,7 @@ export function composeAnswer(intent, tools) {
     if (response.status !== TOOL_STATUS.OK) {
       return abstain(response.reason_code, response.limitations.slice(1));
     }
-    const artifact = citeArtifact(tools, request, response);
+    const artifact = citeArtifact(tools, response);
     const metricId = intent.metric_id ?? artifact?.payload.metrics[0]?.metric_id;
     const metric = artifact && metricId ? getMetricFromArtifact(artifact, metricId) : null;
     if (!metric) {
@@ -204,7 +183,7 @@ export function composeAnswer(intent, tools) {
         artifact_refs: [artifact.artifact_ref],
       }],
       limitations: artifact.limitations,
-    }, [artifact]);
+    }, [artifact], { expectedSessionRefs: [...artifact.source_session_refs] });
   }
 
   return abstain(REASON_CODES.UNSUPPORTED_CLAIM, [

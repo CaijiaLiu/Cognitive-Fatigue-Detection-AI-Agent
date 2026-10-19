@@ -8,14 +8,13 @@ import {
   PARTICIPANT_SCOPE,
   PROTOCOL_COMPATIBILITY,
   REASON_CODES,
+  SYNTHETIC_LIMIT,
   TOOL_NAMES,
   TOOL_STATUS,
 } from './constants.mjs';
-import { createEvidenceArtifact } from './artifacts.mjs';
+import { comparisonArtifactRef, createEvidenceArtifact } from './artifacts.mjs';
 import { createFixtureStore } from './fixtures.mjs';
-import { validateToolRequest, validateToolResponse } from './validate.mjs';
-
-const SYNTHETIC_LIMIT = 'Synthetic fixture; not a fatigue diagnosis and not empirical evidence.';
+import { validateResponseAgreesWithArtifact, validateToolRequest, validateToolResponse } from './validate.mjs';
 
 function clone(value) {
   return structuredClone(value);
@@ -70,16 +69,8 @@ function protocolsCompatible(left, right) {
   return Boolean(PROTOCOL_COMPATIBILITY[left]?.includes(right));
 }
 
-function sessionAlias(sessionRef) {
-  return sessionRef.replace(/^fixture:session:/, '');
-}
-
-function comparisonArtifactRef(sessionRefs, metricId) {
-  return `fixture:session-compare:${sessionRefs.map(sessionAlias).join('-')}:${metricId}`;
-}
-
-function okFromArtifact(tool, artifact, extras = {}) {
-  return finalize(baseEnvelope(tool, {
+function okFromArtifact(tool, artifact) {
+  const envelope = baseEnvelope(tool, {
     status: TOOL_STATUS.OK,
     artifact_ref: artifact.artifact_ref,
     protocol_version: artifact.protocol_version,
@@ -87,8 +78,28 @@ function okFromArtifact(tool, artifact, extras = {}) {
     quality: artifact.quality,
     metrics: artifact.payload.metrics,
     limitations: artifact.limitations,
-    ...extras,
-  }));
+  });
+  const agreement = validateResponseAgreesWithArtifact(envelope, artifact);
+  if (!agreement.ok) {
+    return failEnvelope(tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.INCONSISTENT_EVIDENCE, [
+      agreement.message,
+    ]);
+  }
+  return finalize(envelope);
+}
+
+function sessionMetric(session, metricId) {
+  return session.metrics.find((metric) => metric.metric_id === metricId) ?? null;
+}
+
+function artifactMatchesSessionMetrics(artifact, sessions) {
+  return artifact.payload.metrics.every((metric) => {
+    const session = metric.session_ref
+      ? sessions.find((item) => item.session_ref === metric.session_ref)
+      : sessions[0];
+    const expected = session ? sessionMetric(session, metric.metric_id) : null;
+    return expected && Object.is(expected.value, metric.value) && expected.unit === metric.unit && expected.n === metric.n;
+  });
 }
 
 export function buildComparisonArtifact(sessions, metricId) {
@@ -152,6 +163,16 @@ function getSessionSummary(store, request) {
       'Session exists but no immutable summary artifact is catalogued.',
     ]);
   }
+  if (!artifact.source_session_refs.includes(request.session_ref)) {
+    return failEnvelope(request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.SESSION_MISMATCH, [
+      'The catalogued summary artifact does not belong to the requested session.',
+    ]);
+  }
+  if (artifact.protocol_version !== session.protocol_version || !artifactMatchesSessionMetrics(artifact, [session])) {
+    return failEnvelope(request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.INCONSISTENT_EVIDENCE, [
+      'The catalogued summary artifact does not match the session metrics or protocol.',
+    ]);
+  }
   return okFromArtifact(request.tool, artifact);
 }
 
@@ -194,7 +215,22 @@ function compareSessions(store, request) {
     });
   }
   const catalogRef = store.comparisonRefFor(request.session_refs, request.metric_id);
-  const artifact = catalogRef ? store.getArtifact(catalogRef) : buildComparisonArtifact(sessions, request.metric_id);
+  const artifact = catalogRef ? store.getArtifact(catalogRef) : null;
+  if (!artifact) {
+    return failEnvelope(request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.UNKNOWN_ARTIFACT, [
+      'Compatible sessions were found but no immutable comparison artifact is catalogued.',
+    ]);
+  }
+  if (!request.session_refs.every((sessionRef) => artifact.source_session_refs.includes(sessionRef))) {
+    return failEnvelope(request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.SESSION_MISMATCH, [
+      'The catalogued comparison artifact does not belong to the requested sessions.',
+    ]);
+  }
+  if (artifact.protocol_version !== protocols[0] || !artifactMatchesSessionMetrics(artifact, sessions)) {
+    return failEnvelope(request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.INCONSISTENT_EVIDENCE, [
+      'The catalogued comparison artifact does not match the session metrics or protocol.',
+    ]);
+  }
   return okFromArtifact(request.tool, artifact);
 }
 

@@ -18,12 +18,14 @@ export {
   findMetricInArtifacts,
   isOpaqueRef,
   ok,
+  metricsAgree,
   validateAgentAnswer,
   validateEvidenceArtifact,
+  validateResponseAgreesWithArtifact,
   validateToolRequest,
   validateToolResponse,
 } from './validate.mjs';
-export { cloneJson, createEvidenceArtifact, getMetricFromArtifact } from './artifacts.mjs';
+export { cloneJson, comparisonArtifactRef, createEvidenceArtifact, deepFreeze, getMetricFromArtifact } from './artifacts.mjs';
 export { COMPARISON_REFS, createFixtureStore, FIXTURE_ARTIFACTS, FIXTURE_SESSIONS, SESSION_SUMMARY_REFS } from './fixtures.mjs';
 export { buildComparisonArtifact, createAnalysisTools } from './tools.mjs';
 export { composeAnswer } from './answer.mjs';

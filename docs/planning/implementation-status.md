@@ -2,23 +2,30 @@
 
 ## W1 evidence-grounded agent tools (2026-10-19)
 
-**Status:** Implemented and verified in synthetic tests. Not an LLM runtime, not scientifically validated, not deployed.
+**Status:** Implemented, hardened, and verified in synthetic tests plus typecheck/build. Not an LLM runtime, not scientifically validated, not deployed.
 
-Linxi W1 vertical slice follows the proposed contract in PR #1 and [DEC-003](decision-log.md). Implementation PR: [#2](https://github.com/CaijiaLiu/Cognitive-Fatigue-Detection-AI-Agent/pull/2) (`cursor/w1-agent-tools-4e29`, `ff2d27b`). Source: `analysis/src/neurolens/agent/`. Tests: `tests/agent-tools.test.mjs`. Contract note: [agent-tools.md](../architecture/agent-tools.md).
+Linxi W1 vertical slice follows the proposed contract in PR #1 and [DEC-003](decision-log.md). Implementation PR: [#2](https://github.com/CaijiaLiu/Cognitive-Fatigue-Detection-AI-Agent/pull/2) (`cursor/w1-agent-tools-4e29`). Source: `analysis/src/neurolens/agent/`. Tests: `tests/agent-tools.test.mjs`. Contract note: [agent-tools.md](../architecture/agent-tools.md).
+
+W1.2 hardening (same PR): session-bound citations, tool-response/artifact agreement, complete comparison catalog so every OK `artifact_ref` is retrievable, deep-frozen fixtures, extra-field rejection, and fail-closed catalog mismatch.
 
 | Capability | Status | Evidence / remaining work |
 |---|---|---|
 | Read-only analysis tool interface | Implemented | `createAnalysisTools().invoke` allowlists `get_session_summary`, `compare_sessions`, `get_evidence` |
 | Evidence artifact + provenance | Implemented | `evidence-artifact/0.1` with immutable `deterministic_fixture_lookup` provenance |
-| Structured output validation | Implemented | Request, response, artifact and answer validators; numeric claim-to-artifact match |
+| Structured output validation | Implemented | Request, response, artifact and answer validators; numeric claim-to-artifact match; session-binding and envelope/artifact agreement |
 | Deterministic mock tools | Implemented | Synthetic catalog only; no network, camera, D1 or filesystem retrieval |
-| W1 test matrix | Verified in tests | Known session, unknown session, missing evidence, incompatible protocols, unsupported claims, rejected requests, repeatability |
+| W1 test matrix | Verified in tests | Original matrix plus session mismatch, dangling comparison refs, catalog inconsistency, frozen fixtures, extra fields |
 | LLM provider / retrieval over real analyses | Planned | W6 agent runtime; W1 composer is deterministic only |
 | Scientific validity of fixture numbers | Not applicable | Fixtures are synthetic and cannot establish empirical performance |
 
 **Not changed:** collection modules, consent, cloud allowlists, mission preview, deployment.
 
-**Checks actually run (2026-10-19):** `npm test` — 22 passed, 0 failed (13 new agent-tools tests plus existing 4 collection and 5 research tests). `npm run test:flow`, `npx tsc --noEmit`, `npm run build` and `tests/integration.mjs` were not rerun because collection, consent and cloud paths were not changed.
+**Checks actually run (2026-10-19, W1.2):**
+- `npm test` — 31 passed, 0 failed (22 agent-tools + 4 collection + 5 research).
+- `npm run test:flow` — PASS (controlled DOM/clock collection graph).
+- `npx tsc --noEmit` — first run failed because `node_modules` was absent and `npx` fetched the unrelated `tsc@2.0.4` package; after `npm run install:ci`, `npx --no-install tsc --noEmit` exited 0.
+- `npm run build` — vinext/Vite production build completed after the same install.
+- `tests/integration.mjs` was not run (requires initialized local D1 and preview; collection/cloud paths unchanged).
 
 **Next task:** Caijia review of `metric_id` / units / protocol compatibility; keep mission-integration work on a separate branch. Do not treat this slice as Stage F completion.
 

@@ -57,7 +57,11 @@ export const REASON_CODES = Object.freeze({
   NUMERIC_MISMATCH: 'numeric_mismatch',
   UNSUPPORTED_CLAIM: 'unsupported_claim',
   MALFORMED_OUTPUT: 'malformed_output',
+  SESSION_MISMATCH: 'session_mismatch',
+  INCONSISTENT_EVIDENCE: 'inconsistent_evidence',
 });
+
+export const SYNTHETIC_LIMIT = 'Synthetic fixture; not a fatigue diagnosis and not empirical evidence.';
 
 /**
  * Proposed metric identifiers mapped from existing collection summaries.

@@ -13,6 +13,7 @@ import {
   createFixtureStore,
   validateAgentAnswer,
   validateEvidenceArtifact,
+  validateResponseAgreesWithArtifact,
   validateToolRequest,
   validateToolResponse,
 } from '../analysis/src/neurolens/agent/index.mjs';
@@ -313,6 +314,142 @@ test('mutating a tool response does not change the fixture catalog', () => {
   const again = agent.invoke(summaryRequest());
   assert.equal(again.metrics[0].value, 320);
   assert.equal(agent.inspectArtifact('fixture:session-summary:a').payload.metrics[0].value, 320);
+});
+
+test('usable other-protocol sessions have their own summary artifact', () => {
+  const agent = tools();
+  const response = agent.invoke(summaryRequest('fixture:session:other-protocol'));
+  assert.equal(response.status, TOOL_STATUS.OK);
+  assert.equal(response.artifact_ref, 'fixture:session-summary:other-protocol');
+  assert.equal(response.protocol_version, 'fixture-protocol/0.2');
+  assert.equal(response.metrics.find((item) => item.metric_id === 'reaction_time_median_ms').value, 301);
+  const answer = composeAnswer({
+    kind: 'report_metric',
+    session_ref: 'fixture:session:other-protocol',
+    metric_id: 'reaction_time_median_ms',
+  }, agent);
+  assert.equal(answer.status, 'answered');
+  assert.deepEqual(answer.claims[0].artifact_refs, ['fixture:session-summary:other-protocol']);
+});
+
+test('returned comparison artifact_refs are retrievable and agree with get_evidence', () => {
+  const agent = tools();
+  const compared = agent.invoke({
+    tool: TOOL_NAMES.COMPARE_SESSIONS,
+    session_refs: ['fixture:session:a', 'fixture:session:b'],
+    metric_id: 'accuracy',
+    analysis_version: ANALYSIS_VERSION,
+  });
+  assert.equal(compared.status, TOOL_STATUS.OK);
+  assert.equal(compared.artifact_ref, 'fixture:session-compare:a-b:accuracy');
+  const evidence = agent.invoke({
+    tool: TOOL_NAMES.GET_EVIDENCE,
+    artifact_ref: compared.artifact_ref,
+  });
+  assert.equal(evidence.status, TOOL_STATUS.OK);
+  assert.deepEqual(evidence.metrics, compared.metrics);
+  assert.equal(validateResponseAgreesWithArtifact(compared, agent.inspectArtifact(compared.artifact_ref)).ok, true);
+});
+
+test('answers cannot cite an artifact from another session', () => {
+  const artifactA = structuredClone(FIXTURE_ARTIFACTS['fixture:session-summary:a']);
+  const artifactB = structuredClone(FIXTURE_ARTIFACTS['fixture:session-summary:b']);
+  const answer = {
+    answer_version: ANSWER_VERSION,
+    status: 'answered',
+    claims: [{
+      text: 'The fixture reaction_time_median_ms is 348 ms.',
+      metric_id: 'reaction_time_median_ms',
+      value: 348,
+      unit: 'ms',
+      artifact_refs: ['fixture:session-summary:b'],
+    }],
+    limitations: ['Synthetic fixture; not a fatigue diagnosis and not empirical evidence.'],
+  };
+  assert.equal(validateAgentAnswer(answer, [artifactB]).ok, true);
+  assert.equal(validateAgentAnswer(answer, [artifactA, artifactB], {
+    expectedSessionRefs: ['fixture:session:a'],
+  }).reason_code, REASON_CODES.SESSION_MISMATCH);
+});
+
+test('a summary mapped to another session artifact is rejected', () => {
+  const base = createFixtureStore();
+  const store = {
+    getSession: (ref) => base.getSession(ref),
+    hasSession: (ref) => base.hasSession(ref),
+    getArtifact: (ref) => base.getArtifact(ref),
+    hasArtifact: (ref) => base.hasArtifact(ref),
+    summaryRefFor: (ref) => (ref === 'fixture:session:a' ? 'fixture:session-summary:b' : base.summaryRefFor(ref)),
+    comparisonRefFor: (refs, metricId) => base.comparisonRefFor(refs, metricId),
+  };
+  const response = createAnalysisTools({ store }).invoke(summaryRequest('fixture:session:a'));
+  assert.equal(response.status, TOOL_STATUS.UNAVAILABLE);
+  assert.equal(response.reason_code, REASON_CODES.SESSION_MISMATCH);
+  assert.deepEqual(response.metrics, []);
+});
+
+test('catalog metrics that disagree with the session are rejected', () => {
+  const base = createFixtureStore();
+  const store = {
+    getSession: (ref) => base.getSession(ref),
+    hasSession: (ref) => base.hasSession(ref),
+    getArtifact(ref) {
+      const artifact = base.getArtifact(ref);
+      if (ref === 'fixture:session-summary:a') {
+        artifact.payload.metrics[0] = { ...artifact.payload.metrics[0], value: 111 };
+      }
+      return artifact;
+    },
+    hasArtifact: (ref) => base.hasArtifact(ref),
+    summaryRefFor: (ref) => base.summaryRefFor(ref),
+    comparisonRefFor: (refs, metricId) => base.comparisonRefFor(refs, metricId),
+  };
+  const response = createAnalysisTools({ store }).invoke(summaryRequest('fixture:session:a'));
+  assert.equal(response.status, TOOL_STATUS.UNAVAILABLE);
+  assert.equal(response.reason_code, REASON_CODES.INCONSISTENT_EVIDENCE);
+});
+
+test('tool envelopes cannot add extra fields or disagree with the cited artifact', () => {
+  const artifact = structuredClone(FIXTURE_ARTIFACTS['fixture:session-summary:a']);
+  const okResponse = tools().invoke(summaryRequest());
+  assert.equal(validateToolResponse({ ...okResponse, extra_injected: true }).ok, false);
+  assert.equal(validateResponseAgreesWithArtifact({
+    ...okResponse,
+    protocol_version: 'fixture-protocol/0.2',
+    metrics: [{ metric_id: 'reaction_time_median_ms', value: 999, unit: 'ms', n: 12 }],
+  }, artifact).reason_code, REASON_CODES.INCONSISTENT_EVIDENCE);
+});
+
+test('comparison metrics cannot name a session outside provenance', () => {
+  const tampered = structuredClone(FIXTURE_ARTIFACTS['fixture:session-compare:a-b:reaction_time_median_ms']);
+  tampered.payload.metrics[0].session_ref = 'fixture:session:other-protocol';
+  const checked = validateEvidenceArtifact(tampered);
+  assert.equal(checked.ok, false);
+  assert.equal(checked.reason_code, REASON_CODES.SESSION_MISMATCH);
+});
+
+test('exported fixture artifacts are frozen against accidental mutation', () => {
+  assert.throws(() => {
+    FIXTURE_ARTIFACTS['fixture:session-summary:a'].payload.metrics[0].value = 1;
+  }, TypeError);
+  assert.equal(FIXTURE_ARTIFACTS['fixture:session-summary:a'].payload.metrics[0].value, 320);
+});
+
+test('diagnostic claim language is rejected by the answer validator', () => {
+  const artifact = structuredClone(FIXTURE_ARTIFACTS['fixture:session-summary:a']);
+  const checked = validateAgentAnswer({
+    answer_version: ANSWER_VERSION,
+    status: 'answered',
+    claims: [{
+      text: 'This is a diagnostic conclusion from the fixture.',
+      metric_id: 'reaction_time_median_ms',
+      value: 320,
+      unit: 'ms',
+      artifact_refs: ['fixture:session-summary:a'],
+    }],
+    limitations: ['Synthetic fixture; not a fatigue diagnosis and not empirical evidence.'],
+  }, [artifact]);
+  assert.equal(checked.reason_code, REASON_CODES.UNSUPPORTED_CLAIM);
 });
 
 test('listTools exposes only the read-only allowlist', () => {

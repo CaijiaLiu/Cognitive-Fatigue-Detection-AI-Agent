@@ -59,6 +59,10 @@ function exactKeys(value, allowed) {
   return keys.length === allowed.length && keys.every((key) => allowed.includes(key));
 }
 
+function unexpectedKeys(value, allowed) {
+  return Object.keys(value).filter((key) => !allowed.includes(key));
+}
+
 function isSafeString(value, max = MAX_STRING) {
   return typeof value === 'string' && value.length > 0 && value.length <= max && !FORBIDDEN_REQUEST_PATTERN.test(value);
 }
@@ -245,8 +249,24 @@ export function validateToolResponse(input) {
       return fail(REASON_CODES.MALFORMED_OUTPUT, 'OK responses must not include reason_code.');
     }
     for (const metric of input.metrics) {
-      const checked = validateMetric(metric, { requireSessionRef: input.tool === TOOL_NAMES.COMPARE_SESSIONS && !String(metric.metric_id).endsWith('_delta') });
+      const checked = validateMetric(metric, { requireSessionRef: input.tool === TOOL_NAMES.COMPARE_SESSIONS });
       if (!checked.ok) return checked;
+    }
+    const extraOk = unexpectedKeys(input, [
+      'contract_version',
+      'tool',
+      'status',
+      'analysis_version',
+      'data_origin',
+      'quality',
+      'metrics',
+      'limitations',
+      'artifact_ref',
+      'protocol_version',
+      'participant_scope',
+    ]);
+    if (extraOk.length > 0) {
+      return fail(REASON_CODES.MALFORMED_OUTPUT, `Tool response has unexpected fields: ${extraOk.join(', ')}.`);
     }
   } else {
     if (!isSafeString(input.reason_code, 80)) {
@@ -255,8 +275,62 @@ export function validateToolResponse(input) {
     if (input.metrics.length !== 0) {
       return fail(REASON_CODES.MALFORMED_OUTPUT, 'Non-OK responses must not fabricate metrics.');
     }
+    const extraFail = unexpectedKeys(input, [
+      'contract_version',
+      'tool',
+      'status',
+      'analysis_version',
+      'data_origin',
+      'quality',
+      'metrics',
+      'limitations',
+      'reason_code',
+      'protocol_version',
+      'participant_scope',
+    ]);
+    if (extraFail.length > 0) {
+      return fail(REASON_CODES.MALFORMED_OUTPUT, `Tool response has unexpected fields: ${extraFail.join(', ')}.`);
+    }
   }
   return ok(input);
+}
+
+export function metricsAgree(left = [], right = []) {
+  if (left.length !== right.length) return false;
+  return left.every((metric, index) => (
+    metric.metric_id === right[index].metric_id
+    && Object.is(metric.value, right[index].value)
+    && metric.unit === right[index].unit
+    && metric.n === right[index].n
+    && metric.session_ref === right[index].session_ref
+  ));
+}
+
+export function validateResponseAgreesWithArtifact(response, artifact) {
+  const responseCheck = validateToolResponse(response);
+  if (!responseCheck.ok) return responseCheck;
+  const artifactCheck = validateEvidenceArtifact(artifact);
+  if (!artifactCheck.ok) return artifactCheck;
+  if (response.status !== TOOL_STATUS.OK) {
+    return fail(REASON_CODES.INCONSISTENT_EVIDENCE, 'Only OK responses can be checked against an evidence artifact.');
+  }
+  if (response.artifact_ref !== artifact.artifact_ref) {
+    return fail(REASON_CODES.INCONSISTENT_EVIDENCE, 'Tool response artifact_ref does not match the evidence artifact.');
+  }
+  if (response.analysis_version !== artifact.analysis_version || response.protocol_version !== artifact.protocol_version) {
+    return fail(REASON_CODES.INCONSISTENT_EVIDENCE, 'Tool response versions do not match the evidence artifact.');
+  }
+  if (response.data_origin !== artifact.data_origin || response.participant_scope !== artifact.participant_scope) {
+    return fail(REASON_CODES.INCONSISTENT_EVIDENCE, 'Tool response provenance fields do not match the evidence artifact.');
+  }
+  if (!metricsAgree(response.metrics, artifact.payload.metrics)) {
+    return fail(REASON_CODES.INCONSISTENT_EVIDENCE, 'Tool response metrics do not match the evidence artifact.');
+  }
+  if (response.quality.usable !== artifact.quality.usable
+    || JSON.stringify(response.quality.reason_codes) !== JSON.stringify(artifact.quality.reason_codes)) {
+    return fail(REASON_CODES.INCONSISTENT_EVIDENCE, 'Tool response quality does not match the evidence artifact.');
+  }
+  return ok(response);
 }
 
 export function validateProvenance(provenance) {
@@ -316,6 +390,10 @@ export function validateEvidenceArtifact(input) {
   if (!ARTIFACT_KIND_VALUES.has(input.artifact_kind)) {
     return fail(REASON_CODES.MALFORMED_OUTPUT, 'artifact_kind is invalid.');
   }
+  const extraArtifact = unexpectedKeys(input, required);
+  if (extraArtifact.length > 0) {
+    return fail(REASON_CODES.MALFORMED_OUTPUT, `Evidence artifact has unexpected fields: ${extraArtifact.join(', ')}.`);
+  }
   if (input.contract_version !== CONTRACT_VERSION || input.analysis_version !== ANALYSIS_VERSION) {
     return fail(REASON_CODES.MALFORMED_OUTPUT, 'Artifact versions are unsupported.');
   }
@@ -335,9 +413,19 @@ export function validateEvidenceArtifact(input) {
   if (!isPlainObject(input.payload) || !Array.isArray(input.payload.metrics)) {
     return fail(REASON_CODES.MALFORMED_OUTPUT, 'payload.metrics must be an array.');
   }
+  const extraPayload = unexpectedKeys(input.payload, ['metrics', 'metric_id', 'analysis_version']);
+  if (extraPayload.length > 0) {
+    return fail(REASON_CODES.MALFORMED_OUTPUT, `Artifact payload has unexpected fields: ${extraPayload.join(', ')}.`);
+  }
+  if (input.quality.usable && input.payload.metrics.length === 0) {
+    return fail(REASON_CODES.MISSING_EVIDENCE, 'Usable artifacts must include metrics.');
+  }
   for (const metric of input.payload.metrics) {
-    const checked = validateMetric(metric, { requireSessionRef: input.artifact_kind === ARTIFACT_KIND.SESSION_COMPARISON && !String(metric.metric_id).endsWith('_delta') });
+    const checked = validateMetric(metric, { requireSessionRef: input.artifact_kind === ARTIFACT_KIND.SESSION_COMPARISON });
     if (!checked.ok) return checked;
+    if (metric.session_ref && !input.source_session_refs.includes(metric.session_ref)) {
+      return fail(REASON_CODES.SESSION_MISMATCH, 'Metric session_ref is not in source_session_refs.');
+    }
   }
   if (!validateStringList(input.limitations, { maxItems: MAX_LIMITATIONS, allowEmpty: false })) {
     return fail(REASON_CODES.MALFORMED_OUTPUT, 'Artifact limitations are invalid.');
@@ -345,7 +433,7 @@ export function validateEvidenceArtifact(input) {
   return ok(input);
 }
 
-const UNSUPPORTED_CLAIM_PATTERN = /\b(adhd|diagnos(?:e|is|ed)|clinical validation|medical (?:advice|diagnosis)|fatigue score|fatigue probability)\b/i;
+const UNSUPPORTED_CLAIM_PATTERN = /\b(adhd|diagnos(?:e|is|ed|tic)|clinical validation|medical (?:advice|diagnosis)|fatigue score|fatigue probability)\b/i;
 
 export function containsUnsupportedClaimLanguage(text) {
   return typeof text === 'string' && UNSUPPORTED_CLAIM_PATTERN.test(text);
@@ -367,9 +455,13 @@ export function findMetricInArtifacts(metricId, artifactRefs, artifactsByRef, { 
   return null;
 }
 
-export function validateAgentAnswer(input, artifacts = []) {
+export function validateAgentAnswer(input, artifacts = [], options = {}) {
   if (!isPlainObject(input)) {
     return fail(REASON_CODES.MALFORMED_OUTPUT, 'Agent answer must be a plain object.');
+  }
+  const extraAnswer = unexpectedKeys(input, ['answer_version', 'status', 'claims', 'limitations', 'reason_code']);
+  if (extraAnswer.length > 0) {
+    return fail(REASON_CODES.MALFORMED_OUTPUT, `Agent answer has unexpected fields: ${extraAnswer.join(', ')}.`);
   }
   if (input.answer_version !== ANSWER_VERSION) {
     return fail(REASON_CODES.MALFORMED_OUTPUT, 'Unsupported answer_version.');
@@ -429,6 +521,16 @@ export function validateAgentAnswer(input, artifacts = []) {
     }
     if (claim.artifact_refs.some((ref) => !artifactsByRef.has(ref))) {
       return fail(REASON_CODES.MISSING_EVIDENCE, 'A cited artifact_ref was not returned by a tool.');
+    }
+    const expectedSessionRefs = Array.isArray(options.expectedSessionRefs) ? options.expectedSessionRefs : [];
+    if (expectedSessionRefs.length > 0) {
+      const bound = claim.artifact_refs.every((ref) => {
+        const sources = artifactsByRef.get(ref)?.source_session_refs ?? [];
+        return expectedSessionRefs.some((sessionRef) => sources.includes(sessionRef));
+      });
+      if (!bound) {
+        return fail(REASON_CODES.SESSION_MISMATCH, 'A cited artifact does not belong to the requested session.');
+      }
     }
     const grounded = findMetricInArtifacts(claim.metric_id, claim.artifact_refs, artifactsByRef, {
       value: claim.value,

@@ -64,6 +64,13 @@ Protocol compatibility is exact-version match unless listed in `PROTOCOL_COMPATI
 }
 ```
 
+## W1.2 hardening
+
+- Cited artifacts must belong to the requested session when `expectedSessionRefs` is provided.
+- OK tool envelopes are checked against the cited artifact for `artifact_ref`, versions, provenance, quality and metrics.
+- Every OK `artifact_ref` returned by `compare_sessions` is catalogued and retrievable via `get_evidence`.
+- Fixture artifacts are deep-frozen. Extra fields on public envelopes are rejected.
+
 ## Open contract choices
 
 1. Malformed or unsafe requests use existing status `unavailable` plus `reason_code=rejected_request` rather than a fifth status.

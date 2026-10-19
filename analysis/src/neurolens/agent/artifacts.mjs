@@ -12,6 +12,25 @@ export function cloneJson(value) {
   return structuredClone(value);
 }
 
+export function deepFreeze(value) {
+  if (value === null || typeof value !== 'object' || Object.isFrozen(value)) {
+    return value;
+  }
+  Object.freeze(value);
+  for (const nested of Object.values(value)) {
+    deepFreeze(nested);
+  }
+  return value;
+}
+
+export function sessionAlias(sessionRef) {
+  return String(sessionRef).replace(/^fixture:session:/, '');
+}
+
+export function comparisonArtifactRef(sessionRefs, metricId) {
+  return `fixture:session-compare:${sessionRefs.map(sessionAlias).join('-')}:${metricId}`;
+}
+
 export function createEvidenceArtifact({
   artifact_ref,
   artifact_kind,
@@ -56,7 +75,7 @@ export function createEvidenceArtifact({
   if (!checked.ok) {
     throw new Error(`Invalid evidence artifact ${artifact_ref}: ${checked.message}`);
   }
-  return cloneJson(artifact);
+  return deepFreeze(cloneJson(artifact));
 }
 
 export function getMetricFromArtifact(artifact, metricId, sessionRef = undefined) {
