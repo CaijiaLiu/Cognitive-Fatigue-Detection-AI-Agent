@@ -4,7 +4,7 @@
 
 **Status:** Implemented and verified in synthetic tests. Manual ChatGPT workflow only. Not an LLM API, not scientifically validated, not deployed.
 
-Implementation branch: `cursor/w1-eval-harness-4e29`, based on PR #2 (`cursor/w1-agent-tools-4e29` @ `5e8f791`). Source: `analysis/src/neurolens/eval/`. Tests: `tests/agent-eval.test.mjs`. Design: [agent-eval.md](../architecture/agent-eval.md).
+Implementation PR: [#5](https://github.com/CaijiaLiu/Cognitive-Fatigue-Detection-AI-Agent/pull/5) (`cursor/w1-eval-harness-4e29` @ `fe311fe`), based on PR #2 (`cursor/w1-agent-tools-4e29` @ `5e8f791`). Source: `analysis/src/neurolens/eval/`. Tests: `tests/agent-eval.test.mjs`. Design: [agent-eval.md](../architecture/agent-eval.md).
 
 This slice is **not stacked on W1.4**. It uses the PR #2 fixture catalog and answer validator. LLM output is never trusted without `validateAgentAnswer`.
 
