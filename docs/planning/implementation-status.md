@@ -1,5 +1,32 @@
 # Implementation status
 
+## W4.0 Dataset architecture readiness (2026-10-21)
+
+**Status:** Architecture only. Not a runtime pipeline. Not scientifically validated. Week 3 PR #19 is **not** merged and was **not** cherry-picked.
+
+Implementation branch: `feature/w4-dataset-pipeline`, based on `develop/neurolens-agent` @ `3b7528f`. Design: [dataset-pipeline.md](../architecture/dataset-pipeline.md). Decision: [DEC-016](decision-log.md).
+
+```text
+W4.0 DATASET ARCHITECTURE: DESIGNED
+W4.1 VALIDATOR / WINDOW BUILDER: NOT IMPLEMENTED
+WEEK 3 PR #19: UNMERGED / NOT COPIED
+REAL-DEVICE VALIDATION: PENDING
+SCIENTIFIC REVIEW: PENDING
+```
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| Contract audit (develop vs PR #19) | Documented | V1 + W3.0 mission sidecar are on develop; W3.1–W3.3 contracts stay on PR #19 |
+| Dataset / window / manifest contracts | Designed | `dataset-manifest/0.1-provisional` and related ids; not implemented |
+| Validation / windowing rules | Designed | Acquisition-time `[start, end)`; fail closed; dropout ≠ open eyes |
+| Runtime CLI / builder | Not implemented | W4.1 Node modules under `analysis/src/neurolens/dataset/` |
+| Statistics / plots / ML | Not started | Caijia D3 after JSON exists |
+| Scientific protocol | Pending | Unsigned slots and ocular meaning remain Caijia-owned |
+
+**Not changed:** V1 `schema_version` `1.0.0`, Go/No-Go trial code, camera algorithms, `sanitizeSession`, Sites, OpenAI, D1, `main`, PR #19.
+
+**Next task:** Review W4.0 architecture. Do not implement the runtime until this design is accepted. Do not merge Week 3 from this branch.
+
 ## W3.0 Mission integration foundation (2026-10-19)
 
 **Status:** Linxi-owned Stage A/B engineering prerequisites implemented on canonical collection modules. Preview snapshot is **not** merged. Real-camera accuracy is **not** claimed. Scientific review remains **Pending / Blocked**.

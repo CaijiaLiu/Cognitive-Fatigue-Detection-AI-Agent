@@ -49,3 +49,7 @@ Do not silently convert the three preview ratings to V1 pre/post or upload old p
 ## Mission event contract (provisional, local-only)
 
 W3.0 adds `mission-event/0.1-provisional` on local V1 records as `session.mission`. Scientific review: **PENDING_SCIENTIFIC_REVIEW**. It records task start/end offsets and frame-admission events. It does not change `schema_version` `1.0.0`, cloud allowlists, or metric identifiers. Preview `mission-preview-1` remains incompatible and is not rewritten. See [mission-adapter.md](mission-adapter.md).
+
+## Dataset pipeline contract (designed, not implemented)
+
+W4.0 proposes `dataset-manifest/0.1-provisional`, `dataset-session/0.1-provisional`, `dataset-window/0.1-provisional`, and `dataset-observation/0.1-provisional`. The builder consumes V1 `schema_version` `1.0.0` plus optional W3.0 mission sidecars. Unmerged Week 3 orchestration/evidence contracts are not required for W4.1. Window membership uses acquisition time with `[start, end)`. Generic/unsigned protocol ids are not PVT or Go/No-Go. See [dataset-pipeline.md](dataset-pipeline.md) and [DEC-016](../planning/decision-log.md).

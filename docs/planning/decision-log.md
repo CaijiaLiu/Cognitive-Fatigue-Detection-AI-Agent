@@ -1,6 +1,14 @@
 # NeuroLens decision log (shared across human and AI contributors)
 
-This file is the durable record of **accepted project decisions**, not a speculative backlog. Last updated 2026-10-19. Read alongside [Research North Star](research-north-star.md), [Roadmap](roadmap.md), [Implementation Status](implementation-status.md), and [AGENTS.md](../../AGENTS.md).
+This file is the durable record of **accepted project decisions**, not a speculative backlog. Last updated 2026-10-21. Read alongside [Research North Star](research-north-star.md), [Roadmap](roadmap.md), [Implementation Status](implementation-status.md), and [AGENTS.md](../../AGENTS.md).
+
+## Accepted decisions — 2026-10-21
+
+### DEC-016: W4.0 dataset pipeline is architecture-only and does not cherry-pick Week 3
+**Accepted.** W4.0 designs versioned dataset/window/manifest contracts and a fail-closed validator/windowing plan on `develop/neurolens-agent`. The W4.1 implementation will be a deterministic Node CLI under `analysis/src/neurolens/dataset/`, not a new Python backend. Inputs on develop are V1 `schema_version` `1.0.0` plus optional W3.0 `mission-event/0.1-provisional`. Unmerged PR #19 orchestration/evidence modules are **not** copied. Generic or unsigned protocol ids are not PVT or Go/No-Go. Ocular metrics are not invented.
+
+**Reason:** Week 4 needs a reproducible research-data architecture before statistics or ML. Cherry-picking unreviewed Week 3 code would mix unmerged contracts into develop. A Python validator would fork the existing JS analysis tree. Treating generic slots or simulated vision as signed biomedical data would redefine Caijia's science.
+**Implementation implications:** Architecture-only in W4.0. W4.1 may implement the Node builder against V1 + optional mission sidecars. Do not merge PR #19 from this decision. Do not expand `sanitizeSession`. Do not upload sidecars. Window membership uses acquisition time, `[start, end)`. Mixed camera/simulated cohorts stratify; they do not pool ocular rows. Caijia owns estimands, ocular interpretation, and exclusion thresholds.
 
 ## Accepted decisions — 2026-10-19
 

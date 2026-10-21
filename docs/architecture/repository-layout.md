@@ -56,6 +56,7 @@ The session controller composes explicit task/tracking controllers and owns sess
 |---|---|
 | analysis/src/neurolens/agent/ | Read-only W1 tool interface, evidence artifacts, structured validators and deterministic fixture catalog |
 | analysis/src/neurolens/adapter/ | Offline V1 JSON export → evidence-artifact store for the same tool interface |
+| analysis/src/neurolens/dataset/ | **Proposed W4.1** (not created): dataset validator, window builder, manifest, CLI |
 | analysis/src/neurolens/eval/ | API-independent prompt builder, evaluation harness and W1.6 offline pipeline |
 | analysis/src/neurolens/runtime/ | Mock/OpenAI providers, orchestrator, HTTP adapter, and demo view-model |
 | analysis/prompts/ | Versioned research-agent system prompt |
@@ -77,6 +78,7 @@ The session controller composes explicit task/tracking controllers and owns sess
 | lib/research-agent.mjs | Server facade; does not import D1 or collection |
 | docs/architecture/agent-tools.md | Implemented W1 contract and open review questions |
 | docs/architecture/analysis-export-adapter.md | Implemented offline adapter boundary and blocked scientific mappings |
+| docs/architecture/dataset-pipeline.md | W4.0 dataset/window/manifest architecture (not implemented) |
 | docs/architecture/agent-eval.md | Manual ChatGPT evaluation workflow |
 | docs/architecture/analysis-integration.md | Integrated offline pipeline and reproducibility command |
 | docs/architecture/agent-reliability.md | Threat model, adversarial categories and remaining reliability limits |
