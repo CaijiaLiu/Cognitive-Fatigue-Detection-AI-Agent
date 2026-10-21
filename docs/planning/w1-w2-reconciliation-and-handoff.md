@@ -1,6 +1,6 @@
 # Week 1–2 reconciliation: Linxi delivery, deviations, and Caijia handoff
 
-Date: 2026-10-19. **Status: proposed coordination update for team review.** This document reconciles the original [seven-week sprint](seven-week-sprint.md) with the actual Linxi engineering work on `develop/neurolens-agent`. It does **not** retroactively mark Caijia's tasks complete, authorize changes to her branches, or change scientific contracts. See [implementation status](implementation-status.md), [Week 2 closeout](week2-completion.md), [mission integration](mission-integration.md), and [decision log](decision-log.md).
+Updated: 2026-10-21. **Status: Linxi W1–W3 engineering reconciliation; Caijia review and Week 3 merge pending.** This document reconciles the original [seven-week sprint](seven-week-sprint.md) with the actual Linxi engineering work on `develop/neurolens-agent`. It does **not** retroactively mark Caijia's tasks complete, authorize changes to her branches, or change scientific contracts. See [implementation status](implementation-status.md), [Week 2 closeout](week2-completion.md), [mission integration](mission-integration.md), and [decision log](decision-log.md).
 
 ## Summary / two independent scoreboards
 
@@ -17,7 +17,7 @@ Date: 2026-10-19. **Status: proposed coordination update for team review.** This
 | W2 Stage B: camera processing, quality/missingness flags, dropout/latency instrumentation, feature adapters | Agent runtime, API, eval, auth, D1 rate limiting, deployment preparation | **Substitution, not completion** of Stage B | Camera feature quality and timing instrumentation remain separate backlog items |
 | W6 Stage F: restricted evidence-grounded agent | Much of agent infrastructure brought forward to W1–W2 | **Pulled forward; partial early delivery** | W6 still requires integration with versioned real analyses and Caijia-reviewed scientific benchmark; synthetic fixture tests do not close it |
 | W7 Stage G: security, reproducibility, deployment | Mock demo auth, audit, evaluation reproducibility, offline deployment preflight brought forward | **Pulled forward; offline only** | Remote deployment, browser E2E, release audit remain deferred |
-| W3 Stage C: protocol state machine and versioned records | Not completed by agent work | **Still pending** | Linxi can build adapters around provisional, versioned contracts, not unilaterally finalize scientific protocol |
+| W3 Stage C: protocol state machine and versioned records | W3.0 mission foundation merged to develop; W3.1–W3.3 orchestration, evidence adapter and offline E2E implemented in Draft PR #19 | **Engineering complete (offline), not merged** | Scientific protocol signoff, live browser wiring and real-device validation remain pending |
 | W4 Stage D: dataset/window/provenance/statistics pipeline | Evidence provenance and eval infrastructure partly reusable, but not a scientific data pipeline | **Still pending** | Needs scientific estimands, compatible dataset contract and synthetic end-to-end reproducibility |
 | W5 Stage E: grouped splits, fold-safe preprocessing, baseline/fusion | Not delivered by W2 agent eval | **Still pending** | No model training/held-out predictive performance should be claimed |
 
@@ -36,7 +36,7 @@ Date: 2026-10-19. **Status: proposed coordination update for team review.** This
 ## Remaining Linxi-owned work (accelerated coding through W5)
 
 1. **First:** audit mission preview against 1A–1D and existing Caijia branches; fix Linxi-owned late-frame/calibration/timestamp defects and avoid duplicate tracking engines. If the interface depends on an unsigned scientific definition, use a versioned provisional adapter and mark blocked.
-2. **W3 engineering:** versioned session/protocol orchestration, task adapters, missingness/provenance, privacy-safe exports and backward-compatible readers; deterministic synthetic transitions and failure tests. Caijia owns the scientific protocol and task semantics.
+2. **W3 engineering:** implemented offline in Draft PR #19; retain review/fix/merge gate and do not claim live-camera validation. Caijia owns scientific protocol and task semantics.
 3. **W4 engineering:** offline dataset validator, window builder, cohort/run manifest, provenance, compatible modality checks and reproducible CLI. Do not invent participant measurements or clinical statistics.
 4. **W5 engineering:** grouped split manifest, fold-safe preprocessing, baseline runner, ablations and model cards using synthetic or licensed compatible data. No cross-person generalization claims without adequate independent participant groups and labels.
 5. **Deferred gates:** Caijia local testing → fix observed defects → isolated preview D1/Sites publication with separate authorization → remote E2E → separately approved paid LLM baseline. Do not use real OpenAI merely because adapter code exists.
@@ -75,11 +75,50 @@ Date: 2026-10-19. **Status: proposed coordination update for team review.** This
 ```text
 LINXI W1 AGENT FOUNDATION: IMPLEMENTED OFFLINE
 LINXI W2 AGENT/PLATFORM: ENGINEERING COMPLETE (OFFLINE)
-ORIGINAL W1 STAGE A MISSION INTEGRATION: NOT CLOSED BY AGENT WORK
+ORIGINAL W1 STAGE A MISSION FOUNDATION: IMPLEMENTED OFFLINE IN W3.0; LIVE DEVICE PENDING
 ORIGINAL W2 STAGE B MEASUREMENT QA: NOT CLOSED BY AGENT WORK
 CAIJIA LOCAL FUNCTIONAL QA: PENDING
-CAIJIA SCIENTIFIC REVIEW: PENDING / BLOCKED
+W3.1–W3.3 OFFLINE ENGINEERING: COMPLETE ON DRAFT PR #19; NOT MERGED\nCAIJIA SCIENTIFIC REVIEW: PENDING / BLOCKED
 LIVE LLM: NOT RUN
 CLOUDFLARE PREVIEW: NOT DEPLOYED
 REMOTE E2E: NOT RUN
 ```
+
+## Week 3 update — Linxi delivery, Caijia handoff and closeout (2026-10-21)
+
+**Status:** Week 3 **Engineering Complete (Offline)**, not scientific validation or live browser integration. W3.0 mission foundation was previously squash-merged into `develop/neurolens-agent` via PR #18. W3.1–W3.3 are together in **Draft [PR #19](https://github.com/CaijiaLiu/Cognitive-Fatigue-Detection-AI-Agent/pull/19)**, branch `feature/w3-protocol-orchestration`, latest reviewed SHA `84d3ccab395b6d393a0a91bf3938c5707d828dbd`. **Do not merge PR #19 before review.** `main` untouched.
+
+### What Linxi actually coded
+
+| Slice | Linxi implementation | Status and evidence |
+|---|---|---|
+| W3.0 Mission foundation | Tracking lifecycle, calibration deadline, acquisition-vs-processing timestamps, stale/late-frame rejection, mission adapter, task-window handling | PR #18 merged to develop; offline tests only |
+| W3.1 Protocol/session orchestration | Versioned provisional protocol/event/session contracts, deterministic state machine, task boundaries, local sidecars, event-only exact-timeline replay, fail-closed readers | Draft PR #19; `public/collection/session/{protocol,orchestrate,orchestration-export}.js` |
+| W3.2 Biomedical evidence → Agent | V1 + sidecar validation, full replay verification, stable unique evidence IDs, duplicate-session rejection, source/missingness/provenance, existing read-only Agent tools and abstention | Draft PR #19; `analysis/src/neurolens/adapter/session-evidence.mjs`; no new medical metric |
+| W3.3 Offline E2E/reliability | Production-module offline session → export → evidence → Agent; optional default-off browser observer; interrupt/fail/dropout and adversarial integration tests; observation admission consistency hardening | Draft PR #19; `analysis/src/neurolens/integration/research-session.mjs`, `tests/week3-integration.test.mjs` |
+
+At SHA `84d3cca`, Cursor reported **239 passing npm tests**, flow PASS, integration 6 PASS, reliability 7 PASS, TypeScript check 0 errors, and build completed. These are **reported offline checks**, not real camera, Safari, remote deployment or scientific performance results. Tracking observation admission now classifies/inspects read-only, commits the orchestration observation, then advances the tracking cursor; companion automatic dropout is attempted only after accepted observations. Remaining hardening: check/handle companion dropout commit failure; no cross-module rollback is claimed.
+
+**Important limitations:** `public/collection/session/controller.js` does **not** own/use the new orchestrator; optional browser observer is off by default. HTTP demo does not yet accept `analysis-session-evidence/0.1`. W3.1 replay is `event_only` with `measurement_fidelity: false`; it cannot reconstruct ocular measurements. Generic `slot-a` / `slot-b` are not PVT or validated Go/No-Go. No new signed EAR/blink/fatigue metrics, diagnosis, real OpenAI calls, D1/Sites deployment, or cloud sidecar upload. V1 `schema_version: 1.0.0`, Go/No-Go science and `sanitizeSession` remain unchanged.
+
+### What Caijia needs to do — scientific review, not Linxi's infrastructure work
+
+Caijia's W1/W2 original implementation and measurement-QA progress are **not independently verified here**. Week 3 review does not replace her original substantive coding responsibilities or imply completion of PVT, rating/probe or ocular-validation tasks. Her concrete Week 3 handoff is to review [Week 3 closeout checklist](week3-closeout.md) and relevant contracts/code, then record **ACCEPT / REVISE / BLOCK / DEFER** with rationale for:
+
+1. **Protocol and task identity:** `go-no-go-v1` compatibility; generic placeholders remain unsigned; no invented PVT or new pause/resume semantics.
+2. **Behavioral science:** Go/No-Go trial/outcome and summary meaning; PVT implementation and tests remain Caijia-owned; rating/pre-post/probe/confounder definitions are not silently added.
+3. **Ocular science/QA:** EAR, blink, closure, dropout, coverage, exclusion thresholds and reference traces; distinguish copied observations from signed metrics and camera from simulated/task-only.
+4. **Evidence/claims:** allowlisted `reaction_time_median_ms`, `accuracy`, `valid_trial_count`, units, missingness, sample counts, citations, interpretation, abstention; no fatigue or medical diagnosis claims.
+5. **Review evidence:** provide small scientific fixtures, expected outputs or concrete correction requests where needed; leave not-yet-implemented science marked DEFER rather than approving it implicitly.
+
+**Division of work:** Linxi fixes orchestration, evidence adapter, tests, privacy or Agent defects identified in review. Caijia owns protocol/metric semantics, scientific QA criteria, task implementations and scientific interpretation. No unapproved edits to Caijia-owned branches. Target 60:40 coding split is a plan, not a verified measurement.
+
+### How Week 3 closes — explicit gates
+
+1. **Engineering:** Linxi completes final code review of PR #19, documents remaining issues (including dropout companion commit handling), and verifies CI against the final SHA. The current label is **Engineering Complete (Offline)**, not live-ready.
+2. **Scientific review:** Caijia records ACCEPT / REVISE / BLOCK / DEFER decisions on [week3-closeout.md](week3-closeout.md) or PR #19; blocking issues get assigned and fixed on the same PR, with regression tests and re-review. Deferred unsigned science remains visibly pending.
+3. **Merge:** only after both reviewers accept the **offline scope**, mark PR #19 ready and squash-merge into `develop/neurolens-agent`; do not merge into `main`. Keep unverified scientific features excluded. This is a **team-approved offline engineering merge**, not a clinical/scientific validation release.
+4. **Independent later gates:** real camera/device + Safari QA, live controller ownership/integration, HTTP demo contract acceptance, optional remote preview/deployment and live LLM evaluation require separate work and evidence. None are automatically passed by merging PR #19.
+5. **Week 4 parallel work:** Linxi may design independent dataset contracts/validators on a separate branch from develop without merging PR #19 early or reinterpreting unsigned science. Integrate W3 artifacts only after the agreed contract/merge gate.
+
+**Canonical detail:** [Week 3 closeout](week3-closeout.md), [Week 3 architecture](../architecture/week3-integration.md), [implementation status](implementation-status.md), and [seven-week sprint](seven-week-sprint.md).
