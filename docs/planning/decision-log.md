@@ -1,6 +1,26 @@
 # NeuroLens decision log (shared across human and AI contributors)
 
-This file is the durable record of **accepted project decisions**, not a speculative backlog. Last updated 2026-10-19. Read alongside [Research North Star](research-north-star.md), [Roadmap](roadmap.md), [Implementation Status](implementation-status.md), and [AGENTS.md](../../AGENTS.md).
+This file is the durable record of **accepted project decisions**, not a speculative backlog. Last updated 2026-10-21. Read alongside [Research North Star](research-north-star.md), [Roadmap](roadmap.md), [Implementation Status](implementation-status.md), and [AGENTS.md](../../AGENTS.md).
+
+## Accepted decisions — 2026-10-21
+
+### DEC-018: W4.1 publishes dataset pairs atomically and does not treat simulated vision as ocular presence
+**Accepted.** The dataset CLI stages a complete `dataset.json` + `manifest.json` pair, then publishes by directory rename. Non-empty existing `--out` directories are refused unless `--replace`. Task start/end offsets must lie in the session duration; completed sessions cannot have open-ended tasks; interrupted open windows remain valid. `ocular_observations_present` requires camera provenance and at least one `quality: valid` camera observation with finite EAR.
+
+**Reason:** A failed write of one of two published files could pair a new dataset with an old success manifest. Simulated or task-only EAR values must not read as real ocular coverage. Open-ended completed tasks are inconsistent with a finished session clock.
+**Implementation implications:** Do not overwrite published datasets by default. Do not invent ocular coverage thresholds. Do not start W4.2 or merge PR #19 from this hardening.
+
+### DEC-017: W4.1 dataset builder is a fail-closed Node CLI on V1 + optional W3.0 sidecars
+**Accepted.** W4.1 implements `analysis/src/neurolens/dataset/` against the W4.0 contracts. Window membership uses acquisition time `[start, end)`. Missing mission tasks fall back to a whole-session Go/No-Go window labeled `window_origin: session_fallback`, which is not a measured task boundary. `engineering_valid` is independent of `scientific_eligibility` (`pending_review` unless a later accepted scientific contract says otherwise). `camera_source_present` is independent of `ocular_observations_present`. Output fingerprint is SHA-256 of canonical JSON excluding `output_fingerprint`, then written back. Unmerged PR #19 code is not imported.
+
+**Reason:** Week 4 needs a reproducible research-data artifact before statistics or ML. A Python validator would fork the JS analysis tree. Treating camera presence, simulated vision, or unsigned slots as signed ocular science would redefine Caijia's review.
+**Implementation implications:** Synthetic tests can prove engineering determinism; they cannot prove camera accuracy or scientific eligibility. Do not merge PR #19 from this decision. Do not start W4.2 until this slice is reviewed. Do not pool camera and simulated ocular rows.
+
+### DEC-016: W4.0 dataset pipeline is architecture-only and does not cherry-pick Week 3
+**Accepted.** W4.0 designs versioned dataset/window/manifest contracts and a fail-closed validator/windowing plan on `develop/neurolens-agent`. The W4.1 implementation will be a deterministic Node CLI under `analysis/src/neurolens/dataset/`, not a new Python backend. Inputs on develop are V1 `schema_version` `1.0.0` plus optional W3.0 `mission-event/0.1-provisional`. Unmerged PR #19 orchestration/evidence modules are **not** copied. Generic or unsigned protocol ids are not PVT or Go/No-Go. Ocular metrics are not invented.
+
+**Reason:** Week 4 needs a reproducible research-data architecture before statistics or ML. Cherry-picking unreviewed Week 3 code would mix unmerged contracts into develop. A Python validator would fork the existing JS analysis tree. Treating generic slots or simulated vision as signed biomedical data would redefine Caijia's science.
+**Implementation implications:** Architecture-only in W4.0. W4.1 may implement the Node builder against V1 + optional mission sidecars. Do not merge PR #19 from this decision. Do not expand `sanitizeSession`. Do not upload sidecars. Window membership uses acquisition time, `[start, end)`. Mixed camera/simulated cohorts stratify; they do not pool ocular rows. Caijia owns estimands, ocular interpretation, and exclusion thresholds.
 
 ## Accepted decisions — 2026-10-19
 
