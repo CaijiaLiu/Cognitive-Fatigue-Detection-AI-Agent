@@ -171,7 +171,11 @@ function getSessionSummary(store, request) {
     });
   }
   if (!session.quality.usable || session.metrics.length === 0) {
+    const extraLimits = Array.isArray(session.limitations)
+      ? session.limitations.filter((line) => line !== catalogLimit(store)).slice(0, 8)
+      : [];
     return failEnvelope(store, request.tool, TOOL_STATUS.INSUFFICIENT_DATA, REASON_CODES.INSUFFICIENT_DATA, [
+      ...extraLimits,
       'Session quality is insufficient or required features are missing.',
       'Do not impute a fatigue label or substitute a clinical conclusion.',
     ], {
@@ -276,12 +280,26 @@ function compareSessions(store, request) {
 
 function getEvidence(store, request) {
   const artifact = store.getArtifact(request.artifact_ref);
-  if (artifact) {
-    return okFromArtifact(store, request.tool, artifact);
+  if (!artifact) {
+    return failEnvelope(store, request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.UNKNOWN_ARTIFACT, [
+      'No immutable evidence artifact exists for the requested artifact_ref.',
+    ]);
   }
-  return failEnvelope(store, request.tool, TOOL_STATUS.UNAVAILABLE, REASON_CODES.UNKNOWN_ARTIFACT, [
-    'No immutable evidence artifact exists for the requested artifact_ref.',
-  ]);
+  if (!artifact.quality?.usable || !Array.isArray(artifact.payload?.metrics) || artifact.payload.metrics.length === 0) {
+    const extraLimits = Array.isArray(artifact.limitations)
+      ? artifact.limitations.filter((line) => line !== catalogLimit(store)).slice(0, 8)
+      : [];
+    return failEnvelope(store, request.tool, TOOL_STATUS.INSUFFICIENT_DATA, REASON_CODES.INSUFFICIENT_DATA, [
+      ...extraLimits,
+      'The catalogued artifact has no supported measurement metrics.',
+      'Missing measurements stay missing and are not treated as zero.',
+    ], {
+      protocol_version: artifact.protocol_version,
+      participant_scope: artifact.participant_scope,
+      quality: artifact.quality,
+    });
+  }
+  return okFromArtifact(store, request.tool, artifact);
 }
 
 export function createAnalysisTools({ store } = {}) {

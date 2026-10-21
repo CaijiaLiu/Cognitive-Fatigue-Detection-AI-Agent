@@ -134,17 +134,53 @@ export function createTrackingLifecycle({ now = () => performance.now() } = {}) 
     return { admit: true, reason: 'admitted', ...timing };
   }
 
-  function noteAdmitted(acquisitionTs) {
+  function inspectAdmission(acquisitionTs) {
     if (!finiteTimestamp(acquisitionTs)) {
-      return { admitted: false, reason: 'invalid_timestamp', gap_ms: 0, dropout: false, previous_acquisition_ts: lastAdmittedAcquisition };
+      return {
+        ok: false,
+        reason: 'invalid_timestamp',
+        gap_ms: 0,
+        dropout: false,
+        previous_acquisition_ts: lastAdmittedAcquisition
+      };
     }
     if (lastAdmittedAcquisition != null && acquisitionTs <= lastAdmittedAcquisition) {
-      return { admitted: false, reason: 'out_of_order', gap_ms: 0, dropout: false, previous_acquisition_ts: lastAdmittedAcquisition };
+      return {
+        ok: false,
+        reason: 'out_of_order',
+        gap_ms: 0,
+        dropout: false,
+        previous_acquisition_ts: lastAdmittedAcquisition
+      };
     }
     const previous = lastAdmittedAcquisition;
     const gap = previous == null ? 0 : acquisitionTs - previous;
+    return {
+      ok: true,
+      gap_ms: gap,
+      dropout: previous != null && gap > MAX_TRACKING_GAP_MS,
+      previous_acquisition_ts: previous
+    };
+  }
+
+  function noteAdmitted(acquisitionTs) {
+    const inspected = inspectAdmission(acquisitionTs);
+    if (!inspected.ok) {
+      return {
+        admitted: false,
+        reason: inspected.reason,
+        gap_ms: 0,
+        dropout: false,
+        previous_acquisition_ts: lastAdmittedAcquisition
+      };
+    }
     lastAdmittedAcquisition = acquisitionTs;
-    return { admitted: true, gap_ms: gap, dropout: previous != null && gap > MAX_TRACKING_GAP_MS, previous_acquisition_ts: previous };
+    return {
+      admitted: true,
+      gap_ms: inspected.gap_ms,
+      dropout: inspected.dropout,
+      previous_acquisition_ts: inspected.previous_acquisition_ts
+    };
   }
 
   return {
@@ -161,6 +197,7 @@ export function createTrackingLifecycle({ now = () => performance.now() } = {}) 
     completeCalibration,
     calibrationExpired,
     classifyResult,
+    inspectAdmission,
     noteAdmitted,
     cleanup: bumpGeneration
   };

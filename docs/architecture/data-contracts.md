@@ -49,3 +49,13 @@ Do not silently convert the three preview ratings to V1 pre/post or upload old p
 ## Mission event contract (provisional, local-only)
 
 W3.0 adds `mission-event/0.1-provisional` on local V1 records as `session.mission`. Scientific review: **PENDING_SCIENTIFIC_REVIEW**. It records task start/end offsets and frame-admission events. It does not change `schema_version` `1.0.0`, cloud allowlists, or metric identifiers. Preview `mission-preview-1` remains incompatible and is not rewritten. See [mission-adapter.md](mission-adapter.md).
+
+## Research-session orchestration contract (provisional, local-only)
+
+W3.1 adds `research-protocol/0.1-provisional`, `research-session/0.1-provisional`, and `research-event/0.1-provisional`. The existing V1 Go/No-Go protocol stays `go-no-go-v1` / `v1-existing`. Generic multi-slot sequences use unsigned ids (`PENDING_SCIENTIFIC_REVIEW`) and remain local-only (`upload_eligible: false`). `schema_version` stays `1.0.0`. Cloud `sanitizeSession` is unchanged and still drops `mission` and `orchestration`. See [session-orchestration.md](session-orchestration.md) and [w4-session-artifact.md](w4-session-artifact.md).
+
+## Session-evidence contract (implemented, not scientifically validated)
+
+W3.2 adds `analysis-session-evidence/0.1` and `session-evidence/0.1`. The adapter accepts V1 `schema_version` `1.0.0` plus optional W3.1 sidecars and emits `evidence-artifact/0.1` records with `data_origin` `session_orchestration`. Evidence items preserve camera / simulated / task-only provenance and missingness. They are not allowlisted Agent metrics. Generic slots do not become PVT or Go/No-Go measurements. See [session-evidence-adapter.md](session-evidence-adapter.md) and [DEC-014](../planning/decision-log.md).
+
+W3.3 adds `research-session-integration/0.1-provisional` as an offline composition contract only. It does not change V1 schema identity, cloud allowlists, or signed protocol ids. Failed sessions stay unusable for completed-session claims. See [week3-integration.md](week3-integration.md) and [DEC-015](../planning/decision-log.md).

@@ -29,3 +29,5 @@ V1 collection remains the browser entrypoint. Preview snapshot `preview/mission-
 ## Unsigned scientific contracts
 
 Unsigned protocol ids are stored as `PENDING_SCIENTIFIC_REVIEW`. Existing V1 Go/No-Go keeps `protocol_id: go-no-go-v1` with review tag `v1-existing`. Do not treat adapter task kinds as validated PVT or as a three-rating mission protocol.
+
+W3.1 session orchestration (`research-session/0.1-provisional`) composes this adapter. It does not replace it. See [session-orchestration.md](session-orchestration.md).

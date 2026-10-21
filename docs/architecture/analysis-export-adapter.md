@@ -118,6 +118,8 @@ The original export object is frozen as a sidecar (`source_export_sha256`). Norm
 
 The W1.6 offline pipeline (`runOfflinePipeline`) feeds these artifacts into the W1.5 prompt builder and validator. See [analysis-integration.md](analysis-integration.md).
 
+W3.2 keeps this export adapter unchanged and adds a sibling local adapter in `session-evidence.mjs`. See [session-evidence-adapter.md](session-evidence-adapter.md).
+
 Out of scope: collection modules, consent, D1, camera, mission preview port, LLM provider, CSV writer changes.
 
 ## What this does not establish

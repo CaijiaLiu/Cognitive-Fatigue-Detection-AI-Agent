@@ -38,7 +38,7 @@ flowchart TD
 | Persistence | IndexedDB; optional authenticated researcher access to D1 | Backward-compatible exports, validated schema evolution |
 | Analysis | Descriptive summaries and two browser plots | Reproducible Python statistics, grouped evaluation, model comparison |
 | Reports / extensions | Local results and private table | Scientific reports; video and interview adapters; long-term attention research |
-| Evidence-grounded agent tools | Deterministic W1 read-only interface, artifacts, validators, an offline V1 JSON export adapter, a mock-default runtime, an opt-in OpenAI adapter, and a synthetic HTTP/UI demo | Constrained generation, provenance retrieval and evaluation against real analysis runs |
+| Evidence-grounded agent tools | Deterministic W1 read-only interface, artifacts, validators, an offline V1 JSON export adapter, a W3.2 session-evidence adapter, a mock-default runtime, an opt-in OpenAI adapter, and a synthetic HTTP/UI demo | Constrained generation, provenance retrieval and evaluation against real analysis runs |
 
 ## Technology decisions
 
@@ -94,4 +94,4 @@ Decision: preserve the snapshot as provenance while porting selected capabilitie
 
 Live feedback may alter behavior; the participant experience is an experimental variable. Preserve presentation version and feedback setting, and do not pool feedback-on/off or different protocols without explicit analysis justification.
 
-The immediate plan is [mission integration](../planning/mission-integration.md), followed by the existing V2/V3 research work. Facial actions, calibrated screen gaze, thought probes, confounders and ML remain outstanding.
+The immediate plan is [mission integration](../planning/mission-integration.md), followed by the existing V2/V3 research work. W3.1 adds a local versioned session orchestrator; see [session-orchestration.md](session-orchestration.md). W3.2 adds a local evidence adapter into the existing Research Agent tools; see [session-evidence-adapter.md](session-evidence-adapter.md). W3.3 composes those layers into one offline research-session path; see [week3-integration.md](week3-integration.md). Facial actions, calibrated screen gaze, thought probes, confounders and ML remain outstanding.

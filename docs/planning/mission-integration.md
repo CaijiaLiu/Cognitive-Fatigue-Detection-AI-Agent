@@ -1,6 +1,6 @@
 # Mission preview integration plan
 
-Updated 2026-10-19. Source snapshot (still latest preview head): [663ed79](https://github.com/CaijiaLiu/Cognitive-Fatigue-Detection-AI-Agent/tree/663ed797841e46cd2bc7779673d52a5120b1b9a3/previews/mission) on `preview/mission-live-camera-v0.3`. Canonical runtime for this work: `develop/neurolens-agent`. W3.0 ports **lifecycle fixes and a provisional adapter** into `public/collection/{tracking,session,features}`; it does not merge the preview tree or claim 1B–1E complete.
+Updated 2026-10-19. Source snapshot (still latest preview head): [663ed79](https://github.com/CaijiaLiu/Cognitive-Fatigue-Detection-AI-Agent/tree/663ed797841e46cd2bc7779673d52a5120b1b9a3/previews/mission) on `preview/mission-live-camera-v0.3`. Canonical runtime for this work: `develop/neurolens-agent`. W3.0 ports **lifecycle fixes and a provisional adapter** into `public/collection/{tracking,session,features}`; it does not merge the preview tree or claim 1B–1E complete. W3.1 adds a **provisional engineering orchestrator** (`research-session/0.1-provisional`) on that adapter; it does not implement Caijia-owned PVT/ratings science. W3.2 adds a **local session-evidence adapter** into the existing Research Agent tools. W3.3 composes those layers into an **offline** end-to-end path and does not wire the live browser controller or claim scientific validation.
 
 ## Scope and already-done work
 

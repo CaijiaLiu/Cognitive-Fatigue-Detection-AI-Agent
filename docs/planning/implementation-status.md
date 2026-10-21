@@ -1,5 +1,134 @@
 # Implementation status
 
+## W3.3 End-to-end integration and reliability (2026-10-19)
+
+**Status:** Linxi-owned Week 3 engineering closeout implemented as a deterministic **offline** pipeline. Not a live-camera validation. Not scientifically validated. Not deployed.
+
+Implementation branch: `feature/w3-protocol-orchestration`, continuing Draft PR #19. Design: [week3-integration.md](../architecture/week3-integration.md). Closeout: [week3-closeout.md](week3-closeout.md). Tests: `tests/week3-integration.test.mjs`. Decision: [DEC-015](decision-log.md).
+
+```text
+WEEK 3: ENGINEERING COMPLETE (OFFLINE)
+REAL-DEVICE VALIDATION: PENDING
+SCIENTIFIC REVIEW: PENDING
+DEPLOYMENT: PENDING
+BROWSER LIVE ORCHESTRATOR: NOT WIRED
+```
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| Offline E2E path | Implemented | Orchestrator → local export → W3.2 evidence → existing Agent tools |
+| Failure recovery | Implemented | Interrupt, fail, camera-unavailable, missing landmarks, dropout, late/stale, duplicates |
+| Observation admission atomicity | Hardened | Tracking cursor and automatic dropout commit only after `orchestrator.recordObservation` succeeds |
+| V1 Go/No-Go compatibility | Preserved | Existing trial semantics and allowlisted metrics unchanged |
+| Live browser orchestrator | Not wired | `controller.js` still uses mission adapter only; optional observer is default-off |
+| Privacy / upload | Unchanged | `sanitizeSession` still strips sidecars; no automatic upload |
+| Real device / Safari | NOT RUN | Synthetic clocks and fixtures only |
+| Scientific protocol | Pending | Caijia checklist in week3-closeout.md |
+
+**Not changed:** V1 `schema_version` `1.0.0`, Go/No-Go trial code, cloud allowlist, Sites, OpenAI, D1, `main`, Caijia scientific modules.
+
+**Admission hardening (2026-10-21):** `createResearchSessionRuntime` no longer calls `tracking.noteAdmitted()` before the orchestrator accepts the observation. Rejected observations do not advance `lastAdmittedAcquisition` and do not insert companion dropouts. Strategy: classify (read-only) → inspect (read-only) → commit observation → commit tracking → companion dropout only if the observation was accepted.
+
+**Checks actually run (2026-10-21, admission hardening):**
+- `npm test` — 239 passed, 0 failed (week3-integration includes the 15 original reliability cases plus 7 admission regressions).
+- `npm run test:flow` — PASS (controlled DOM/clock; not a real camera).
+- `npm run test:integration` — 6 passed.
+- `npm run test:reliability` — 7 passed.
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run build` — vinext/Vite production build completed.
+- `tests/integration.mjs` was not run.
+- No live OpenAI call, no remote D1, no Sites publish, no real-camera session.
+
+**Next task:** Stop for final Week 3 engineering review. Do not merge. Do not start Week 4. Caijia reviews the combined Week 3 work before `develop/neurolens-agent`.
+
+## W3.2 Biomedical evidence → Research Agent integration (2026-10-19)
+
+**Status:** Linxi-owned Stage C evidence adapter implemented on the existing W1–W2 Research Agent tools. Not scientifically validated. No second Agent runtime. Real-camera accuracy is **not** claimed. Scientific review remains **Pending / Blocked**.
+
+Implementation branch: `feature/w3-protocol-orchestration`, continuing Draft PR #19. Design: [session-evidence-adapter.md](../architecture/session-evidence-adapter.md). Tests: `tests/session-evidence.test.mjs`. Decision: [DEC-014](decision-log.md).
+
+```text
+W3.2 SESSION EVIDENCE ADAPTER: IMPLEMENTED OFFLINE
+REAL CAMERA VALIDATION: NOT RUN
+CAIJIA SCIENTIFIC REVIEW: PENDING / BLOCKED
+W3.3 OFFLINE INTEGRATION: SEE WEEK 3 CLOSEOUT
+```
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| V1 session without sidecar | Implemented | Existing Go/No-Go metrics copied; evidence items added |
+| V1 session with W3.1 sidecar | Implemented | Session/protocol/event/mission versions checked; full event-only replay; local-only |
+| Timeline / evidence integrity | Hardened | Replay validates order, active-task windows, terminal state, and declared task boundaries; evidence IDs are index-stable; conflicting duplicate `session_ref`s are rejected |
+| Generic multi-task session | Implemented | `slot-a` / `slot-b` stay unsigned; no invented PVT/GNG metrics |
+| Structured evidence items | Implemented | `session-evidence/0.1` with provenance, missingness, original refs |
+| Existing Agent tools | Extended in place | Same three read-only tools + `analysis-session-evidence/0.1` store |
+| Fatigue / diagnostic claims | Abstain | Existing `UNSUPPORTED_CLAIM` path unchanged |
+| Cloud / consent | Unchanged | `sanitizeSession` still strips `mission` / `orchestration` |
+| Scientific validation | Not claimed | Synthetic adapter-to-agent tests only |
+
+**Not changed:** V1 `schema_version` `1.0.0`, Go/No-Go trial semantics, allowlisted metric identifiers, cloud allowlist, Sites, OpenAI, `main`, Caijia scientific modules.
+
+**W3.2 integrity review fixes (2026-10-19):**
+1. Sidecar acceptance now requires W3.1 `replayOrchestration()` success plus matching terminal state and declared task boundaries. Replay stays event-only and does not mutate the submitted artifact.
+2. Evidence IDs for timeline events use the accepted-event index, so repeated timestamps cannot collide.
+3. The evidence store rejects conflicting duplicate `session_ref`s and keeps identical copies once.
+
+**Checks actually run (2026-10-19, W3.2 integrity review):**
+- `npm test` — 215 passed, 0 failed (26 session-evidence cases, including 10 integrity regressions).
+- `npm run test:flow` — PASS (controlled DOM/clock; not a real camera).
+- `npm run test:integration` — 6 passed.
+- `npm run test:reliability` — 7 passed.
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run build` — vinext/Vite production build completed.
+- `tests/integration.mjs` was not run.
+- No live OpenAI call, no remote D1, no Sites publish, no real-camera session.
+
+**Follow-on:** W3.3 consumed this adapter through the offline research-session pipeline. W3.2 itself remains an engineering adapter, not scientific validation.
+
+## W3.1 Versioned protocol and session orchestration (2026-10-19)
+
+**Status:** Linxi-owned Stage C engineering orchestrator implemented on canonical collection modules. Not a scientific protocol. Real-camera accuracy is **not** claimed. Scientific review remains **Pending / Blocked**.
+
+Implementation branch: `feature/w3-protocol-orchestration`, based on `develop/neurolens-agent` @ `3b7528f` (PR #18). Design: [session-orchestration.md](../architecture/session-orchestration.md), [w4-session-artifact.md](../architecture/w4-session-artifact.md). Tests: `tests/session-orchestration.test.mjs`. Decision: [DEC-013](decision-log.md).
+
+```text
+W3.1 PROTOCOL ORCHESTRATION: IMPLEMENTED OFFLINE
+REAL CAMERA VALIDATION: NOT RUN
+CAIJIA SCIENTIFIC PROTOCOL: PENDING / BLOCKED
+W4 DATASET INGEST: NOT IMPLEMENTED
+```
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| Versioned protocol contract | Implemented, provisional | `research-protocol/0.1-provisional`; V1 Go/No-Go unchanged; generic `slot-a`/`slot-b` only |
+| Deterministic state machine | Implemented | created→ready→running→{completed,interrupted,failed}; no pause |
+| Event timeline / provenance | Implemented | `research-event/0.1-provisional`; acquisition vs processing; camera/simulated/task-only |
+| Local export / replay | Implemented (event-only) | Timeline/state replay only; `measurement_fidelity: false`; no fabricated facial features |
+| Atomic transitions | Hardened | Validate-before-commit; rejected ops leave accepted state and summaries unchanged |
+| Preview compatibility | Guard remains | `mission-preview-1` is not coerced |
+| Cloud / consent | Unchanged | `sanitizeSession` still requires upload consent and strips `mission`/`orchestration` |
+| PVT / ratings / thresholds | Not implemented | Caijia-owned; unsigned contracts stay `PENDING_SCIENTIFIC_REVIEW` |
+| Real device / Safari | NOT RUN | Synthetic tests only |
+
+**Not changed:** Research Agent W1–W2 contracts, metric identifiers/units, production D1, Sites, OpenAI, `main`, preview snapshot files, Caijia scientific modules, `lib/research/validation.mjs` allowlist.
+
+**PR #19 review fixes (2026-10-19):**
+1. Orchestrator operations preview the candidate event and only then mutate state, tasks, clocks, accumulator, mission adapter, and the accepted timeline.
+2. Replay is event-only. It no longer regenerates observations with default facial features or claims summary equivalence.
+3. `importTimelineEvent` copies stored timeline fields, validates session/contract/task boundaries, and does not rewrite acquisition timestamps. Replay imports every lifecycle and `resources_cleared` event, then requires exact `acceptedTimeline` equality before `replay.ok === true`.
+
+**Checks actually run (2026-10-19, W3.1 exact-timeline replay):**
+- `npm test` — 189 passed, 0 failed (23 orchestration cases).
+- `npm run test:flow` — PASS (controlled DOM/clock; not a real camera).
+- `npm run test:integration` — 6 passed.
+- `npm run test:reliability` — 7 passed.
+- `npx --no-install tsc --noEmit` — exited 0.
+- `npm run build` — vinext/Vite production build completed.
+- `tests/integration.mjs` was not run.
+- No live OpenAI call, no remote D1, no Sites publish, no real-camera session.
+
+**Follow-on:** W3.2 consumed these sidecars through the evidence adapter. W3.1 itself remains an engineering orchestrator, not a scientific protocol.
+
 ## W3.0 Mission integration foundation (2026-10-19)
 
 **Status:** Linxi-owned Stage A/B engineering prerequisites implemented on canonical collection modules. Preview snapshot is **not** merged. Real-camera accuracy is **not** claimed. Scientific review remains **Pending / Blocked**.
@@ -43,7 +172,7 @@ CAIJIA SCIENTIFIC REVIEW: PENDING / BLOCKED
 - `tests/integration.mjs` was not run.
 - No live OpenAI call, no remote D1, no Sites publish, no real-camera session.
 
-**Next task:** W3.1 only after review of this Draft PR. Do not merge to `main`. Do not start protocol orchestration until Caijia’s event dictionary is available or a new provisional contract is accepted.
+**Next task:** W3.1 provisional orchestrator is implemented on `feature/w3-protocol-orchestration` (DEC-013). Do not merge to `main`.
 
 ## Week 2 closeout (2026-10-19)
 
