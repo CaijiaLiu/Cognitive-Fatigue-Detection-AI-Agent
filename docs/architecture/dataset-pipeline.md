@@ -100,7 +100,7 @@ Normalized, redaction-safe projection of one V1 session:
 | `scientific_eligibility` | Always `pending_review` in W4.1 unless a separately accepted scientific contract says otherwise |
 | `engineering_valid` | `true` only for records that passed structural/provenance checks |
 | `camera_source_present` | `mode === 'camera'` and `sources.vision === 'camera'` |
-| `ocular_observations_present` | At least one copied sample with finite EAR that is not `no_face` / `tracking_gap` / `eyes_unavailable` |
+| `ocular_observations_present` | `true` only when `camera_source_present` and at least one observation has `source: camera`, `quality: valid`, and finite EAR. Simulated and task-only rows cannot set this flag. Not a coverage threshold. |
 | `mode` / `sources` | V1 | Vision must match mode |
 | `status` | `completed` \| `interrupted` | `failed` only after a future merged contract defines it |
 | `started_at` / `ended_at` | ISO wall clock | Identity, not event time |
@@ -211,6 +211,9 @@ Validator id: `dataset-validate/0.1-provisional`. Deterministic, no I/O besides 
 | `acquired_elapsed_ms` > `processed_elapsed_ms` | Reject that observation | `future_acquisition` |
 | Task-window overlap | Reject session | `inconsistent_evidence` |
 | Window `end_ms` < `start_ms` | Reject session | `malformed_output` |
+| Task `start_ms` / `end_ms` outside `[0, duration_ms]` (`start` must be `< duration_ms`; finite `end` must be `<= duration_ms`) | Reject session | `malformed_output` |
+| Completed session with open-ended task (`end_ms` null) | Reject session | `malformed_output` |
+| Interrupted session with open-ended task | Accept; membership uses `< duration_ms` | — |
 | Unsupported protocol | Reject session | `incompatible_protocol` |
 | Preview schema/protocol | Reject | `incompatible_protocol` |
 | Sample source ≠ `sources.vision` | Reject | `inconsistent_evidence` |
@@ -230,6 +233,8 @@ Algorithm id: `dataset-window/0.1-provisional`.
 
 1. If `session.mission.tasks` is a non-empty array with finite `started_session_ms`:
    - One window per task, `start_ms = started_session_ms`, `end_ms = ended_session_ms` (nullable if still open / interrupted).
+   - Offsets must lie in the session elapsed domain: `0 <= start_ms < duration_ms`; finite `end_ms` must satisfy `start_ms <= end_ms <= duration_ms`.
+   - `end_ms` may be null only when `session.status === 'interrupted'`. Completed sessions with an open task are rejected.
    - Sort by `start_ms`, then `task_id`.
    - Overlap if `start_i < end_j && start_j < end_i` (treat null end as `+∞` for overlap detection) → reject.
 2. Else if `config.protocol === 'go-no-go-v1'`:
@@ -291,7 +296,18 @@ tests/dataset-pipeline.test.mjs
 docs/architecture/dataset-pipeline.md   # this file
 ```
 
-CLI exit codes: `0` success, `2` usage error, `3` validation failure, `1` unexpected I/O. Failure does not write `dataset.json` or a success `manifest.json`. `--report-only` prints counts/fingerprint to stdout without writing a usable dataset directory.
+CLI exit codes: `0` success, `2` usage error (including refusing to overwrite a non-empty `--out` without `--replace`), `3` validation failure, `1` unexpected I/O. `--report-only` prints counts/fingerprint to stdout without writing a usable dataset directory.
+
+Publication strategy (atomic pair):
+
+1. Validate the full dataset in memory. Do not touch `--out` until the payload is complete.
+2. If `--out` exists and is non-empty, refuse unless `--replace`.
+3. Write both `dataset.json` and `manifest.json` into a sibling staging directory (`.nl-dataset-staging-<name>-*`).
+4. Publish by renaming the staging directory onto `--out`. Empty existing directories are swapped the same way so a new dataset cannot pair with an old manifest.
+5. `--replace` retires the previous directory, then renames staging into place. If the publish rename fails, the retired directory is restored.
+6. Staging directories are deleted after failures. A failed replace does not delete the retired copy until restore succeeds.
+
+This refuses mixed-generation artifacts: a new `dataset.json` is never left beside an old success `manifest.json`.
 
 Reuse `validateV1Session` / `summarizeTrials` / mission `readCompatibleSession`. Do not import unmerged PR #19 modules. Do not change `sanitizeSession`, Go/No-Go, or camera algorithms.
 
@@ -323,6 +339,9 @@ Covered by `tests/dataset-pipeline.test.mjs` with synthetic fixtures only.
 | 20 | CLI fail-closed | Invalid or mixed valid+invalid writes no dataset |
 | 21 | Privacy | No notes / UA / tokens in dataset JSON |
 | 22 | No network | `fetch` unused |
+| 23 | Transaction-safe CLI publication | Existing `--out` refused without `--replace`; injected write failure leaves no mixed pair and cleans staging |
+| 24 | Task window boundaries | Out-of-range start/end rejected; completed open-ended tasks rejected; interrupted open tasks kept |
+| 25 | Ocular provenance | Simulated/task-only/`closed_eyes` cannot set `ocular_observations_present`; requires camera + `quality: valid` |
 
 Synthetic fixtures only. Not real-camera validation.
 
@@ -355,7 +374,7 @@ Synthetic fixtures only. Not real-camera validation.
 | Slice | Scope | Not in scope |
 |---|---|---|
 | **W4.0** | Architecture, contracts, test matrix, DEC-016 | Runtime code |
-| **W4.1** (this slice) | Node validator + window builder + CLI + 22 synthetic tests | Statistics, plots, ML, PR #19 code |
+| **W4.1** (this slice) | Node validator + window builder + CLI + 25 synthetic tests | Statistics, plots, ML, PR #19 code |
 | **W4.2** | If PR #19 merges: optional orchestration sidecar reader | Treating generic slots as science |
 | **D3** | Caijia statistics on the JSON dataset | Engineering inventing estimands |
 

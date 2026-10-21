@@ -1,18 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { writeFile as fsWriteFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { summarizeTrials } from '../public/collection/tasks/summary.js';
 import {
+  EXIT,
   REASON_CODES,
+  RETIRED_DIR_PREFIX,
   SCIENTIFIC_ELIGIBILITY,
   SCIENTIFIC_REVIEW,
+  STAGING_DIR_PREFIX,
   WINDOW_ORIGIN,
   buildDataset,
   datasetPrivacyLeaks,
+  runCli,
   toCanonicalJson,
 } from '../analysis/src/neurolens/dataset/index.mjs';
 import {
@@ -20,6 +25,7 @@ import {
   SECRET_PARTICIPANT_ID,
   cameraSessionA,
   cameraWithoutOcularSession,
+  completedOpenTaskSession,
   conflictingDuplicateSession,
   dropoutMissingEarSession,
   emptyWindowSession,
@@ -32,8 +38,11 @@ import {
   missingIdentitySession,
   mixedSourcesSession,
   orchestrationSidecarSession,
+  outOfRangeEndSession,
+  outOfRangeStartSession,
   overlappingMissionSession,
   simulatedVisionSession,
+  taskOnlySession,
   unknownSchemaSession,
 } from '../analysis/fixtures/datasets/synthetic.mjs';
 
@@ -151,6 +160,7 @@ test('11. Mixed camera/simulated cohort stratification', () => {
   assert.equal(Object.hasOwn(result.value.manifest, 'ocular_pool'), false);
   const simulated = result.value.sessions.find((session) => session.mode === 'simulated');
   assert.equal(simulated.usable_for_ocular, false);
+  assert.equal(simulated.ocular_observations_present, false);
   assert.ok(result.value.manifest.limitations.some((line) => line.includes('stratified')));
 });
 
@@ -276,6 +286,26 @@ test('21. Privacy redaction', () => {
   assert.equal(result.value.sessions[0].participant_ref, SECRET_PARTICIPANT_ID);
 });
 
+function leftoverDirs(parent, outDir) {
+  const token = basename(outDir);
+  return readdirSync(parent).filter((name) => (
+    name.startsWith(`${STAGING_DIR_PREFIX}${token}-`)
+    || name.startsWith(`${RETIRED_DIR_PREFIX}${token}-`)
+  ));
+}
+
+function captureIo(overrides = {}) {
+  let stdout = '';
+  let stderr = '';
+  return {
+    stdout: { write(chunk) { stdout += chunk; return true; } },
+    stderr: { write(chunk) { stderr += chunk; return true; } },
+    stdoutText: () => stdout,
+    stderrText: () => stderr,
+    ...overrides,
+  };
+}
+
 test('22. No network calls', () => {
   const previous = globalThis.fetch;
   let calls = 0;
@@ -298,4 +328,155 @@ test('22. No network calls', () => {
     assert.equal(/from ['"]openai['"]/.test(source), false, name);
     assert.equal(/wrangler|cloudflare:d1|process\.env\.OPENAI/i.test(source), false, name);
   }
+});
+
+test('23. Transaction-safe CLI publication', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'nl-dataset-pub-'));
+  const validPath = join(root, 'valid.json');
+  writeFileSync(validPath, JSON.stringify(cameraSessionA()));
+  const outDir = join(root, 'dataset');
+  const argv = ['node', CLI, 'build', '--in', validPath, '--out', outDir];
+
+  const first = await runCli(argv, captureIo());
+  assert.equal(first, EXIT.OK);
+  const original = readFileSync(join(outDir, 'dataset.json'), 'utf8');
+  const originalManifest = readFileSync(join(outDir, 'manifest.json'), 'utf8');
+  const originalFingerprint = JSON.parse(original).manifest.output_fingerprint;
+
+  const refused = spawnSync(process.execPath, [CLI, 'build', '--in', validPath, '--out', outDir], {
+    encoding: 'utf8',
+  });
+  assert.equal(refused.status, EXIT.USAGE);
+  assert.match(refused.stderr, /Refusing to overwrite/);
+  assert.equal(readFileSync(join(outDir, 'dataset.json'), 'utf8'), original);
+  assert.equal(readFileSync(join(outDir, 'manifest.json'), 'utf8'), originalManifest);
+
+  let writes = 0;
+  const injectedOut = join(root, 'injected');
+  const injected = await runCli(['node', CLI, 'build', '--in', validPath, '--out', injectedOut], captureIo({
+    async writeFile(path, data, encoding) {
+      writes += 1;
+      if (writes >= 2) {
+        throw Object.assign(new Error('injected write failure'), { code: 'ENOSPC' });
+      }
+      return fsWriteFile(path, data, encoding);
+    },
+  }));
+  assert.equal(injected, EXIT.UNEXPECTED);
+  assert.equal(existsSync(join(injectedOut, 'dataset.json')), false);
+  assert.equal(existsSync(join(injectedOut, 'manifest.json')), false);
+  assert.deepEqual(leftoverDirs(root, injectedOut), []);
+
+  const replaceFail = await runCli(
+    ['node', CLI, 'build', '--in', validPath, '--out', outDir, '--replace'],
+    captureIo({
+      async writeFile() {
+        throw Object.assign(new Error('injected replace write failure'), { code: 'ENOSPC' });
+      },
+    }),
+  );
+  assert.equal(replaceFail, EXIT.UNEXPECTED);
+  assert.equal(readFileSync(join(outDir, 'dataset.json'), 'utf8'), original);
+  assert.equal(readFileSync(join(outDir, 'manifest.json'), 'utf8'), originalManifest);
+  assert.deepEqual(leftoverDirs(root, outDir), []);
+
+  const emptyExisting = join(root, 'empty-existing');
+  mkdirSync(emptyExisting);
+  const emptyRun = await runCli(['node', CLI, 'build', '--in', validPath, '--out', emptyExisting], captureIo());
+  assert.equal(emptyRun, EXIT.OK);
+  assert.equal(existsSync(join(emptyExisting, 'dataset.json')), true);
+  assert.equal(existsSync(join(emptyExisting, 'manifest.json')), true);
+
+  const replaced = spawnSync(process.execPath, [CLI, 'build', '--in', validPath, '--out', outDir, '--replace'], {
+    encoding: 'utf8',
+  });
+  assert.equal(replaced.status, EXIT.OK, replaced.stderr);
+  const replacedFingerprint = JSON.parse(readFileSync(join(outDir, 'manifest.json'), 'utf8')).output_fingerprint;
+  assert.equal(replacedFingerprint, originalFingerprint);
+  assert.deepEqual(leftoverDirs(root, outDir), []);
+});
+
+test('24. Task window boundaries', () => {
+  assertRejected(built(outOfRangeStartSession()), REASON_CODES.MALFORMED_OUTPUT);
+  assertRejected(built(outOfRangeEndSession()), REASON_CODES.MALFORMED_OUTPUT);
+  assertRejected(built(completedOpenTaskSession()), REASON_CODES.MALFORMED_OUTPUT);
+
+  const startAtEnd = cameraSessionA();
+  startAtEnd.mission = outOfRangeStartSession().mission;
+  startAtEnd.mission.tasks = [{
+    kind: 'go-no-go',
+    protocol_id: 'go-no-go-v1',
+    scientific_review: 'v1-existing',
+    started_session_ms: startAtEnd.duration_ms,
+    ended_session_ms: startAtEnd.duration_ms,
+    reason: 'completed',
+  }];
+  assertRejected(built(startAtEnd), REASON_CODES.MALFORMED_OUTPUT);
+
+  const endAtDuration = cameraSessionA();
+  endAtDuration.session_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa15';
+  endAtDuration.mission = {
+    contract_id: 'mission-event/0.1-provisional',
+    scientific_review: 'PENDING_SCIENTIFIC_REVIEW',
+    local_only: true,
+    upload_eligible: false,
+    events: [],
+    tasks: [{
+      kind: 'go-no-go',
+      protocol_id: 'go-no-go-v1',
+      scientific_review: 'v1-existing',
+      started_session_ms: 0,
+      ended_session_ms: endAtDuration.duration_ms,
+      reason: 'completed',
+    }],
+  };
+  const allowed = built(endAtDuration);
+  assert.equal(allowed.ok, true, allowed.message);
+  assert.equal(allowed.value.windows[0].end_ms, endAtDuration.duration_ms);
+
+  const interrupted = built(interruptedSession());
+  assert.equal(interrupted.ok, true);
+  assert.equal(interrupted.value.windows[0].end_ms, null);
+  assert.equal(interrupted.value.sessions[0].status, 'interrupted');
+});
+
+test('25. Ocular provenance requires camera and valid quality', () => {
+  const camera = built(cameraSessionA());
+  assert.equal(camera.ok, true);
+  assert.equal(camera.value.sessions[0].camera_source_present, true);
+  assert.equal(camera.value.sessions[0].ocular_observations_present, true);
+
+  const simulated = built(simulatedVisionSession());
+  assert.equal(simulated.ok, true);
+  assert.equal(simulated.value.sessions[0].mode, 'simulated');
+  assert.equal(simulated.value.observations.some((observation) => (
+    observation.quality === 'valid' && observation.eye_aspect_ratio != null
+  )), true);
+  assert.equal(simulated.value.sessions[0].camera_source_present, false);
+  assert.equal(simulated.value.sessions[0].ocular_observations_present, false);
+  assert.equal(simulated.value.sessions[0].usable_for_ocular, false);
+
+  const taskOnly = built(taskOnlySession());
+  assert.equal(taskOnly.ok, true);
+  assert.equal(taskOnly.value.sessions[0].camera_source_present, false);
+  assert.equal(taskOnly.value.sessions[0].ocular_observations_present, false);
+  assert.equal(taskOnly.value.sessions[0].usable_for_ocular, false);
+
+  const closedOnly = cameraSessionA();
+  closedOnly.session_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa16';
+  closedOnly.samples = [{
+    elapsed_ms: 120,
+    source: 'camera',
+    face_present: true,
+    eye_aspect_ratio: 0.08,
+    eyes_closed: true,
+    gaze_x: 0.1,
+    gaze_y: 0.2,
+    head_rotation: null,
+    quality: 'closed_eyes',
+  }];
+  const closed = built(closedOnly);
+  assert.equal(closed.ok, true);
+  assert.equal(closed.value.sessions[0].camera_source_present, true);
+  assert.equal(closed.value.sessions[0].ocular_observations_present, false);
 });

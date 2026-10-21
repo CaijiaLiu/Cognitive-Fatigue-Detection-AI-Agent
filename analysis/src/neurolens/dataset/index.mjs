@@ -26,4 +26,12 @@ export { validateDatasetSession, collectValidatedSessions, validateV1Session } f
 export { assignMembership, deriveWindows, acquiredElapsedMs } from './windows.mjs';
 export { datasetPrivacyLeaks, stripPrivacyFields } from './redaction.mjs';
 export { buildDataset } from './manifest.mjs';
-export { EXIT, parseArgs, runCli } from './cli.mjs';
+export {
+  EXIT,
+  PUBLISHED_FILES,
+  RETIRED_DIR_PREFIX,
+  STAGING_DIR_PREFIX,
+  parseArgs,
+  publishDataset,
+  runCli,
+} from './cli.mjs';

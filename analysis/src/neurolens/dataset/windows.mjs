@@ -174,11 +174,10 @@ function projectTrial(session, trial, index, windows) {
   };
 }
 
-function isOcularObservation(observation) {
-  return finiteNumber(observation.eye_aspect_ratio)
-    && observation.quality !== 'no_face'
-    && observation.quality !== 'tracking_gap'
-    && observation.quality !== 'eyes_unavailable';
+function isCameraValidOcularObservation(observation) {
+  return observation.source === 'camera'
+    && observation.quality === 'valid'
+    && finiteNumber(observation.eye_aspect_ratio);
 }
 
 function finalizeWindow(window, session) {
@@ -242,7 +241,8 @@ export function assignMembership(session) {
   });
 
   const camera_source_present = session.mode === 'camera' && session.sources?.vision === 'camera';
-  const ocular_observations_present = observations.some(isOcularObservation);
+  const ocular_observations_present = camera_source_present
+    && observations.some(isCameraValidOcularObservation);
 
   return {
     window_origin: derived.window_origin,

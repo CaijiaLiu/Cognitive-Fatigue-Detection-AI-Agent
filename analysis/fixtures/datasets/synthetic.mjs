@@ -11,6 +11,7 @@ import {
   SECRET_WITHDRAWAL,
   cameraSessionA,
   simulatedVisionSession,
+  taskOnlySession,
   missionPreviewSession,
   unknownSchemaSession,
 } from '../exports/synthetic.mjs';
@@ -24,6 +25,7 @@ export {
   SECRET_WITHDRAWAL,
   cameraSessionA,
   simulatedVisionSession,
+  taskOnlySession,
   missionPreviewSession,
   unknownSchemaSession,
 };
@@ -40,6 +42,9 @@ export const DATASET_IDS = Object.freeze({
   noOcular: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa09',
   inverted: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa10',
   unsigned: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa11',
+  outOfRangeStart: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa12',
+  outOfRangeEnd: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa13',
+  completedOpen: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa14',
 });
 
 export const PRIVACY_SECRETS = Object.freeze([
@@ -257,4 +262,23 @@ export function dropoutLabeledOpenEyesSession() {
   const session = dropoutMissingEarSession();
   session.samples[0].interpreted_as_open_eyes = true;
   return session;
+}
+
+export function outOfRangeStartSession() {
+  const session = cameraSessionA();
+  session.session_id = DATASET_IDS.outOfRangeStart;
+  return withMission(session, [gngTask(70000, 80000)]);
+}
+
+export function outOfRangeEndSession() {
+  const session = cameraSessionA();
+  session.session_id = DATASET_IDS.outOfRangeEnd;
+  return withMission(session, [gngTask(0, 90000)]);
+}
+
+export function completedOpenTaskSession() {
+  const session = cameraSessionA();
+  session.session_id = DATASET_IDS.completedOpen;
+  session.status = 'completed';
+  return withMission(session, [gngTask(0, null)]);
 }

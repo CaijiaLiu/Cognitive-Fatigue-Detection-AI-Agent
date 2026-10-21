@@ -4,6 +4,12 @@ This file is the durable record of **accepted project decisions**, not a specula
 
 ## Accepted decisions — 2026-10-21
 
+### DEC-018: W4.1 publishes dataset pairs atomically and does not treat simulated vision as ocular presence
+**Accepted.** The dataset CLI stages a complete `dataset.json` + `manifest.json` pair, then publishes by directory rename. Non-empty existing `--out` directories are refused unless `--replace`. Task start/end offsets must lie in the session duration; completed sessions cannot have open-ended tasks; interrupted open windows remain valid. `ocular_observations_present` requires camera provenance and at least one `quality: valid` camera observation with finite EAR.
+
+**Reason:** A failed write of one of two published files could pair a new dataset with an old success manifest. Simulated or task-only EAR values must not read as real ocular coverage. Open-ended completed tasks are inconsistent with a finished session clock.
+**Implementation implications:** Do not overwrite published datasets by default. Do not invent ocular coverage thresholds. Do not start W4.2 or merge PR #19 from this hardening.
+
 ### DEC-017: W4.1 dataset builder is a fail-closed Node CLI on V1 + optional W3.0 sidecars
 **Accepted.** W4.1 implements `analysis/src/neurolens/dataset/` against the W4.0 contracts. Window membership uses acquisition time `[start, end)`. Missing mission tasks fall back to a whole-session Go/No-Go window labeled `window_origin: session_fallback`, which is not a measured task boundary. `engineering_valid` is independent of `scientific_eligibility` (`pending_review` unless a later accepted scientific contract says otherwise). `camera_source_present` is independent of `ocular_observations_present`. Output fingerprint is SHA-256 of canonical JSON excluding `output_fingerprint`, then written back. Unmerged PR #19 code is not imported.
 

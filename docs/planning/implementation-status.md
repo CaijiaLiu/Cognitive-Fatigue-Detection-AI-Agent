@@ -4,7 +4,7 @@
 
 **Status:** Implemented against synthetic fixtures. Not scientifically validated. Not real-camera validated. Week 3 PR #19 is **not** merged and was **not** imported.
 
-Implementation branch: `feature/w4-dataset-pipeline`, based on `develop/neurolens-agent` @ `3b7528f`. W4.0 design SHA `2646835`. Design: [dataset-pipeline.md](../architecture/dataset-pipeline.md). Decisions: [DEC-016](decision-log.md), [DEC-017](decision-log.md). Tests: `tests/dataset-pipeline.test.mjs` (22 cases). CLI: `node analysis/src/neurolens/dataset/cli.mjs build --in <files...> --out <dir>`.
+Implementation branch: `feature/w4-dataset-pipeline`, based on `develop/neurolens-agent` @ `3b7528f`. W4.0 design SHA `2646835`. W4.1 implementation SHA `18ed91b`; this hardening continues on the same branch. Design: [dataset-pipeline.md](../architecture/dataset-pipeline.md). Decisions: [DEC-016](decision-log.md), [DEC-017](decision-log.md), [DEC-018](decision-log.md). Tests: `tests/dataset-pipeline.test.mjs` (25 cases). CLI: `node analysis/src/neurolens/dataset/cli.mjs build --in <files...> --out <dir>`.
 
 ```text
 W4.0 DATASET ARCHITECTURE: DESIGNED
@@ -18,20 +18,20 @@ SCIENTIFIC REVIEW: PENDING
 |---|---|---|
 | Dataset contracts | Implemented | `dataset-manifest/0.1-provisional`, `dataset-session/0.1-provisional`, `dataset-window/0.1-provisional`, `dataset-observation/0.1-provisional`, `dataset-validate/0.1-provisional` |
 | Fail-closed validator | Implemented | Rejects schema/identity/timestamp/duplicate-conflict/overlap/preview/mixed-source/summary errors; identical duplicates kept once |
-| Window builder | Implemented | Acquisition-time `[start, end)`; mission sidecar when present; else `window_origin: session_fallback` |
-| Engineering vs science fields | Implemented | `engineering_valid` vs `scientific_eligibility: pending_review`; `camera_source_present` vs `ocular_observations_present` |
-| Manifest / CLI | Implemented | Canonical JSON, SHA-256 input/output fingerprints, exit `3` writes no dataset |
+| Window builder | Implemented | Acquisition-time `[start, end)`; mission sidecar when present; else `window_origin: session_fallback`; start/end must lie in session duration; completed sessions cannot have open tasks |
+| Engineering vs science fields | Implemented | `engineering_valid` vs `scientific_eligibility: pending_review`; `ocular_observations_present` requires camera + `quality: valid` |
+| Manifest / CLI | Implemented | Canonical JSON, SHA-256 fingerprints; stage-then-rename publication; refuse non-empty `--out` without `--replace` |
 | Statistics / plots / ML | Not started | Caijia D3 after JSON review |
 | W3.1–W3.3 sidecar reader | Blocked | Unmerged PR #19; W4.2 only after merge/review |
 | Scientific protocol | Pending | Unsigned slots and ocular meaning remain Caijia-owned |
 
-**Checks (W4.1):** `npm test` 188 pass (includes 22 dataset-pipeline cases); `npm run test:flow` pass; `npm run test:integration` 6 pass; `npm run test:reliability` 7 pass; `npx tsc --noEmit` pass; `npm run build` pass. Synthetic fixtures only; not real-camera validation.
+**Checks (W4.1 hardening):** `npm test` 191 pass (includes 25 dataset-pipeline cases); `npm run test:flow` pass; `npm run test:integration` 6 pass; `npm run test:reliability` 7 pass; `npx tsc --noEmit` pass; `npm run build` pass. Synthetic fixtures only; not real-camera validation.
 
 **Not changed:** V1 `schema_version` `1.0.0`, Go/No-Go trial code, camera algorithms, `sanitizeSession`, Sites, OpenAI, D1, `main`, PR #19.
 
 **Limitations:** Synthetic fixtures only. `session_fallback` is not a measured task boundary. Browser `participant_ref` is not a verified person. No ocular coverage threshold was invented.
 
-**Next task:** Review W4.1. Do not merge PR #19 or PR #20 from this slice. Do not start W4.2 until review.
+**Next task:** Review W4.1 hardening. Do not merge PR #19 or PR #20. Do not start W4.2.
 
 ## W4.0 Dataset architecture readiness (2026-10-21)
 

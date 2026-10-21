@@ -249,11 +249,30 @@ export function validateMissionTasks(session) {
         index,
       });
     }
-    const end = task.ended_session_ms;
-    if (end != null && (!finiteNumber(end) || end < task.started_session_ms)) {
-      return rejected(REASON_CODES.MALFORMED_OUTPUT, `Mission task ${index} has an inverted or invalid ended_session_ms.`, {
+    const duration = session.duration_ms;
+    if (!finiteNumber(duration) || task.started_session_ms >= duration) {
+      return rejected(REASON_CODES.MALFORMED_OUTPUT, `Mission task ${index} start is outside the session duration.`, {
         session_id: session.session_id,
         index,
+        started_session_ms: task.started_session_ms,
+        duration_ms: duration,
+      });
+    }
+    const end = task.ended_session_ms;
+    if (end == null) {
+      if (session.status !== 'interrupted') {
+        return rejected(
+          REASON_CODES.MALFORMED_OUTPUT,
+          `Mission task ${index} is open-ended; completed sessions cannot have open task windows.`,
+          { session_id: session.session_id, index, status: session.status },
+        );
+      }
+    } else if (!finiteNumber(end) || end < task.started_session_ms || end > duration) {
+      return rejected(REASON_CODES.MALFORMED_OUTPUT, `Mission task ${index} has an inverted or out-of-range ended_session_ms.`, {
+        session_id: session.session_id,
+        index,
+        ended_session_ms: end,
+        duration_ms: duration,
       });
     }
     windows.push({
