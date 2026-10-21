@@ -10,7 +10,7 @@ NeuroLens is the target research platform; Focus Lab is the existing V1 collecti
 | Existing and planned file locations | [Repository layout](architecture/repository-layout.md) |
 | Evidence-grounded agent tool contract | [Agent tools](architecture/agent-tools.md) |
 | Offline V1 export → evidence adapter | [Export adapter](architecture/analysis-export-adapter.md) |
-| W4.0 dataset / window architecture | [Dataset pipeline](architecture/dataset-pipeline.md) |
+| W4.1 dataset validator / window CLI | [Dataset pipeline](architecture/dataset-pipeline.md) |
 | Manual LLM evaluation harness | [Agent eval](architecture/agent-eval.md) |
 | Offline export → agent integration | [Analysis integration](architecture/analysis-integration.md) |
 | Research Agent reliability / adversarial tests | [Agent reliability](architecture/agent-reliability.md) |

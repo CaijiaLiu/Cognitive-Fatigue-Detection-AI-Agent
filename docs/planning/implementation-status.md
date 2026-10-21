@@ -1,14 +1,47 @@
 # Implementation status
 
+## W4.1 Deterministic dataset pipeline (2026-10-21)
+
+**Status:** Implemented against synthetic fixtures. Not scientifically validated. Not real-camera validated. Week 3 PR #19 is **not** merged and was **not** imported.
+
+Implementation branch: `feature/w4-dataset-pipeline`, based on `develop/neurolens-agent` @ `3b7528f`. W4.0 design SHA `2646835`. Design: [dataset-pipeline.md](../architecture/dataset-pipeline.md). Decisions: [DEC-016](decision-log.md), [DEC-017](decision-log.md). Tests: `tests/dataset-pipeline.test.mjs` (22 cases). CLI: `node analysis/src/neurolens/dataset/cli.mjs build --in <files...> --out <dir>`.
+
+```text
+W4.0 DATASET ARCHITECTURE: DESIGNED
+W4.1 VALIDATOR / WINDOW BUILDER: IMPLEMENTED (SYNTHETIC TESTS)
+WEEK 3 PR #19: UNMERGED / NOT COPIED
+REAL-DEVICE VALIDATION: PENDING
+SCIENTIFIC REVIEW: PENDING
+```
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| Dataset contracts | Implemented | `dataset-manifest/0.1-provisional`, `dataset-session/0.1-provisional`, `dataset-window/0.1-provisional`, `dataset-observation/0.1-provisional`, `dataset-validate/0.1-provisional` |
+| Fail-closed validator | Implemented | Rejects schema/identity/timestamp/duplicate-conflict/overlap/preview/mixed-source/summary errors; identical duplicates kept once |
+| Window builder | Implemented | Acquisition-time `[start, end)`; mission sidecar when present; else `window_origin: session_fallback` |
+| Engineering vs science fields | Implemented | `engineering_valid` vs `scientific_eligibility: pending_review`; `camera_source_present` vs `ocular_observations_present` |
+| Manifest / CLI | Implemented | Canonical JSON, SHA-256 input/output fingerprints, exit `3` writes no dataset |
+| Statistics / plots / ML | Not started | Caijia D3 after JSON review |
+| W3.1–W3.3 sidecar reader | Blocked | Unmerged PR #19; W4.2 only after merge/review |
+| Scientific protocol | Pending | Unsigned slots and ocular meaning remain Caijia-owned |
+
+**Checks (W4.1):** `npm test` 188 pass (includes 22 dataset-pipeline cases); `npm run test:flow` pass; `npm run test:integration` 6 pass; `npm run test:reliability` 7 pass; `npx tsc --noEmit` pass; `npm run build` pass. Synthetic fixtures only; not real-camera validation.
+
+**Not changed:** V1 `schema_version` `1.0.0`, Go/No-Go trial code, camera algorithms, `sanitizeSession`, Sites, OpenAI, D1, `main`, PR #19.
+
+**Limitations:** Synthetic fixtures only. `session_fallback` is not a measured task boundary. Browser `participant_ref` is not a verified person. No ocular coverage threshold was invented.
+
+**Next task:** Review W4.1. Do not merge PR #19 or PR #20 from this slice. Do not start W4.2 until review.
+
 ## W4.0 Dataset architecture readiness (2026-10-21)
 
-**Status:** Architecture only. Not a runtime pipeline. Not scientifically validated. Week 3 PR #19 is **not** merged and was **not** cherry-picked.
+**Status:** Architecture designed and accepted as the W4.1 implementation spec. Not a scientific validation.
 
 Implementation branch: `feature/w4-dataset-pipeline`, based on `develop/neurolens-agent` @ `3b7528f`. Design: [dataset-pipeline.md](../architecture/dataset-pipeline.md). Decision: [DEC-016](decision-log.md).
 
 ```text
 W4.0 DATASET ARCHITECTURE: DESIGNED
-W4.1 VALIDATOR / WINDOW BUILDER: NOT IMPLEMENTED
+W4.1 VALIDATOR / WINDOW BUILDER: IMPLEMENTED IN W4.1 SLICE
 WEEK 3 PR #19: UNMERGED / NOT COPIED
 REAL-DEVICE VALIDATION: PENDING
 SCIENTIFIC REVIEW: PENDING
@@ -17,15 +50,13 @@ SCIENTIFIC REVIEW: PENDING
 | Capability | Status | Evidence / remaining work |
 |---|---|---|
 | Contract audit (develop vs PR #19) | Documented | V1 + W3.0 mission sidecar are on develop; W3.1–W3.3 contracts stay on PR #19 |
-| Dataset / window / manifest contracts | Designed | `dataset-manifest/0.1-provisional` and related ids; not implemented |
-| Validation / windowing rules | Designed | Acquisition-time `[start, end)`; fail closed; dropout ≠ open eyes |
-| Runtime CLI / builder | Not implemented | W4.1 Node modules under `analysis/src/neurolens/dataset/` |
+| Dataset / window / manifest contracts | Designed then implemented in W4.1 | See W4.1 section |
+| Validation / windowing rules | Designed then implemented in W4.1 | Acquisition-time `[start, end)`; fail closed; dropout ≠ open eyes |
+| Runtime CLI / builder | Implemented in W4.1 | `analysis/src/neurolens/dataset/` |
 | Statistics / plots / ML | Not started | Caijia D3 after JSON exists |
 | Scientific protocol | Pending | Unsigned slots and ocular meaning remain Caijia-owned |
 
 **Not changed:** V1 `schema_version` `1.0.0`, Go/No-Go trial code, camera algorithms, `sanitizeSession`, Sites, OpenAI, D1, `main`, PR #19.
-
-**Next task:** Review W4.0 architecture. Do not implement the runtime until this design is accepted. Do not merge Week 3 from this branch.
 
 ## W3.0 Mission integration foundation (2026-10-19)
 

@@ -1,14 +1,14 @@
-# W4.0 — Dataset architecture readiness
+# W4.0 / W4.1 — Dataset architecture and deterministic pipeline
 
-Status: **Architecture only. Not implemented.** Owner: Linxi (engineering contracts, validator, window builder, CLI). Review partner: Caijia (protocol meaning, ocular interpretation, estimands, exclusion thresholds). Scientific review: **PENDING_SCIENTIFIC_REVIEW**.
+Status: **W4.0 architecture designed. W4.1 Node validator / window builder / CLI implemented against synthetic fixtures.** Owner: Linxi (engineering contracts, validator, window builder, CLI). Review partner: Caijia (protocol meaning, ocular interpretation, estimands, exclusion thresholds). Scientific review: **PENDING_SCIENTIFIC_REVIEW**.
 
-This document designs a deterministic, fail-closed biomedical **research data** pipeline. It does not produce fatigue scores, ADHD probabilities, or clinical labels. It does not implement the runtime.
+This document specifies a deterministic, fail-closed biomedical **research data** pipeline. It does not produce fatigue scores, ADHD probabilities, or clinical labels. Passing synthetic tests is not real-camera or scientific validation.
 
 Branch: `feature/w4-dataset-pipeline` from `develop/neurolens-agent` @ `3b7528f`. Week 3 Draft PR #19 stays open and is **not** merged or cherry-picked.
 
 ```text
 W4.0 DATASET ARCHITECTURE: DESIGNED
-W4.1 VALIDATOR / WINDOW BUILDER: NOT IMPLEMENTED
+W4.1 VALIDATOR / WINDOW BUILDER: IMPLEMENTED (SYNTHETIC TESTS)
 W3 PR #19: UNMERGED / NOT COPIED
 REAL-DEVICE VALIDATION: PENDING
 SCIENTIFIC REVIEW: PENDING
@@ -57,7 +57,7 @@ Do **not** copy these modules onto this branch. W4 may later consume them only a
 - Production D1 as an implicit input
 - Participant video/photos
 
-## 2. Dataset contracts (proposed, not implemented)
+## 2. Dataset contracts (implemented in W4.1 as `0.1-provisional`)
 
 All dataset contracts are versioned `name/0.1-provisional`, `contract_version` `0.1.0`, default `scientific_review` `PENDING_SCIENTIFIC_REVIEW`, `local_only` true for any sidecar-derived field. Units and timestamps are copied, never rescaled.
 
@@ -71,7 +71,7 @@ One immutable JSON object per build:
 | `dataset_id` | Stable slug from config, not a random UUID |
 | `created_from` | Sorted list of input file fingerprints |
 | `input_fingerprint` | SHA-256 of canonical concatenated input bytes |
-| `output_fingerprint` | SHA-256 of canonical dataset JSON (excluding this fingerprint field, then written back in a second pass **or** stored beside the payload — W4.1 must pick one and test it) |
+| `output_fingerprint` | SHA-256 of `stableStringify({ sessions, windows, observations, trials, manifest })` **excluding** this field; written back in a second pass |
 | `feature_definition_version` | `feature-dictionary/0.1` (existing docs only) |
 | `window_algorithm_version` | `dataset-window/0.1-provisional` |
 | `validator_version` | `dataset-validate/0.1-provisional` |
@@ -84,7 +84,7 @@ One immutable JSON object per build:
 | `counts` | Sessions, windows, observations, exclusions by reason |
 | `local_only_sidecars_present` | Boolean; true if any `session.mission` was read |
 
-W4.1 recommended fingerprint rule: write payload without `output_fingerprint`, hash `stableStringify(payload)`, then set the field. Repeat builds must match.
+W4.1 fingerprint rule: write payload without `output_fingerprint`, hash `stableStringify(payload)`, then set the field. Repeat builds with the same inputs and versions are byte-identical.
 
 ### 2.2 Session record — `dataset-session/0.1-provisional`
 
@@ -97,6 +97,10 @@ Normalized, redaction-safe projection of one V1 session:
 | `group_key` | `participant_ref` | Grouped split key |
 | `protocol_id` / `protocol_version` | `config.protocol` | `go-no-go-v1` / `1.0.0` on develop |
 | `scientific_review` | `v1-existing` iff protocol is `go-no-go-v1`, else pending |
+| `scientific_eligibility` | Always `pending_review` in W4.1 unless a separately accepted scientific contract says otherwise |
+| `engineering_valid` | `true` only for records that passed structural/provenance checks |
+| `camera_source_present` | `mode === 'camera'` and `sources.vision === 'camera'` |
+| `ocular_observations_present` | At least one copied sample with finite EAR that is not `no_face` / `tracking_gap` / `eyes_unavailable` |
 | `mode` / `sources` | V1 | Vision must match mode |
 | `status` | `completed` \| `interrupted` | `failed` only after a future merged contract defines it |
 | `started_at` / `ended_at` | ISO wall clock | Identity, not event time |
@@ -104,7 +108,7 @@ Normalized, redaction-safe projection of one V1 session:
 | `task_windows` | See §4 | Derived, not invented tasks |
 | `provenance` | `camera` / `simulated` / `task-only` | From mode |
 | `missingness` | Counts of quality flags | Preserve, do not impute |
-| `usable_for_ocular` | `mode === 'camera'` and not simulated | Simulated never trains ocular models |
+| `usable_for_ocular` | `camera_source_present && ocular_observations_present` | Presence check, not a coverage threshold; simulated never trains ocular models |
 | `usable_for_behavior` | Protocol `go-no-go-v1` and human trials | Independent of vision |
 | `sidecar_mission` | Present / absent | Copied offsets only |
 
@@ -119,6 +123,7 @@ Do not copy `environment.user_agent`, notes, withdrawal tokens, or upload tokens
 | `protocol_id` | Copied; unsigned ids stay pending |
 | `kind` | `go-no-go` or `unsigned-slot` |
 | `start_ms` / `end_ms` | Session-elapsed; `end` may be null if interrupted mid-task |
+| `window_origin` | `mission_sidecar` when W3.0 tasks exist; otherwise `session_fallback` for V1 Go/No-Go |
 | `bound` | `[start_ms, end_ms)` on **acquisition** time |
 | `status` | `completed` / `interrupted` / `empty` |
 | `observation_count` | Assigned samples |
@@ -258,7 +263,7 @@ Trials (GNG): assign by `onset_ms` with the same `[start, end)` rule. Invalid tr
 | Mechanism | Rule |
 |---|---|
 | Runtime | Node, existing `analysis/` tree. No new Python backend in W4.1. Caijia D3 statistics may later read the JSON. |
-| CLI | `node analysis/src/neurolens/dataset/cli.mjs build --in <json...> --out <dir>` (proposed) |
+| CLI | `node analysis/src/neurolens/dataset/cli.mjs build --in <json...> --out <dir>` |
 | Clock / RNG | None in the builder. No `Date.now()`, no `Math.random()`. |
 | Ordering | Sessions by `session_id`; windows by `(session_id, start_ms, task_id)`; observations by `(session_id, acquired_elapsed_ms, index)` |
 | Canonical JSON | Sorted keys (same `stableStringify` idea as other analysis code) |
@@ -270,32 +275,37 @@ Trials (GNG): assign by `onset_ms` with the same `[start, end)` rule. Invalid tr
 
 Repeated runs with the same inputs and versions must byte-match.
 
-## 6. Proposed module layout (W4.1, not created here)
+## 6. Module layout (W4.1)
 
 ```text
 analysis/src/neurolens/dataset/
   contracts.mjs     # frozen contract ids and allowed enums
   validate.mjs      # fail-closed session/dataset checks
   windows.mjs       # derive + assign
-  manifest.mjs      # fingerprints, counts, limitations
+  manifest.mjs      # fingerprints, counts, limitations, buildDataset
   redaction.mjs     # strip notes / UA / tokens
   cli.mjs           # deterministic build entry
-analysis/fixtures/datasets/   # synthetic V1 JSON only
+  index.mjs         # public exports
+analysis/fixtures/datasets/synthetic.mjs
 tests/dataset-pipeline.test.mjs
 docs/architecture/dataset-pipeline.md   # this file
 ```
+
+CLI exit codes: `0` success, `2` usage error, `3` validation failure, `1` unexpected I/O. Failure does not write `dataset.json` or a success `manifest.json`. `--report-only` prints counts/fingerprint to stdout without writing a usable dataset directory.
 
 Reuse `validateV1Session` / `summarizeTrials` / mission `readCompatibleSession`. Do not import unmerged PR #19 modules. Do not change `sanitizeSession`, Go/No-Go, or camera algorithms.
 
 ## 7. Test matrix (W4.1)
 
+Covered by `tests/dataset-pipeline.test.mjs` with synthetic fixtures only.
+
 | # | Case | Expected |
 |---|---|---|
 | 1 | Valid V1 GNG camera session | One `[0, duration)` window; metrics agree with `summarizeTrials` |
 | 2 | Valid V1 + mission sidecar, non-overlapping tasks | Windows from sidecar offsets |
-| 3 | Invalid schema / missing fields | Reject |
-| 4 | Duplicate session id, identical body | Keep first |
-| 5 | Duplicate session id, conflicting participant | Reject |
+| 3 | Invalid schema / missing fields / unmerged sidecar | Reject |
+| 4 | Missing identity | Reject |
+| 5 | Duplicate sessions | Identical body kept once; conflicting participant rejected |
 | 6 | Invalid / inverted timestamps | Reject |
 | 7 | Overlapping task windows | Reject |
 | 8 | Unsupported / preview protocol | Reject |
@@ -303,12 +313,16 @@ Reuse `validateV1Session` / `summarizeTrials` / mission `readCompatibleSession`.
 | 10 | Mixed sources inside one session | Reject |
 | 11 | Camera + simulated in one cohort | Accept; stratified; no pooled ocular table |
 | 12 | Late processed, in-window acquisition | Assigned to window |
-| 13 | Acquisition after window end | Unassigned `post_task` |
+| 13 | Acquisition at exclusive end | Unassigned `post_task` |
 | 14 | Empty window | Kept, counted |
 | 15 | Interrupted session | Status interrupted; no completed claim |
-| 16 | Deterministic repeat | Byte-identical output |
-| 17 | No network | `fetch` unused |
-| 18 | Privacy | No notes / UA / tokens in dataset JSON |
+| 16 | Fallback window origin | `window_origin: session_fallback`; not a measured task boundary |
+| 17 | Camera present without valid ocular data | `camera_source_present` true; `ocular_observations_present` false |
+| 18 | Engineering vs scientific eligibility | `engineering_valid` true; `scientific_eligibility` `pending_review` |
+| 19 | Deterministic repeat | Byte-identical output |
+| 20 | CLI fail-closed | Invalid or mixed valid+invalid writes no dataset |
+| 21 | Privacy | No notes / UA / tokens in dataset JSON |
+| 22 | No network | `fetch` unused |
 
 Synthetic fixtures only. Not real-camera validation.
 
@@ -340,12 +354,12 @@ Synthetic fixtures only. Not real-camera validation.
 
 | Slice | Scope | Not in scope |
 |---|---|---|
-| **W4.0** (this PR) | Architecture, contracts, test matrix, DEC-016 | Runtime code |
-| **W4.1** | Node validator + window builder + CLI + synthetic tests | Statistics, plots, ML, PR #19 code |
+| **W4.0** | Architecture, contracts, test matrix, DEC-016 | Runtime code |
+| **W4.1** (this slice) | Node validator + window builder + CLI + 22 synthetic tests | Statistics, plots, ML, PR #19 code |
 | **W4.2** | If PR #19 merges: optional orchestration sidecar reader | Treating generic slots as science |
 | **D3** | Caijia statistics on the JSON dataset | Engineering inventing estimands |
 
-W4.1 proposed CLI acceptance: from committed synthetic fixtures, one command writes a manifest whose fingerprint is stable and whose exclusion counts match the test table.
+W4.1 CLI acceptance: from synthetic fixtures, `node analysis/src/neurolens/dataset/cli.mjs build --in <files...> --out <dir>` writes `dataset.json` and `manifest.json` whose `output_fingerprint` is stable and whose exclusion counts match the test table.
 
 ## 11. Non-goals
 

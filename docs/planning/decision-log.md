@@ -4,6 +4,12 @@ This file is the durable record of **accepted project decisions**, not a specula
 
 ## Accepted decisions — 2026-10-21
 
+### DEC-017: W4.1 dataset builder is a fail-closed Node CLI on V1 + optional W3.0 sidecars
+**Accepted.** W4.1 implements `analysis/src/neurolens/dataset/` against the W4.0 contracts. Window membership uses acquisition time `[start, end)`. Missing mission tasks fall back to a whole-session Go/No-Go window labeled `window_origin: session_fallback`, which is not a measured task boundary. `engineering_valid` is independent of `scientific_eligibility` (`pending_review` unless a later accepted scientific contract says otherwise). `camera_source_present` is independent of `ocular_observations_present`. Output fingerprint is SHA-256 of canonical JSON excluding `output_fingerprint`, then written back. Unmerged PR #19 code is not imported.
+
+**Reason:** Week 4 needs a reproducible research-data artifact before statistics or ML. A Python validator would fork the JS analysis tree. Treating camera presence, simulated vision, or unsigned slots as signed ocular science would redefine Caijia's review.
+**Implementation implications:** Synthetic tests can prove engineering determinism; they cannot prove camera accuracy or scientific eligibility. Do not merge PR #19 from this decision. Do not start W4.2 until this slice is reviewed. Do not pool camera and simulated ocular rows.
+
 ### DEC-016: W4.0 dataset pipeline is architecture-only and does not cherry-pick Week 3
 **Accepted.** W4.0 designs versioned dataset/window/manifest contracts and a fail-closed validator/windowing plan on `develop/neurolens-agent`. The W4.1 implementation will be a deterministic Node CLI under `analysis/src/neurolens/dataset/`, not a new Python backend. Inputs on develop are V1 `schema_version` `1.0.0` plus optional W3.0 `mission-event/0.1-provisional`. Unmerged PR #19 orchestration/evidence modules are **not** copied. Generic or unsigned protocol ids are not PVT or Go/No-Go. Ocular metrics are not invented.
 
