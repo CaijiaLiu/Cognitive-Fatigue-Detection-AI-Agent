@@ -67,6 +67,7 @@ Do not describe this week as live browser integration.
 | Camera unavailable | Fallback to `behavior`; ocular values stay missing |
 | Missing eye landmarks | `eyes_unavailable` / missingness preserved |
 | Tracking dropout | `tracking_gap`; not open eyes |
+| Observation admission | Classify (read-only) → commit orchestrator observation → commit tracking cursor → companion dropout only if the observation was accepted |
 | Late processing during a task | Admitted when acquisition is in-window |
 | Late / stale after terminal or generation bump | Rejected; accepted timeline unchanged |
 | Out-of-order timestamps | Rejected `out_of_order` |
@@ -80,3 +81,15 @@ Do not describe this week as live browser integration.
 - No automatic sidecar upload. No new consent assumption.
 - Generic slots stay `PENDING_SCIENTIFIC_REVIEW`.
 - Agent answers cite copied V1 metrics or abstain. Fatigue and diagnostic intents abstain.
+
+## Observation admission atomicity
+
+`createResearchSessionRuntime.recordObservation` uses classify-then-commit:
+
+1. `tracking.classifyResult` is read-only (generation, acquisition vs processing, task window).
+2. `tracking.inspectAdmission` is read-only (would the tracking cursor advance; would a gap be a dropout).
+3. `orchestrator.recordObservation` is the observation commit.
+4. Tracking `noteAdmitted` runs only after that commit succeeds.
+5. Automatic dropout is a companion of an accepted observation. It is not committed when the observation is rejected.
+
+Rejected observations therefore cannot advance `lastAdmittedAcquisition` or insert a dropout that the timeline does not own. Acquisition-time vs processing-time, stale-generation, and out-of-order rejection are unchanged. This does not change Go/No-Go trial science or camera algorithms.

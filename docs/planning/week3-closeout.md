@@ -20,6 +20,7 @@ DEPLOYMENT: PENDING
 | W3.1 Protocol orchestration | `session/protocol.js`, `orchestrate.js`, `orchestration-export.js` | Offline implemented |
 | W3.2 Evidence → Agent | `adapter/session-evidence.mjs` + existing tools | Offline implemented |
 | W3.3 E2E + reliability | `integration/research-session.mjs` | Offline implemented |
+| W3.3 admission atomicity | classify → orchestrator commit → tracking commit | Hardened: rejected observations do not advance tracking or insert companion dropouts |
 
 The supported path is deterministic and local:
 
@@ -97,3 +98,13 @@ Use this list for the combined Week 3 review. Engineering passing tests does not
 - Real-device validation on target browsers, separately marked.
 - Later, and only if it cannot change Go/No-Go science, consider enabling the optional browser observer.
 - Do not start Week 4 dataset ingest from this closeout alone.
+
+## Final engineering hardening (observation admission)
+
+The W3.3 runtime previously called `tracking.noteAdmitted()` before `orchestrator.recordObservation()`. Tracking could therefore advance, and an automatic dropout could be committed, even when the orchestrator rejected the observation (for example `no_active_task` while the previous task window still contained the acquisition timestamp).
+
+The production path is now:
+
+classify (read-only) → inspect admission (read-only) → commit observation → commit tracking cursor → companion dropout only if the observation was accepted.
+
+Automatic dropout without an accepted observation is not a documented contract and is not emitted. This hardening does not change Caijia-owned task science, V1 Go/No-Go, or camera algorithms. Scientific review remains the next gate.

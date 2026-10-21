@@ -12,12 +12,14 @@ import {
 import { ANSWER_STATUS } from '../analysis/src/neurolens/agent/constants.mjs';
 import {
   RESEARCH_SESSION_INTEGRATION_CONTRACT,
+  OBSERVATION_ADMISSION_CONTRACT,
   BROWSER_ORCHESTRATION_GAP,
   createResearchSessionRuntime,
   createOptionalBrowserOrchestration,
   analyzeResearchSession,
   runOfflineResearchSession,
 } from '../analysis/src/neurolens/integration/index.mjs';
+import { MAX_TRACKING_GAP_MS } from '../public/collection/tracking/lifecycle.js';
 import {
   PROVISIONAL_SEQUENCE_PROTOCOL,
   V1_GO_NO_GO_PROTOCOL,
@@ -50,6 +52,13 @@ const IDS = Object.freeze({
   net: 'aaaa3333-aaaa-4aaa-8aaa-aaaaaaaa0013',
   deter: 'bbbb3333-bbbb-4bbb-8bbb-bbbbbbbb0014',
   science: 'cccc3333-cccc-4ccc-8ccc-cccccccc0015',
+  admitOrch: 'dddd3333-dddd-4ddd-8ddd-dddddddd0016',
+  admitInvalid: 'eeee3333-eeee-4eee-8eee-eeeeeeee0017',
+  admitBoundary: 'ffff3333-ffff-4fff-8fff-ffffffff0018',
+  admitDup: 'aaaa4444-aaaa-4aaa-8aaa-aaaaaaaa0019',
+  admitDropReject: 'bbbb4444-bbbb-4bbb-8bbb-bbbbbbbb0020',
+  admitDropOk: 'cccc4444-cccc-4ccc-8ccc-cccccccc0021',
+  admitDeter: 'dddd4444-dddd-4ddd-8ddd-dddddddd0022',
 });
 
 function createClock(start = 0) {
@@ -562,4 +571,218 @@ test('15. scientific protocol and Go/No-Go source are not mutated', () => {
   assert.equal(V1_GO_NO_GO_PROTOCOL.protocol_id, 'go-no-go-v1');
   assert.equal(V1_GO_NO_GO_PROTOCOL.scientific_review, 'v1-existing');
   assert.ok(PROVISIONAL_SEQUENCE_PROTOCOL.tasks.every((task) => task.kind === 'generic-slot'));
+});
+
+function eventTypes(runtime, type) {
+  return runtime.snapshot().events.filter((event) => event.type === type);
+}
+
+function startSlotA(runtime, clock, { endAt = null } = {}) {
+  assert.equal(runtime.prepare(clock.set(0)).ok, true);
+  assert.equal(runtime.startSession({ startedAt: clock.set(0) }).ok, true);
+  assert.equal(runtime.startTask('slot-a', { startedAt: clock.set(100) }).ok, true);
+  assert.equal(runtime.recordObservation({
+    acquisitionTs: 150,
+    processedTs: clock.set(180),
+    source: 'simulated',
+    features: openFace(),
+  }).ok, true);
+  if (endAt != null) {
+    assert.equal(runtime.endTask('slot-a', { endedAt: clock.set(endAt) }).ok, true);
+  }
+}
+
+test('admission contract is classify-then-commit-observation-then-tracking', () => {
+  assert.equal(OBSERVATION_ADMISSION_CONTRACT.automatic_dropout_without_observation, false);
+  assert.equal(OBSERVATION_ADMISSION_CONTRACT.tracking_commit, 'only after orchestrator.recordObservation ok');
+  assert.equal(
+    RESEARCH_SESSION_INTEGRATION_CONTRACT.observation_admission,
+    OBSERVATION_ADMISSION_CONTRACT,
+  );
+});
+
+test('A1. tracking accept + orchestrator reject does not advance tracking', () => {
+  const { runtime, clock } = runtimeFor(IDS.admitOrch);
+  startSlotA(runtime, clock, { endAt: 400 });
+  const before = runtime.tracking.lastAdmittedAcquisition;
+  assert.equal(before, 150);
+  const rejected = runtime.recordObservation({
+    acquisitionTs: 200,
+    processedTs: clock.set(220),
+    source: 'simulated',
+    features: openFace(),
+  });
+  assert.equal(rejected.ok, false);
+  assert.equal(rejected.reason, 'no_active_task');
+  assert.equal(rejected.rejected_by, 'orchestrator');
+  assert.equal(runtime.tracking.lastAdmittedAcquisition, 150);
+  assert.equal(runtime.orchestrator.lastAcquisition(), 150);
+  assert.equal(eventTypes(runtime, 'observation').length, 1);
+  assert.equal(eventTypes(runtime, 'dropout').length, 0);
+});
+
+test('A2. invalid observation payload is rejected without tracking commit', () => {
+  const { runtime, clock } = runtimeFor(IDS.admitInvalid);
+  startSlotA(runtime, clock);
+  const before = runtime.tracking.lastAdmittedAcquisition;
+  const invalidTs = runtime.recordObservation({
+    acquisitionTs: Number.NaN,
+    processedTs: clock.set(200),
+    source: 'simulated',
+    features: openFace(),
+  });
+  const future = runtime.recordObservation({
+    acquisitionTs: 250,
+    processedTs: clock.set(240),
+    source: 'simulated',
+    features: openFace(),
+  });
+  assert.equal(invalidTs.ok, false);
+  assert.equal(invalidTs.reason, 'invalid_timestamp');
+  assert.equal(future.ok, false);
+  assert.equal(future.reason, 'future_acquisition');
+  assert.equal(runtime.tracking.lastAdmittedAcquisition, before);
+  assert.equal(runtime.orchestrator.lastAcquisition(), before);
+  assert.equal(eventTypes(runtime, 'observation').length, 1);
+});
+
+test('A3. invalid task boundary is rejected without tracking commit', () => {
+  const { runtime, clock } = runtimeFor(IDS.admitBoundary);
+  assert.equal(runtime.prepare(clock.set(0)).ok, true);
+  assert.equal(runtime.startSession({ startedAt: clock.set(0) }).ok, true);
+  assert.equal(runtime.startTask('slot-a', { startedAt: clock.set(100) }).ok, true);
+  const preTask = runtime.recordObservation({
+    acquisitionTs: 50,
+    processedTs: clock.set(80),
+    source: 'simulated',
+    features: openFace(),
+  });
+  assert.equal(runtime.recordObservation({
+    acquisitionTs: 150,
+    processedTs: clock.set(180),
+    source: 'simulated',
+    features: openFace(),
+  }).ok, true);
+  assert.equal(runtime.endTask('slot-a', { endedAt: clock.set(400) }).ok, true);
+  const postTask = runtime.recordObservation({
+    acquisitionTs: 500,
+    processedTs: clock.set(520),
+    source: 'simulated',
+    features: openFace(),
+  });
+  assert.equal(preTask.ok, false);
+  assert.equal(preTask.reason, 'pre_task');
+  assert.equal(postTask.ok, false);
+  assert.equal(postTask.reason, 'post_task');
+  assert.equal(runtime.tracking.lastAdmittedAcquisition, 150);
+  assert.equal(runtime.orchestrator.lastAcquisition(), 150);
+  assert.equal(eventTypes(runtime, 'observation').length, 1);
+});
+
+test('A4. duplicate acquisition timestamp is rejected without tracking commit', () => {
+  const { runtime, clock } = runtimeFor(IDS.admitDup);
+  startSlotA(runtime, clock);
+  const duplicate = runtime.recordObservation({
+    acquisitionTs: 150,
+    processedTs: clock.set(200),
+    source: 'simulated',
+    features: openFace(0.31),
+  });
+  assert.equal(duplicate.ok, false);
+  assert.equal(duplicate.reason, 'out_of_order');
+  assert.equal(runtime.tracking.lastAdmittedAcquisition, 150);
+  assert.equal(runtime.orchestrator.lastAcquisition(), 150);
+  assert.equal(eventTypes(runtime, 'observation').length, 1);
+});
+
+test('A5. automatic dropout is not committed when the observation is rejected', () => {
+  const { runtime, clock } = runtimeFor(IDS.admitDropReject);
+  startSlotA(runtime, clock, { endAt: 5000 });
+  const gapTs = 150 + MAX_TRACKING_GAP_MS + 200;
+  const inspected = runtime.tracking.inspectAdmission(gapTs);
+  assert.equal(inspected.ok, true);
+  assert.equal(inspected.dropout, true);
+  assert.equal(runtime.tracking.lastAdmittedAcquisition, 150);
+  const rejected = runtime.recordObservation({
+    acquisitionTs: gapTs,
+    processedTs: clock.set(gapTs + 20),
+    source: 'simulated',
+    features: openFace(),
+  });
+  assert.equal(rejected.ok, false);
+  assert.equal(rejected.reason, 'no_active_task');
+  assert.equal(runtime.tracking.lastAdmittedAcquisition, 150);
+  assert.equal(runtime.orchestrator.lastAcquisition(), 150);
+  assert.equal(eventTypes(runtime, 'observation').length, 1);
+  assert.equal(eventTypes(runtime, 'dropout').length, 0);
+});
+
+test('A6. successful observation with automatic dropout commits both and keeps cursors aligned', () => {
+  const { runtime, clock } = runtimeFor(IDS.admitDropOk);
+  startSlotA(runtime, clock);
+  const gapTs = 150 + MAX_TRACKING_GAP_MS + 200;
+  const accepted = runtime.recordObservation({
+    acquisitionTs: gapTs,
+    processedTs: clock.set(gapTs + 20),
+    source: 'simulated',
+    features: openFace(0.29),
+  });
+  assert.equal(accepted.ok, true);
+  assert.equal(runtime.tracking.lastAdmittedAcquisition, gapTs);
+  assert.equal(runtime.orchestrator.lastAcquisition(), gapTs);
+  assert.equal(eventTypes(runtime, 'observation').length, 2);
+  assert.equal(eventTypes(runtime, 'dropout').length, 1);
+  const dropout = eventTypes(runtime, 'dropout')[0];
+  const secondObs = eventTypes(runtime, 'observation')[1];
+  assert.equal(dropout.quality, 'tracking_gap');
+  assert.equal(dropout.missingness, 'dropout');
+  assert.equal(secondObs.acquired_elapsed_ms, gapTs);
+  assert.ok(secondObs.processed_elapsed_ms >= secondObs.acquired_elapsed_ms);
+});
+
+test('A7. admission path is deterministic across repeated runs', () => {
+  function once() {
+    const clock = createClock(0);
+    const runtime = createResearchSessionRuntime({
+      now: clock.now,
+      protocol: PROVISIONAL_SEQUENCE_PROTOCOL,
+      session_id: IDS.admitDeter,
+      participant_id: PARTICIPANT,
+      mode: 'simulated',
+      started_at: '2026-10-19T21:00:00.000Z',
+    });
+    startSlotA(runtime, clock);
+    const gapTs = 150 + MAX_TRACKING_GAP_MS + 200;
+    runtime.recordObservation({
+      acquisitionTs: gapTs,
+      processedTs: clock.set(gapTs + 20),
+      source: 'simulated',
+      features: openFace(0.29),
+    });
+    runtime.endTask('slot-a', { endedAt: clock.set(gapTs + 100) });
+    runtime.recordObservation({
+      acquisitionTs: gapTs + 50,
+      processedTs: clock.set(gapTs + 120),
+      source: 'simulated',
+      features: openFace(),
+    });
+    return {
+      tracking: runtime.tracking.lastAdmittedAcquisition,
+      acquisition: runtime.orchestrator.lastAcquisition(),
+      events: runtime.snapshot().events.map((event) => ({
+        type: event.type,
+        session_elapsed_ms: event.session_elapsed_ms,
+        acquired_elapsed_ms: event.acquired_elapsed_ms,
+        processed_elapsed_ms: event.processed_elapsed_ms,
+        quality: event.quality,
+        missingness: event.missingness,
+      })),
+    };
+  }
+  const first = once();
+  const second = once();
+  assert.equal(first.tracking, second.tracking);
+  assert.equal(first.acquisition, second.acquisition);
+  assert.equal(first.tracking, first.acquisition);
+  assert.equal(stableStringify(first.events), stableStringify(second.events));
 });

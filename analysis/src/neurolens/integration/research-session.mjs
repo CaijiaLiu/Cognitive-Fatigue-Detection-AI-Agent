@@ -22,6 +22,18 @@ import {
   createOptionalBrowserOrchestration
 } from '../../../../public/collection/session/browser-orchestration.js';
 
+export const OBSERVATION_ADMISSION_CONTRACT = Object.freeze({
+  strategy: 'classify-then-commit-observation-then-tracking',
+  tracking_commit: 'only after orchestrator.recordObservation ok',
+  automatic_dropout: 'companion of an accepted observation only',
+  automatic_dropout_without_observation: false,
+  preserves: Object.freeze([
+    'acquisition vs processing timestamps',
+    'stale-generation rejection',
+    'out-of-order rejection'
+  ])
+});
+
 export const RESEARCH_SESSION_INTEGRATION_CONTRACT = Object.freeze({
   contract_id: 'research-session-integration/0.1-provisional',
   contract_version: '0.1.0',
@@ -30,6 +42,7 @@ export const RESEARCH_SESSION_INTEGRATION_CONTRACT = Object.freeze({
   upload_eligible: false,
   browser_live_orchestrator: false,
   browser_gap: BROWSER_ORCHESTRATION_GAP,
+  observation_admission: OBSERVATION_ADMISSION_CONTRACT,
   path: Object.freeze([
     'session creation',
     'protocol initialization',
@@ -135,6 +148,25 @@ export function createResearchSessionRuntime({
         type: 'observation'
       });
     }
+    const inspected = tracking.inspectAdmission(input.acquisitionTs);
+    if (!inspected.ok) {
+      return noteRejected({
+        ok: false,
+        reason: inspected.reason,
+        rejected_by: 'tracking_lifecycle',
+        type: 'observation'
+      });
+    }
+
+    const recorded = orchestrator.recordObservation({ ...input, processedTs });
+    if (!recorded.ok) {
+      return noteRejected({
+        ...recorded,
+        rejected_by: 'orchestrator',
+        type: 'observation'
+      });
+    }
+
     const noted = tracking.noteAdmitted(input.acquisitionTs);
     if (noted.dropout) {
       orchestrator.recordDropout({
@@ -143,7 +175,7 @@ export function createResearchSessionRuntime({
         source: input.source
       });
     }
-    return orchestrator.recordObservation({ ...input, processedTs });
+    return recorded;
   }
 
   return {

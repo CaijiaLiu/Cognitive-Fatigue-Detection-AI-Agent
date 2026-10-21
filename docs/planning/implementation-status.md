@@ -18,6 +18,7 @@ BROWSER LIVE ORCHESTRATOR: NOT WIRED
 |---|---|---|
 | Offline E2E path | Implemented | Orchestrator → local export → W3.2 evidence → existing Agent tools |
 | Failure recovery | Implemented | Interrupt, fail, camera-unavailable, missing landmarks, dropout, late/stale, duplicates |
+| Observation admission atomicity | Hardened | Tracking cursor and automatic dropout commit only after `orchestrator.recordObservation` succeeds |
 | V1 Go/No-Go compatibility | Preserved | Existing trial semantics and allowlisted metrics unchanged |
 | Live browser orchestrator | Not wired | `controller.js` still uses mission adapter only; optional observer is default-off |
 | Privacy / upload | Unchanged | `sanitizeSession` still strips sidecars; no automatic upload |
@@ -26,8 +27,10 @@ BROWSER LIVE ORCHESTRATOR: NOT WIRED
 
 **Not changed:** V1 `schema_version` `1.0.0`, Go/No-Go trial code, cloud allowlist, Sites, OpenAI, D1, `main`, Caijia scientific modules.
 
-**Checks actually run (2026-10-19, W3.3 closeout):**
-- `npm test` — 231 passed, 0 failed (16 week3-integration cases, including the 15 required reliability cases).
+**Admission hardening (2026-10-21):** `createResearchSessionRuntime` no longer calls `tracking.noteAdmitted()` before the orchestrator accepts the observation. Rejected observations do not advance `lastAdmittedAcquisition` and do not insert companion dropouts. Strategy: classify (read-only) → inspect (read-only) → commit observation → commit tracking → companion dropout only if the observation was accepted.
+
+**Checks actually run (2026-10-21, admission hardening):**
+- `npm test` — 239 passed, 0 failed (week3-integration includes the 15 original reliability cases plus 7 admission regressions).
 - `npm run test:flow` — PASS (controlled DOM/clock; not a real camera).
 - `npm run test:integration` — 6 passed.
 - `npm run test:reliability` — 7 passed.
