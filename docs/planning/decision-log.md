@@ -1,6 +1,14 @@
 # NeuroLens decision log (shared across human and AI contributors)
 
-This file is the durable record of **accepted project decisions**, not a speculative backlog. Last updated 2026-10-21. Read alongside [Research North Star](research-north-star.md), [Roadmap](roadmap.md), [Implementation Status](implementation-status.md), and [AGENTS.md](../../AGENTS.md).
+This file is the durable record of **accepted project decisions**, not a speculative backlog. Last updated 2026-10-22. Read alongside [Research North Star](research-north-star.md), [Roadmap](roadmap.md), [Implementation Status](implementation-status.md), and [AGENTS.md](../../AGENTS.md).
+
+## Accepted decisions — 2026-10-22
+
+### DEC-019: W4.2 is an optional fail-closed orchestration reader that does not change W4.1 dataset contracts
+**Accepted.** After PR #19 and PR #20 both merge into `develop/neurolens-agent`, W4.2 may add `dataset-orchestration-read/0.1-provisional` as a pre-step in front of the frozen W4.1 validator/window/manifest. Until that merge, `session.orchestration` stays rejected. The reader must fail closed on malformed or unknown sidecars and must not silently fall back to V1. Window membership remains acquisition-time `[start, end)`. Event-only replay is an integrity gate, not measurement validation. Generic slots stay `unsigned-slot` / `pending_review`. V1-only fingerprints must stay byte-identical to W4.1.
+
+**Reason:** PR #19’s orchestration sidecar is a local engineering timeline, not a signed protocol. Copying it before merge would mix unreviewed contracts into the dataset builder. Treating `slot-a` / `slot-b` or replay success as ocular/Go-No-Go science would redefine Caijia’s ownership.
+**Implementation implications:** Architecture-only on `feature/w4-2-dataset-readiness`. Do not import or copy unmerged PR #19 modules. Do not merge this stacked branch while PR #20 is unmerged. Do not start W5 from this decision. Do not expand `sanitizeSession` or upload sidecars.
 
 ## Accepted decisions — 2026-10-21
 

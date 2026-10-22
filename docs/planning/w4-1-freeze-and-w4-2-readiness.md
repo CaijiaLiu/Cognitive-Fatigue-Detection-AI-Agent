@@ -27,12 +27,14 @@ Known limitations: `--replace` is recoverable for handled failures, not crash-at
 
 ## W4.2 architecture-only objectives
 
-1. Audit PR #19's **proposed** research-session, event, replay and artifact contracts without importing or copying its runtime code.
-2. Write a compatibility matrix: V1 only; V1 + W3.0 mission; future signed orchestration sidecar; unknown/malformed sidecars (fail closed).
-3. Specify an optional versioned reader boundary with strict session/protocol identity, replay/timeline integrity, provenance, event-only measurement fidelity, task-boundary semantics and missingness.
-4. Document migration and integration strategy **after** PR #19 merges into develop. Until then, no W4.2 runtime reader or tests that pretend the proposed contracts are already merged.
-5. Preserve scientific ownership: generic slots cannot become PVT/Go-No-Go without Caijia signoff; no new scientific eligibility or ocular pooling.
-6. Plan tests for conflicting sidecars, duplicate events/identities, time boundaries, interrupted/failed states, provenance, privacy, deterministic fingerprints, and backward compatibility.
+Designed in [dataset-orchestration-adapter.md](../architecture/dataset-orchestration-adapter.md) and [DEC-019](decision-log.md). Runtime remains **not implemented**.
+
+1. Audit PR #19's **proposed** research-session, event, replay and artifact contracts without importing or copying its runtime code. **Done (read in place).**
+2. Write a compatibility matrix: V1 only; V1 + W3.0 mission; future signed orchestration sidecar; unknown/malformed sidecars (fail closed). **Done.**
+3. Specify an optional versioned reader boundary with strict session/protocol identity, replay/timeline integrity, provenance, event-only measurement fidelity, task-boundary semantics and missingness. **Done.**
+4. Document migration and integration strategy **after** PR #19 merges into develop. Until then, no W4.2 runtime reader or tests that pretend the proposed contracts are already merged. **Done.**
+5. Preserve scientific ownership: generic slots cannot become PVT/Go-No-Go without Caijia signoff; no new scientific eligibility or ocular pooling. **Done.**
+6. Plan tests for conflicting sidecars, duplicate events/identities, time boundaries, interrupted/failed states, provenance, privacy, deterministic fingerprints, and backward compatibility. **Done (planned matrix; tests not added).**
 7. Stop for architecture review. Do not merge PR #19/#20 or this branch; do not start W5.
 
 ## Integration sequencing

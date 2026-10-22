@@ -81,6 +81,8 @@ The session controller composes explicit task/tracking controllers and owns sess
 | docs/architecture/agent-tools.md | Implemented W1 contract and open review questions |
 | docs/architecture/analysis-export-adapter.md | Implemented offline adapter boundary and blocked scientific mappings |
 | docs/architecture/dataset-pipeline.md | W4.1 dataset/window/manifest architecture and Node CLI |
+| docs/architecture/dataset-orchestration-adapter.md | W4.2 optional orchestration reader (architecture only) |
+| docs/planning/w4-1-freeze-and-w4-2-readiness.md | Frozen W4.1 baseline and W4.2 planning constraints |
 | docs/architecture/agent-eval.md | Manual ChatGPT evaluation workflow |
 | docs/architecture/analysis-integration.md | Integrated offline pipeline and reproducibility command |
 | docs/architecture/agent-reliability.md | Threat model, adversarial categories and remaining reliability limits |

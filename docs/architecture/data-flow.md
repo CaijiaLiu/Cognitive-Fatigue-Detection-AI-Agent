@@ -18,7 +18,7 @@ Phase/event timestamps join ocular, facial, head, task and self-report observati
 
 Exports feed a reproducible offline pipeline: validate -> provenance filtering -> quality checks -> windowing -> labels -> grouped split -> training-only preprocessing -> statistics/models -> report.
 
-W4.1 implements the validate/window/manifest slice of that pipeline as a deterministic Node CLI ([dataset-pipeline.md](dataset-pipeline.md)). It is not the W1.4 Agent export adapter. Grouped split, training, and models remain later weeks.
+W4.1 implements the validate/window/manifest slice of that pipeline as a deterministic Node CLI ([dataset-pipeline.md](dataset-pipeline.md)). W4.2 designs an optional post-merge orchestration sidecar reader in front of that CLI ([dataset-orchestration-adapter.md](dataset-orchestration-adapter.md)); it is not implemented. The W1.4 Agent export adapter remains a separate boundary. Grouped split, training, and models remain later weeks.
 
 The W1.4 adapter is a bounded first step of that export boundary: validated V1 JSON is copied into versioned evidence artifacts for the read-only agent tools. W1.6 connects those artifacts to the W1.5 prompt builder and response validator without adding an LLM API. W2.1 adds a mock-provider orchestrator; W2.2 exposes that runtime through `POST /api/research-agent` and `/research-agent` for synthetic fixtures only. W2.3 adds an opt-in OpenAI `complete()` adapter; mock remains the default. It is not the statistics/model pipeline and is not scientific validation. See [analysis-integration.md](analysis-integration.md), [agent-runtime.md](agent-runtime.md), [agent-api.md](agent-api.md), and [agent-llm-provider.md](agent-llm-provider.md).
 
