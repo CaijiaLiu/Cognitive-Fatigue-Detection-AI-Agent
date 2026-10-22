@@ -49,6 +49,6 @@ Keep Steps 1–9 as stable research milestones. Execute this bounded integration
 | 1D | Integrate data contracts | Versioned multi-task records and three ratings; V1 read compatibility; optional cloud consent/allowlist/export tests |
 | 1E | Complete Step 1 measurement QA | Annotated real-device detection checks, sampling/timing quality and recorded limitations |
 
-1C's minimal multi-task orchestration is engineering groundwork for Step 4, not completion of its baseline/probe/confounder requirements. 1D does not complete Step 5's facial/gaze/probe integration. W4.1 implements the dataset/window builder for roadmap Step 6 as a Node CLI on synthetic fixtures; statistics, plots and models remain later. See [dataset-pipeline.md](../architecture/dataset-pipeline.md).
+1C's minimal multi-task orchestration is engineering groundwork for Step 4, not completion of its baseline/probe/confounder requirements. 1D does not complete Step 5's facial/gaze/probe integration. W4.1 implements the dataset/window builder for roadmap Step 6 as a Node CLI on synthetic fixtures. W4.2 designs an optional orchestration sidecar reader for after PR #19 and PR #20 merge; it is not implemented. Statistics, plots and models remain later. See [dataset-pipeline.md](../architecture/dataset-pipeline.md) and [dataset-orchestration-adapter.md](../architecture/dataset-orchestration-adapter.md).
 
 The preview is already implemented on its branch; porting, scientific validation and deployment are separate statuses. See [detailed integration plan](mission-integration.md).

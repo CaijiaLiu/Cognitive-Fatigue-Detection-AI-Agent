@@ -94,4 +94,4 @@ Decision: preserve the snapshot as provenance while porting selected capabilitie
 
 Live feedback may alter behavior; the participant experience is an experimental variable. Preserve presentation version and feedback setting, and do not pool feedback-on/off or different protocols without explicit analysis justification.
 
-The immediate plan is [mission integration](../planning/mission-integration.md), followed by the existing V2/V3 research work. W4.1 implements an offline dataset/window CLI on V1 exports; see [dataset-pipeline.md](dataset-pipeline.md). Facial actions, calibrated screen gaze, thought probes, confounders and ML remain outstanding.
+The immediate plan is [mission integration](../planning/mission-integration.md), followed by the existing V2/V3 research work. W4.1 implements an offline dataset/window CLI on V1 exports; W4.2 designs an optional orchestration reader after Week 3 merges. See [dataset-pipeline.md](dataset-pipeline.md) and [dataset-orchestration-adapter.md](dataset-orchestration-adapter.md). Facial actions, calibrated screen gaze, thought probes, confounders and ML remain outstanding.

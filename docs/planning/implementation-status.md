@@ -1,5 +1,39 @@
 # Implementation status
 
+## W4.2 Dataset orchestration-adapter readiness (2026-10-22)
+
+**Status:** Architecture only. Not a runtime reader. Not scientifically validated. PR #19 and PR #20 are **not** merged. Unmerged Week 3 modules were **not** copied.
+
+Planning branch: `feature/w4-2-dataset-readiness`, stacked on reviewed W4.1 SHA `0be8039` (Draft PR #20). Design: [dataset-orchestration-adapter.md](../architecture/dataset-orchestration-adapter.md). Freeze: [w4-1-freeze-and-w4-2-readiness.md](w4-1-freeze-and-w4-2-readiness.md). Decisions: [DEC-019](decision-log.md), [DEC-020](decision-log.md).
+
+```text
+W4.1 DATASET PIPELINE: FROZEN (UNMERGED PR #20)
+W4.2 ORCHESTRATION READER: DESIGNED, NOT IMPLEMENTED
+WEEK 3 PR #19: UNMERGED / NOT COPIED
+W5: NOT STARTED
+REAL-DEVICE VALIDATION: PENDING
+SCIENTIFIC REVIEW: PENDING
+```
+
+| Capability | Status | Evidence / remaining work |
+|---|---|---|
+| Compatibility audit (V1, W3.0, proposed W3.1, W4.1) | Documented | Reader policy matrix in the architecture doc; PR #19 read in place only |
+| Optional versioned reader | Designed | `dataset-orchestration-read/0.1-provisional`; import develop helpers after merge |
+| Window / replay / duplicate / privacy rules | Designed | Acquisition-time `[start, end)` preserved; replay is not measurement fidelity |
+| Terminal-state matrix (V1 × orchestration) | Designed | Reject `completed`+`failed` and other contradictions; never rewrite either state (DEC-020) |
+| Mission/orchestration task identity | Designed | Identity (`task_id` or unique `(kind, protocol_id)`) before timestamps; no timestamp-only pairing |
+| W4.1 contract freeze | Preserved | No change to dataset-manifest/session/window/observation/validate field meanings |
+| Runtime `orchestration.mjs` / new tests | Not implemented | After both PRs merge into develop and this branch is rebased |
+| W5 / statistics / ML | Not started | Out of scope |
+
+**Checks (documentation-only):** relative links in the new architecture doc and planning updates resolve to existing paths. W4.1 runtime tests were not re-run for this docs slice and are not claimed as W4.2 evidence.
+
+**Not changed:** V1 `schema_version` `1.0.0`, Go/No-Go trial code, camera algorithms, `sanitizeSession`, dataset builder runtime, Sites, OpenAI, D1, `main`, PR #19, PR #20.
+
+**Limitations:** Stacked branch contains unmerged W4.1 commits and must not merge independently. `config.protocol` may disagree with orchestration `protocol_id`. `failed` is an orchestration state, not a V1 status on develop. Older mission tasks lack `task_id`; without a unique `(kind, protocol_id)` they cannot be paired. Serialized orchestration artifacts are not standalone dataset inputs.
+
+**Next task:** Architecture review of DEC-020 terminal-state and task-identity rules. Do not implement the reader. Do not merge PR #19, PR #20, or PR #21. Do not start W5.
+
 ## W4.1 Deterministic dataset pipeline (2026-10-21)
 
 **Status:** Implemented against synthetic fixtures. Not scientifically validated. Not real-camera validated. Week 3 PR #19 is **not** merged and was **not** imported.
@@ -31,7 +65,7 @@ SCIENTIFIC REVIEW: PENDING
 
 **Limitations:** Synthetic fixtures only. `session_fallback` is not a measured task boundary. Browser `participant_ref` is not a verified person. No ocular coverage threshold was invented.
 
-**Next task:** Review W4.1 hardening. Do not merge PR #19 or PR #20. Do not start W4.2.
+**Next task:** W4.1 remains frozen on Draft PR #20. W4.2 architecture is on `feature/w4-2-dataset-readiness`. Do not merge PR #19 or PR #20. Do not start W5.
 
 ## W4.0 Dataset architecture readiness (2026-10-21)
 

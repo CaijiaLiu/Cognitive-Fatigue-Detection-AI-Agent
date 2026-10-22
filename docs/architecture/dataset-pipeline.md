@@ -14,7 +14,7 @@ REAL-DEVICE VALIDATION: PENDING
 SCIENTIFIC REVIEW: PENDING
 ```
 
-Related: [data contracts](data-contracts.md), [data flow](data-flow.md), [export adapter](analysis-export-adapter.md), [mission adapter](mission-adapter.md), [features](../research/features.md), [protocols](../research/protocols.md), [north star D1–D3](../planning/research-north-star.md), [DEC-016](../planning/decision-log.md).
+Related: [data contracts](data-contracts.md), [data flow](data-flow.md), [export adapter](analysis-export-adapter.md), [mission adapter](mission-adapter.md), [W4.2 orchestration adapter](dataset-orchestration-adapter.md), [features](../research/features.md), [protocols](../research/protocols.md), [north star D1–D3](../planning/research-north-star.md), [DEC-016](../planning/decision-log.md), [DEC-019](../planning/decision-log.md).
 
 ## 1. Audit — what is on develop vs PR #19
 
@@ -375,7 +375,7 @@ Synthetic fixtures only. Not real-camera validation.
 |---|---|---|
 | **W4.0** | Architecture, contracts, test matrix, DEC-016 | Runtime code |
 | **W4.1** (this slice) | Node validator + window builder + CLI + 25 synthetic tests | Statistics, plots, ML, PR #19 code |
-| **W4.2** | If PR #19 merges: optional orchestration sidecar reader | Treating generic slots as science |
+| **W4.2** | Architecture for an optional orchestration sidecar reader after PR #19 and PR #20 merge; see [dataset-orchestration-adapter.md](dataset-orchestration-adapter.md) | Runtime reader, treating generic slots as science, W5 |
 | **D3** | Caijia statistics on the JSON dataset | Engineering inventing estimands |
 
 W4.1 CLI acceptance: from synthetic fixtures, `node analysis/src/neurolens/dataset/cli.mjs build --in <files...> --out <dir>` writes `dataset.json` and `manifest.json` whose `output_fingerprint` is stable and whose exclusion counts match the test table.
