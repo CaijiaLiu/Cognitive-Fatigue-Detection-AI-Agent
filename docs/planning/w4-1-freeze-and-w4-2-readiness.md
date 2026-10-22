@@ -27,7 +27,7 @@ Known limitations: `--replace` is recoverable for handled failures, not crash-at
 
 ## W4.2 architecture-only objectives
 
-Designed in [dataset-orchestration-adapter.md](../architecture/dataset-orchestration-adapter.md) and [DEC-019](decision-log.md). Runtime remains **not implemented**.
+Designed in [dataset-orchestration-adapter.md](../architecture/dataset-orchestration-adapter.md), [DEC-019](decision-log.md), and [DEC-020](decision-log.md). Runtime remains **not implemented**. Terminal V1/orchestration states are fail-closed (no `completed`+`failed` rewrite). Mission/orchestration tasks pair by identity before timestamps.
 
 1. Audit PR #19's **proposed** research-session, event, replay and artifact contracts without importing or copying its runtime code. **Done (read in place).**
 2. Write a compatibility matrix: V1 only; V1 + W3.0 mission; future signed orchestration sidecar; unknown/malformed sidecars (fail closed). **Done.**

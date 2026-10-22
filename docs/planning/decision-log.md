@@ -4,6 +4,12 @@ This file is the durable record of **accepted project decisions**, not a specula
 
 ## Accepted decisions — 2026-10-22
 
+### DEC-020: W4.2 rejects contradictory terminals and pairs mission/orchestration tasks by identity first
+**Accepted.** When both V1 `session.status` and orchestration `state` are present, the reader copies both and never rewrites either. Compatible pairs are `completed/completed`, `interrupted/interrupted`, and `interrupted/failed` (non-success). `completed` + `failed` is rejected unless a merged writer contract later defines **and tests** that mapping. Non-terminal orchestration states on a finished V1 export are rejected. Mission and orchestration tasks are paired by `task_id` when present, else by a unique `(kind, protocol_id)`; timestamps are compared only after a 1:1 identity pair exists. Ambiguous generic slots and equal timestamps with disagreeing identity fail closed. Older W3.0 mission records without `task_id` cannot use timestamp matching.
+
+**Reason:** Treating a failed orchestrator as a completed V1 session, or joining windows that only happen to share a clock offset, would hide protocol identity and invent task correspondence. Generic slots must not become PVT or Go/No-Go in order to match.
+**Implementation implications:** Architecture-only. Do not implement the reader yet. Do not copy PR #19. Do not change W4.1 dataset contracts. Failed and interrupted records stay `scientific_eligibility: pending_review`.
+
 ### DEC-019: W4.2 is an optional fail-closed orchestration reader that does not change W4.1 dataset contracts
 **Accepted.** After PR #19 and PR #20 both merge into `develop/neurolens-agent`, W4.2 may add `dataset-orchestration-read/0.1-provisional` as a pre-step in front of the frozen W4.1 validator/window/manifest. Until that merge, `session.orchestration` stays rejected. The reader must fail closed on malformed or unknown sidecars and must not silently fall back to V1. Window membership remains acquisition-time `[start, end)`. Event-only replay is an integrity gate, not measurement validation. Generic slots stay `unsigned-slot` / `pending_review`. V1-only fingerprints must stay byte-identical to W4.1.
 
