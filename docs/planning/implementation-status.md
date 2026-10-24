@@ -1,5 +1,17 @@
 # Implementation status
 
+## Public-data web lookup (stacked UI branch)
+
+`feature/public-data-agent-ui` extends PR #22 `6064ce8`, without merging main/develop.
+`/research-agent` now separates real public-data lookup from the folded synthetic demo.
+The browser shares the CLI's pure evidence contract via `public-data/evidence.mjs` and
+a source-verified snapshot. No Node filesystem code is bundled into the browser, and
+no cloud API/metric allowlist is widened. See [review/use](../research/public-data-ui-review.md).
+
+Verified: 177 Node tests, typecheck, production build, snapshot integrity; local UI
+overview/source values/missingness/fatigue abstention. No camera or scientific validation,
+paid LLM, model training or deployment. This is source retrieval, not prediction.
+
 ## Public numeric dataset / agent evidence (2026-10-23)
 
 Branch `data/cognitive-lab-agent-evidence`, based on develop `3b7528f`. User authorized

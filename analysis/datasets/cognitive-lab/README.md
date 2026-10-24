@@ -58,8 +58,12 @@ The response contains `instructions` and `evidence` for an AI coding/research ag
 It makes no network or LLM call and changes no model weights. CLI output is reproducible.
 
 The new contract is `public-research-evidence/0.1`, intentionally separate from V1
-`agent-tools/0.1`. It is **not** fed into the existing `/research-agent` synthetic demo,
-whose metric allowlist is unchanged. No export is relabeled as a Focus Lab session.
+`agent-tools/0.1`. On the UI branch, `/research-agent` has a new public-data section
+using the shared pure query module and `web-catalog.json`. Its original synthetic demo
+is folded below and remains separate; that HTTP metric allowlist is unchanged.
+`node scripts/public-data-web-catalog.mjs --check` verifies the browser snapshot against
+all hash-checked raw sources. Without `--check` it prints a reproducible catalog to stdout.
+No export is relabeled as a Focus Lab session.
 No unmerged PR #19/#20/#21 code is copied or merged.
 
 An AI agent using this branch should read this file, `manifest.json`, then run the commands.

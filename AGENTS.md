@@ -5,8 +5,9 @@
 For public-data tasks, first read `analysis/datasets/cognitive-lab/README.md` and
 `docs/research/public-data-agent-handoff.md`. Use `node scripts/public-data-agent.mjs overview`
 or `board SOURCE_FILENAME` for checksum-verified real evidence. This is retrieval, not
-training. Never infer fatigue labels, rewrite V1 metric contracts, or treat the synthetic
-HTTP demo as connected to this dataset. No media or local participant records may be added.
+training. Never infer fatigue labels or rewrite V1 metric contracts. The public-data UI
+on `/research-agent` uses a separate browser-safe evidence contract; the folded original
+synthetic HTTP demo remains separate. No media or local participant records may be added.
 
 ## Read first
 
