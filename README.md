@@ -6,7 +6,9 @@ This branch adds a small CC BY 4.0 numeric subset from *Cognitive Fatigue* (Figs
 See [dataset source, attribution and use](analysis/datasets/cognitive-lab/README.md) and
 [AI-agent handoff](docs/research/public-data-agent-handoff.md).
 Run `node scripts/public-data-agent.mjs overview` or `board SOURCE_FILENAME`.
-This does not connect the synthetic web demo, train an LLM, or validate fatigue prediction.
+The UI branch adds a real-source lookup section to `/research-agent`; the original
+synthetic demo remains separately labeled and folded below. It does not train an LLM
+or validate fatigue prediction. See [UI review and usage](docs/research/public-data-ui-review.md).
 
 ## Focus Lab · V1 Data Collection Web App
 
