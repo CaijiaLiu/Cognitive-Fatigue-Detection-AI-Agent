@@ -1,0 +1,9 @@
+node_modules/
+.sites-runtime/
+.dev.vars
+.env*
+*.zip
+*.tar
+*.png
+*.jpg
+test-results/

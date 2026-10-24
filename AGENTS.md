@@ -1,5 +1,13 @@
 # Shared agent and contributor instructions
 
+## Local mission bridge on this branch
+
+Read `docs/architecture/local-game-agent-bridge.md` before editing this connection.
+The preserved preview snapshot has only an added results-page navigation helper.
+Use the existing task summary engine; no duplicate engine, protocol relabeling or cloud
+allowlist expansion. Browser reads require explicit user action. No automatic cross-origin
+session migration, participant export commits, server upload or paid model call.
+
 ## Public research dataset on this branch
 
 For public-data tasks, first read `analysis/datasets/cognitive-lab/README.md` and
