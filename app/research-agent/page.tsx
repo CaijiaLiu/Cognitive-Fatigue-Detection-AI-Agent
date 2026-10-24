@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import ResearchAgentPanel from './panel';
 import PublicDataPanel from './public-data-panel';
+import LocalSessionPanel from './local-session-panel';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Focus Lab · Research Evidence' };
@@ -11,7 +12,8 @@ export default function ResearchAgentPage() {
       <p style={{ fontSize: 11, letterSpacing: 1.4, color: '#7a8981' }}>FOCUS LAB · RESEARCH EVIDENCE</p>
       <h1 style={{ fontSize: 28, fontWeight: 600, letterSpacing: '-0.6px' }}>Research Agent</h1>
       <p style={{ lineHeight: 1.7 }}>Inspect published source data and its limits. Public records and synthetic demo sessions are separate. Nothing here measures or diagnoses your fatigue.</p>
-      <PublicDataPanel />
+      <LocalSessionPanel />
+      <details style={{marginTop:24}}><summary style={{cursor:'pointer',fontWeight:600}}>Separate public research dataset (not your game results)</summary><PublicDataPanel /></details>
       <details style={{ marginTop: 32, padding: 20, border: '1px solid #d3ddcf', borderRadius: 12 }}>
       <summary style={{ cursor: 'pointer', fontWeight: 600 }}>Original synthetic Agent demo — mock data and mock answers</summary>
       <p>

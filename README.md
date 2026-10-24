@@ -1,5 +1,16 @@
 # Cognitive-Fatigue-Detection-AI-Agent
 
+## Connected local game and results reader
+
+On `feature/game-agent-local-bridge`, run `npm run install:ci`, then
+`npm run dev:connected`. Open `http://127.0.0.1:5185/mission/index.html` to play.
+After saving, use the result page's Agent link, then click **Load my local game sessions**.
+The Agent at `http://127.0.0.1:5185/research-agent` reads and recalculates local task
+results, or opens one explicitly selected JSON export without saving/uploading it.
+Existing records at port 4177 remain there; no automatic migration.
+No LLM call, fatigue model, public deployment or change to main.
+See [contract, privacy and validation limits](docs/architecture/local-game-agent-bridge.md).
+
 ## Public research data branch — real evidence, not model training
 
 This branch adds a small CC BY 4.0 numeric subset from *Cognitive Fatigue* (Figshare v3).

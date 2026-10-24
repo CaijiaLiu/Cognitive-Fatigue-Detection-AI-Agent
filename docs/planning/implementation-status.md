@@ -1,5 +1,23 @@
 # Implementation status
 
+## Local game → Agent evidence connection (new branch)
+
+`feature/game-agent-local-bridge` extends UI PR #23 `2602797`. The preserved English
+preview `663ed79` is available via an ignored directory link at `/mission/index.html`;
+its result page links to the same origin's `/research-agent#local-results`.
+The user explicitly loads saved mission records or chooses a JSON file. A new browser-only
+`mission-local-evidence/0.1` adapter validates provenance and recalculates supported task
+summaries with the existing preview engine. No participant ID/raw samples/notes/tokens
+enter the evidence. Existing sessions at other ports are untouched and cannot be read
+automatically. See [architecture](../architecture/local-game-agent-bridge.md).
+
+Verified: 189 root Node tests (12 new bridge tests), 16 preview tests, typecheck,
+production build, controlled-DOM collection flow and same-origin local HTTP checks.
+No actual game/camera experiment, old-browser-record inspection, LLM call, model training,
+cloud upload or deployment. Not scientific validation or full canonical mission integration.
+Next: user tests a new saved session or manually chosen export; fix reported issues before
+any canonical port, upload or real-LLM integration.
+
 ## Public-data web lookup (stacked UI branch)
 
 `feature/public-data-agent-ui` extends PR #22 `6064ce8`, without merging main/develop.
