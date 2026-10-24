@@ -1,5 +1,13 @@
 # Shared agent and contributor instructions
 
+## Public research dataset on this branch
+
+For public-data tasks, first read `analysis/datasets/cognitive-lab/README.md` and
+`docs/research/public-data-agent-handoff.md`. Use `node scripts/public-data-agent.mjs overview`
+or `board SOURCE_FILENAME` for checksum-verified real evidence. This is retrieval, not
+training. Never infer fatigue labels, rewrite V1 metric contracts, or treat the synthetic
+HTTP demo as connected to this dataset. No media or local participant records may be added.
+
 ## Read first
 
 Read docs/planning/seven-week-sprint.md (proposed weekly deliverables and integration gates), docs/planning/decision-log.md (accepted team decisions), docs/planning/research-north-star.md (strategic research scope), README.md, docs/README.md, docs/architecture/overview.md, docs/planning/implementation-status.md and docs/planning/roadmap.md before implementation. Read data-contracts.md and affected research/operations documents before changing collection or analysis.
