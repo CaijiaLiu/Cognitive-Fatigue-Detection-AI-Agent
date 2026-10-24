@@ -1,5 +1,27 @@
 # Implementation status
 
+## Public numeric dataset / agent evidence (2026-10-23)
+
+Branch `data/cognitive-lab-agent-evidence`, based on develop `3b7528f`. User authorized
+redistributable public data on a new branch. Added 20 CC BY 4.0 board-result JSONs
+from Figshare DOI `10.6084/m9.figshare.28188143.v3`, a source/hash/license manifest,
+and a standalone read-only evidence/context CLI. See
+[handoff](../research/public-data-agent-handoff.md) and
+[dataset README](../../analysis/datasets/cognitive-lab/README.md).
+
+Implemented: checksum/schema verification, exact source lookup, provenance and explicit
+abstention for fatigue inference. Ten source aliases are not an accepted analysis cohort;
+the author's excluded participant is not identified by this subset. No webcam/RT/independent
+fatigue labels, no training or paid LLM calls. Existing web demo, camera, V1 contracts,
+main and unmerged PR #19/#20/#21 remain unchanged. This is not W4 or W5 completion.
+
+Checks actually run: 7/7 public-data tests; `npm test` 173/173 passed; `npm run test:flow`
+passed (controlled DOM/clock, not a real browser). CLI overview, exact-record lookup
+and unsupported fatigue query were checked; no network/LLM calls are made by the reader.
+Typecheck/build not rerun: no TypeScript/UI/framework, dependency, route, or production
+runtime changes; new module is standalone Node-only. No real-camera or scientific validation.
+Next: scientific source/label review, then separately reviewed agent/UI integration.
+
 ## W3.0 Mission integration foundation (2026-10-19)
 
 **Status:** Linxi-owned Stage A/B engineering prerequisites implemented on canonical collection modules. Preview snapshot is **not** merged. Real-camera accuracy is **not** claimed. Scientific review remains **Pending / Blocked**.

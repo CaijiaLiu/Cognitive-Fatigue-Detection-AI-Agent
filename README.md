@@ -1,5 +1,13 @@
 # Cognitive-Fatigue-Detection-AI-Agent
 
+## Public research data branch — real evidence, not model training
+
+This branch adds a small CC BY 4.0 numeric subset from *Cognitive Fatigue* (Figshare v3).
+See [dataset source, attribution and use](analysis/datasets/cognitive-lab/README.md) and
+[AI-agent handoff](docs/research/public-data-agent-handoff.md).
+Run `node scripts/public-data-agent.mjs overview` or `board SOURCE_FILENAME`.
+This does not connect the synthetic web demo, train an LLM, or validate fatigue prediction.
+
 ## Focus Lab · V1 Data Collection Web App
 
 A web prototype for exploratory cognitive fatigue research. **It is not a medical diagnostic tool and does not provide a predicted fatigue score.** V1 focuses on collecting analyzable research data; it does not train a machine learning model.
